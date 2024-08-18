@@ -4,7 +4,26 @@ from flask_login import LoginManager, UserMixin, login_user, login_required, log
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import shutil
+import webbrowser
+import threading
+import socket
 
+def get_local_ip():
+    """Get the local IP address of the machine."""
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    try:
+        # This doesn't even have to be reachable
+        s.connect(('10.254.254.254', 1))
+        ip_address = s.getsockname()[0]
+    except Exception:
+        ip_address = '127.0.0.1'
+    finally:
+        s.close()
+    return ip_address
+
+def open_browser():
+    local_ip = get_local_ip()
+    webbrowser.open_new(f"http://{local_ip}:5001")
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
@@ -182,5 +201,7 @@ def reset_db():
     flash('Database reset successfully.', 'success')
     return redirect(url_for('admin_dashboard'))
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    # Start a thread to open the browser after the Flask app starts
+    threading.Timer(1, open_browser).start()
+    app.run(host='0.0.0.0', port=5001, debug=True, use_reloader=False)
