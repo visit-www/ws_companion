@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bootstrap Toolbox</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        table {
+            width: 100%;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+        }
+        th {
+            background-color: #f8f9fa;
+        }
+        .table-container {
+            margin: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container table-container">
+        <h2>Personal Bootstrap Toolbox</h2>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Feature/Class</th>
+                    <th>Description</th>
+                    <th>Example/Visual Representation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><code>container</code></td>
+                    <td>
+                        Centers the content and provides responsive padding. 
+                        A basic layout element in Bootstrap.
+                    </td>
+                    <td>
+                        <div class="container" style="background-color: #e9ecef; padding: 10px;">
+                            This is a container
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>row</code> and <code>col</code></td>
+                    <td>
+                        Used together to create responsive grid layouts.
+                        <code>row</code> defines a horizontal group of columns, 
+                        while <code>col</code> represents the individual columns.
+                    </td>
+                    <td>
+                        <div class="container">
+                            <div class="row">
+                                <div class="col" style="background-color: #f8d7da;">Column 1</div>
+                                <div class="col" style="background-color: #d4edda;">Column 2</div>
+                                <div class="col" style="background-color: #cce5ff;">Column 3</div>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>btn btn-primary</code></td>
+                    <td>Styles a button with Bootstrap's primary color scheme.</td>
+                    <td>
+                        <button class="btn btn-primary">Primary Button</button>
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>list-group</code> and <code>list-group-item</code></td>
+                    <td>Creates a styled list group with individual items.</td>
+                    <td>
+                        <ul class="list-group">
+                            <li class="list-group-item">Item 1</li>
+                            <li class="list-group-item">Item 2</li>
+                            <li class="list-group-item">Item 3</li>
+                        </ul>
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>badge</code></td>
+                    <td>Displays small counts or labels, often used to indicate status.</td>
+                    <td>
+                        <span class="badge bg-success">Success</span>
+                        <span class="badge bg-danger">Danger</span>
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>list-unstyled</code></td>
+                    <td>Removes default list item styling, including bullets.</td>
+                    <td>
+                        <ul class="list-unstyled">
+                            <li>Unstyled Item 1</li>
+                            <li>Unstyled Item 2</li>
+                            <li>Unstyled Item 3</li>
+                        </ul>
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>mt-4</code></td>
+                    <td>Adds margin to the top of an element, 4 units of spacing.</td>
+                    <td>
+                        <div style="background-color: #f8f9fa; padding: 10px;">
+                            <p class="mt-4" style="background-color: #e9ecef;">Top Margin of 4 Units</p>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>card</code>, <code>card-header</code>, <code>card-body</code></td>
+                    <td>Creates a Bootstrap card with a header and body section.</td>
+                    <td>
+                        <div class="card" style="width: 18rem;">
+                            <div class="card-header">Card Header</div>
+                            <div class="card-body">
+                                <h5 class="card-title">Card Title</h5>
+                                <p class="card-text">Some quick example text to build on the card title and make up the bulk of the card's content.</p>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>form-control</code></td>
+                    <td>Styles form inputs to have a consistent look across all elements.</td>
+                    <td>
+                        <input type="text" class="form-control" placeholder="Form Input Example">
+                    </td>
+                </tr>
+                <tr>
+                    <td><code>btn btn-secondary</code></td>
+                    <td>Styles a button with Bootstrap's secondary color scheme.</td>
+                    <td>
+                        <button class="btn btn-secondary">Secondary Button</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
