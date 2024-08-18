@@ -1,0 +1,19 @@
+<svg width="30" height="32" viewBox="0 0 30 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="instagram" filter="url(#filter0_d_28_6)">
+<path id="Vector" d="M20 2.5H10C7.23858 2.5 5 4.73858 5 7.5V17.5C5 20.2614 7.23858 22.5 10 22.5H20C22.7614 22.5 25 20.2614 25 17.5V7.5C25 4.73858 22.7614 2.5 20 2.5Z" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M19 11.87C19.1234 12.7022 18.9813 13.5522 18.5938 14.299C18.2063 15.0458 17.5932 15.6514 16.8416 16.0297C16.0901 16.4079 15.2385 16.5396 14.4078 16.4059C13.5771 16.2723 12.8098 15.8801 12.2149 15.2852C11.6199 14.6902 11.2277 13.9229 11.0941 13.0922C10.9604 12.2615 11.0921 11.4099 11.4703 10.6584C11.8486 9.90685 12.4542 9.29374 13.201 8.90624C13.9478 8.51874 14.7978 8.37658 15.63 8.5C16.4789 8.62588 17.2649 9.02146 17.8717 9.6283C18.4785 10.2351 18.8741 11.0211 19 11.87Z" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M20.5 7H20.51" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<defs>
+<filter id="filter0_d_28_6" x="-1" y="0.5" width="32" height="32" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="4"/>
+<feGaussianBlur stdDeviation="2"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_28_6"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_28_6" result="shape"/>
+</filter>
+</defs>
+</svg>

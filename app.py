@@ -48,6 +48,8 @@ class User(UserMixin, db.Model):
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# Existing routes remain unchanged...
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -112,70 +114,104 @@ def update_paid_status(user_id):
     flash(f"Updated paid status for {user.username}.", 'success')
     return redirect(url_for('admin_dashboard'))
 
-class Guideline(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    title = db.Column(db.String(100), nullable=False)
-    file_type = db.Column(db.String(10), nullable=False)
-    file_path = db.Column(db.String(200), nullable=False)
+# Add routes for the new features based on navbar and cards
 
-    def __repr__(self):
-        return f'<Guideline {self.title}>'
+@app.route('/pricing')
+def pricing():
+    return render_template('pricing.html')
 
-@app.route('/add_guidelines', methods=['GET', 'POST'])
-@login_required
-def add_guidelines():
-    if not current_user.is_admin:
-        flash('Access restricted to administrators only.', 'warning')
-        return redirect(url_for('index'))
-    
-    if request.method == 'POST':
-        title = request.form['title'].strip().title()
-        file_type = request.form['file_type'].lower()
-        file = request.files['file']
+@app.route('/buy_now')
+def buy_now():
+    return render_template('buy_now.html')
 
-        if file:
-            # Secure the filename and save the file
-            filename = file.filename  # Use the original filename
-            file_path_input = os.path.join('files/guidelines', filename)
-            file.save(file_path_input)
-
-            # Check for duplicate title or file path
-            existing_guideline = Guideline.query.filter_by(title=title).first()
-            if existing_guideline:
-                return "Error: A guideline with this title already exists.", 400
-
-            # Add the new guideline to the database
-            new_guideline = Guideline(
-                title=title,
-                file_type=file_type,
-                file_path=file_path_input
-            )
-            db.session.add(new_guideline)
-            db.session.commit()
-
-            print(f"Added guideline: {new_guideline.title}, Path: {new_guideline.file_path}")
-
-            # Redirect to the success page
-            return render_template('guideline_add_success.html', title=title)
-
-    return render_template('add_guideline.html')
-
-@app.route('/guideline/<int:id>')
-def serve_guideline(id):
-    guideline = Guideline.query.get_or_404(id)
-    file_name = guideline.file_path.split('/')[-1]
-    file_path = os.path.join('files/guidelines', file_name)
-    try:
-        return send_from_directory(directory='files/guidelines', path=file_name)
-    except FileNotFoundError:
-        flash('File not found.', 'danger')
-        return redirect(url_for('index'))
+@app.route('/free_trial')
+def free_trial():
+    return render_template('free_trial.html')
 
 @app.route('/guidelines')
-def list_guidelines():
-    guidelines = Guideline.query.all()  # Retrieve all guidelines from the database
-    return render_template('guidelines_list.html', guidelines=guidelines)
+@login_required
+def guidelines():
+    return render_template('guidelines.html')
 
+@app.route('/classifications')
+@login_required
+def classifications():
+    return render_template('classifications.html')
+
+@app.route('/differential_diagnosis')
+@login_required
+def differential_diagnosis():
+    return render_template('differential_diagnosis.html')
+
+@app.route('/vetting_tools')
+@login_required
+def vetting_tools():
+    return render_template('vetting_tools.html')
+
+@app.route('/anatomy')
+@login_required
+def anatomy():
+    return render_template('anatomy.html')
+
+@app.route('/curated_content')
+@login_required
+def curated_content():
+    return render_template('curated_content.html')
+
+@app.route('/report_checker')
+@login_required
+def report_checker():
+    return render_template('report_checker.html')
+
+@app.route('/rad_calculators')
+@login_required
+def rad_calculators():
+    return render_template('rad_calculators.html')
+
+@app.route('/tnm_staging')
+@login_required
+def tnm_staging():
+    return render_template('tnm_staging.html')
+
+@app.route('/image_search')
+@login_required
+def image_search():
+    return render_template('image_search.html')
+
+@app.route('/physics')
+@login_required
+def physics():
+    return render_template('physics.html')
+
+@app.route('/governance_audits')
+@login_required
+def governance_audits():
+    return render_template('governance_audits.html')
+
+@app.route('/courses')
+@login_required
+def courses():
+    return render_template('courses.html')
+
+@app.route('/research_tools')
+@login_required
+def research_tools():
+    return render_template('research_tools.html')
+
+@app.route('/music')
+@login_required
+def music():
+    return render_template('music.html')
+
+@app.route('/contact_us')
+def contact_us():
+    return render_template('contact_us.html')
+
+@app.route('/review_us')
+def review_us():
+    return render_template('review_us.html')
+
+# Reset the database
 @app.route('/reset_db')
 @login_required
 def reset_db():
