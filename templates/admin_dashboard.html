@@ -1,53 +1,97 @@
 {% extends "base.html" %}
 
-{% block title %}Admin Dashboard - Radiology Workstation Companion{% endblock %}
+{% block title %}Admin Dashboard{% endblock %}
 
 {% block content %}
-    <div class="container mt-5">
-        <h1>Admin Dashboard</h1>
-        
-        <h2 class="mt-4">Manage Users</h2>
-        <ul class="list-group">
-            {% for user in users %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <div>
-                    {{ user.username }} - 
-                    <span class="badge 
-                        {% if user.is_paid %} bg-success 
-                        {% else %} bg-danger 
-                        {% endif %}">
-                        {% if user.is_paid %}
-                        Paid Member
-                        {% else %}
-                        Not Paid
-                        {% endif %}
-                    </span>
+<div class="container mt-4">
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="toast-container position-fixed top-0 end-0 p-3">
+                {% for category, message in messages %}
+                    <div class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                {{ message }}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <!-- Dashboard Heading -->
+    <h1 class="text-center mb-4">Admin Dashboard</h1>
+
+    <!-- Admin Cards -->
+    <div class="row g-4">
+        <!-- Add Guidelines Card -->
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Add Guidelines</h5>
+                    <p class="card-text">Manage and add new guidelines to the system.</p>
+                    <a href="{{ url_for('add_guidelines') }}" class="btn btn-primary">Go</a>
                 </div>
-                <div>
-                    {% if not user.is_admin %}
-                        <a href="{{ url_for('update_paid_status', user_id=user.id) }}" class="btn btn-sm 
-                            {% if user.is_paid %} btn-warning 
-                            {% else %} btn-success 
-                            {% endif %}">
-                            {% if user.is_paid %}
-                            Revoke Paid Status
-                            {% else %}
-                            Grant Paid Status
-                            {% endif %}
-                        </a>
-                    {% endif %}
-                </div>
-            </li>
-            {% endfor %}
-        </ul>
-        
-        <div class="mt-4">
-            <a href="{{ url_for('add_guidelines') }}" class="btn btn-primary">Add Guideline</a>
-            <a href="{{ url_for('reset_db') }}" class="btn btn-danger">Reset Database</a>
+            </div>
         </div>
 
-        <p class="mt-4">
-            <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
-        </p>
+        <!-- Add Curated Content Card -->
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Add Curated Content</h5>
+                    <p class="card-text">Manage and add new curated content.</p>
+                    <a href="{{ url_for('add_curated_contents') }}" class="btn btn-primary">Go</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Radiology Calculator Card -->
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Add Radiology Calculator</h5>
+                    <p class="card-text">Manage and add new radiology calculators.</p>
+                    <a href="{{ url_for('add_radiology_calculators') }}" class="btn btn-primary">Go</a>
+                </div>
+            </div>
+        </div>
+        <!-- New Database Management Card -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Database Management</h5>
+                    <p class="card-text">Manage the database, view tables, and reset data.</p>
+                    <a href="{{ url_for('db_management') }}" class="btn btn-danger">Manage Database</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Management Card -->
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">User Management</h5>
+                    <p class="card-text">Manage users and their roles.</p>
+                    <a href="{{ url_for('user_management') }}" class="btn btn-primary">Go</a>
+                </div>
+            </div>
+        </div>
     </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+    // Bootstrap Toast Initialization
+    document.addEventListener('DOMContentLoaded', function () {
+        var toastElList = [].slice.call(document.querySelectorAll('.toast'));
+        var toastList = toastElList.map(function (toastEl) {
+            return new bootstrap.Toast(toastEl, { autohide: true, delay: 2000 }).show();
+        });
+    });
+</script>
 {% endblock %}

@@ -104,3 +104,10 @@
 .custom-toast .toast-body {
     color: #fff;
 }
+/*login button */
+.login-btn {
+    background-color: #7bf1a8;
+}
+.login-btn:hover{
+    background-color: #136733;
+}
