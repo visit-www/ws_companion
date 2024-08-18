@@ -1,14 +1,13 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory
-from flask_sqlalchemy import SQLAlchemy
-from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
 import os
 import shutil
 import webbrowser
 import threading
 import socket
-from sqlalchemy import inspect
-from sqlalchemy import Table
+from flask import Flask, render_template, request, redirect, url_for, flash, send_from_directory
+from flask_sqlalchemy import SQLAlchemy
+from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
+from werkzeug.security import generate_password_hash, check_password_hash
+from sqlalchemy import inspect, Table
 
 def get_local_ip():
     """Get the local IP address of the machine."""
@@ -26,13 +25,21 @@ def get_local_ip():
 def open_browser():
     local_ip = get_local_ip()
     webbrowser.open_new(f"http://{local_ip}:5001")
+
 basedir = os.path.abspath(os.path.dirname(__file__))
 
 app = Flask(__name__)
 
-app.config['SECRET_KEY'] = os.getenv('SECRET_KEY',"7ebfffbf75e406f1b63739a0c5e487496be74113d2fd3a672fc45b4a120f571b")
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', "7ebfffbf75e406f1b63739a0c5e487496be74113d2fd3a672fc45b4a120f571b")
+
+# Use PostgreSQL if the DATABASE_URL environment variable is set (as it would be on Heroku), otherwise default to SQLite
+# Use PostgreSQL if the DATABASE_URL environment variable is set (as it would be on Heroku), otherwise default to SQLite
+if 'DATABASE_URL' in os.environ:
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+else:
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(basedir, "radiology.db")}'
+
 app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(basedir, "radiology.db")}'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 
