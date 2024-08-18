@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Radiology Workstation Companion{% endblock %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h1>Admin Dashboard</h1>
+        
+        <h2 class="mt-4">Manage Users</h2>
+        <ul class="list-group">
+            {% for user in users %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <div>
+                    {{ user.username }} - 
+                    <span class="badge 
+                        {% if user.is_paid %} bg-success 
+                        {% else %} bg-danger 
+                        {% endif %}">
+                        {% if user.is_paid %}
+                        Paid Member
+                        {% else %}
+                        Not Paid
+                        {% endif %}
+                    </span>
+                </div>
+                <div>
+                    {% if not user.is_admin %}
+                        <a href="{{ url_for('update_paid_status', user_id=user.id) }}" class="btn btn-sm 
+                            {% if user.is_paid %} btn-warning 
+                            {% else %} btn-success 
+                            {% endif %}">
+                            {% if user.is_paid %}
+                            Revoke Paid Status
+                            {% else %}
+                            Grant Paid Status
+                            {% endif %}
+                        </a>
+                    {% endif %}
+                </div>
+            </li>
+            {% endfor %}
+        </ul>
+        
+        <div class="mt-4">
+            <a href="{{ url_for('add_guidelines') }}" class="btn btn-primary">Add Guideline</a>
+            <a href="{{ url_for('reset_db') }}" class="btn btn-danger">Reset Database</a>
+        </div>
+
+        <p class="mt-4">
+            <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+        </p>
+    </div>
+{% endblock %}

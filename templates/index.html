@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Radiology Workstation Companion{% endblock %}
+
+{% block content %}
+    <h1 class="mt-4">Welcome to the Radiology Workstation Companion App</h1>
+    <p>This app is designed to assist radiologists with day-to-day tasks and provide easy access to guidelines, tools, and resources.</p>
+
+    <!-- Navigation Links -->
+    <nav class="mt-4">
+        <ul class="list-unstyled">
+            {% if current_user.is_authenticated %}
+                <li><strong>Welcome, {{ current_user.username }}!</strong></li>
+                <li><a href="{{ url_for('list_guidelines') }}" class="btn btn-link">View Guidelines</a></li>
+
+                {% if current_user.is_admin %}
+                    <li><a href="{{ url_for('admin_dashboard') }}" class="btn btn-link">Admin Dashboard</a></li>
+                    <li><a href="{{ url_for('add_guidelines') }}" class="btn btn-link">Add New Guideline</a></li>
+                {% endif %}
+
+                <li><a href="{{ url_for('logout') }}" class="btn btn-link">Logout</a></li>
+            {% else %}
+                <li><a href="{{ url_for('register') }}" class="btn btn-link">Register</a></li>
+                <li><a href="{{ url_for('login') }}" class="btn btn-link">Login</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+
+    <!-- Outreach and Additional Features -->
+    <h2>Outreach and Additional Features</h2>
+    <ul class="list-unstyled">
+        <li><a href="#" class="btn btn-link">Educational Resources</a></li>
+        <li><a href="#" class="btn btn-link">Contact Support</a></li>
+        <li><a href="#" class="btn btn-link">Feedback</a></li>
+        <li><a href="#" class="btn btn-link">Community Forum</a></li>
+    </ul>
+{% endblock %}
