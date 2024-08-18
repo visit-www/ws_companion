@@ -53,31 +53,41 @@ def load_user(user_id):
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+        username = request.form['username'].strip()
+        password = request.form['password'].strip()
         
-        new_user = User(username=username, password=hashed_password, is_paid=False)  # Default is unpaid
-        db.session.add(new_user)
-        db.session.commit()
-        flash('Registration successful! Please log in.', 'success')
-        return redirect(url_for('login'))
+        # Check if the username already exists
+        existing_user = User.query.filter_by(username=username).first()
+        if existing_user:
+            flash('Username already exists. Please choose a different one.', 'warning')
+            return redirect(url_for('register'))
+        
+        if username and password:
+            hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+            new_user = User(username=username, password=hashed_password, is_paid=False)
+            db.session.add(new_user)
+            db.session.commit()
+            flash('Registration successful! Please log in.', 'success')
+            return redirect(url_for('login'))
+        else:
+            flash('Both fields are required.', 'danger')
+    
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+        username = request.form['username'].strip()
+        password = request.form['password'].strip()
         user = User.query.filter_by(username=username).first()
-        
+
         if user and check_password_hash(user.password, password):
             login_user(user)
-            flash('Login successful!', 'success')
+            flash('Login successful! Welcome back.', 'success')
             return redirect(url_for('index'))
         else:
-            flash('Login failed. Check your username and password.', 'danger')
-    
+            flash('Login failed. Please check your username and password and try again.', 'danger')
+
     return render_template('login.html')
 
 @app.route('/logout')
