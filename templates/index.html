@@ -2,36 +2,121 @@
 
 {% block title %}Home - Radiology Workstation Companion{% endblock %}
 
+{% block hero_container %}
+<div class="hero-container text-center my-4">
+    <h1 class="display-4">Welcome to the Radiology Workstation Companion App</h1>
+    <p class="lead">This app is designed to assist radiologists with day-to-day tasks and provide easy access to guidelines, tools, and resources.</p>
+</div>
+{% endblock %}
+
 {% block content %}
-    <h1 class="mt-4">Welcome to the Radiology Workstation Companion App</h1>
-    <p>This app is designed to assist radiologists with day-to-day tasks and provide easy access to guidelines, tools, and resources.</p>
-
-    <!-- Navigation Links -->
-    <nav class="mt-4">
-        <ul class="list-unstyled">
-            {% if current_user.is_authenticated %}
-                <li><strong>Welcome, {{ current_user.username }}!</strong></li>
-                <li><a href="{{ url_for('list_guidelines') }}" class="btn btn-link">View Guidelines</a></li>
-
-                {% if current_user.is_admin %}
-                    <li><a href="{{ url_for('admin_dashboard') }}" class="btn btn-link">Admin Dashboard</a></li>
-                    <li><a href="{{ url_for('add_guidelines') }}" class="btn btn-link">Add New Guideline</a></li>
-                {% endif %}
-
-                <li><a href="{{ url_for('logout') }}" class="btn btn-link">Logout</a></li>
-            {% else %}
-                <li><a href="{{ url_for('register') }}" class="btn btn-link">Register</a></li>
-                <li><a href="{{ url_for('login') }}" class="btn btn-link">Login</a></li>
-            {% endif %}
-        </ul>
-    </nav>
-
-    <!-- Outreach and Additional Features -->
-    <h2>Outreach and Additional Features</h2>
-    <ul class="list-unstyled">
-        <li><a href="#" class="btn btn-link">Educational Resources</a></li>
-        <li><a href="#" class="btn btn-link">Contact Support</a></li>
-        <li><a href="#" class="btn btn-link">Feedback</a></li>
-        <li><a href="#" class="btn btn-link">Community Forum</a></li>
-    </ul>
+<div class="container my-5">
+    <div class="row g-3">
+        <div class="col-12 col-md-6 col-lg-4">
+            <a href="{{ url_for('guidelines') }}" class="card action-card card-1 text-center p-3 h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Guidelines</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+            <a href="{{ url_for('classifications') }}" class="card action-card card-2 text-center p-3 h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Classifications</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+            <a href="{{ url_for('differential_diagnosis') }}" class="card action-card card-3 text-center p-3 h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Diff. Diagnosis</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+            <a href="{{ url_for('vetting_tools') }}" class="card action-card card-4 text-center p-3 h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Vetting Tools</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+            <a href="{{ url_for('anatomy') }}" class="card action-card card-5 text-center p-3 h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Anatomy</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+            <a href="{{ url_for('curated_content') }}" class="card action-card card-6 text-center p-3 h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Curated Content</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+            <a href="{{ url_for('report_checker') }}" class="card action-card card-7 text-center p-3 h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Report Checker</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+            <a href="{{ url_for('rad_calculators') }}" class="card action-card card-8 text-center p-3 h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Rad Calculators</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+            <a href="{{ url_for('tnm_staging') }}" class="card action-card card-9 text-center p-3 h-100">
+                <div class="card-body">
+                    <h5 class="card-title">TNM Staging</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+            <a href="{{ url_for('image_search') }}" class="card action-card card-10 text-center p-3 h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Image Search</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+            <a href="{{ url_for('physics') }}" class="card action-card card-11 text-center p-3 h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Physics</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+            <a href="{{ url_for('governance_audits') }}" class="card action-card card-12 text-center p-3 h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Governance | Audits</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+            <a href="{{ url_for('courses') }}" class="card action-card card-13 text-center p-3 h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Courses</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+            <a href="{{ url_for('research_tools') }}" class="card action-card card-14 text-center p-3 h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Research Tools</h5>
+                </div>
+            </a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-4">
+            <a href="{{ url_for('music') }}" class="card action-card card-15 text-center p-3 h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Music</h5>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
 {% endblock %}
