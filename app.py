@@ -7,6 +7,8 @@ import shutil
 import webbrowser
 import threading
 import socket
+from sqlalchemy import inspect
+from sqlalchemy import Table
 
 def get_local_ip():
     """Get the local IP address of the machine."""
@@ -33,6 +35,18 @@ app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{os.path.join(basedir, "radi
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+
+# Define the Guideline model
+class Guideline(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(100), nullable=False)
+    file_type = db.Column(db.String(10), nullable=False)
+    file_path = db.Column(db.String(200), nullable=False)
+
+    def __repr__(self):
+        return f'<Guideline {self.title}>'
+    
+    
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'  # Redirect to login page if unauthorized
 login_manager.login_message = 'Please login to access this page'
@@ -101,28 +115,117 @@ def logout():
 def index():
     return render_template('index.html')
 
-@app.route('/admin')
+#add routes for admin access: we want to render admin dashboard to start with :
+@app.route('/admin', methods=['GET', 'POST'])
 @login_required
 def admin_dashboard():
     if not current_user.is_admin:
         flash('Access restricted to administrators only.', 'warning')
         return redirect(url_for('index'))
 
+    if request.method == 'POST':
+        action = request.form.get('action')
+
+        if action == 'add_guideline':
+            # Implement logic for adding guidelines
+            flash('Add Guidelines feature is under construction.', 'info')
+            return redirect(url_for('add_guidelines'))
+
+        elif action == 'add_curated_contents':
+            # Implement logic for adding curated content
+            flash('Add Curated Content feature is under construction.', 'info')
+            return redirect(url_for('add_curated_contents'))
+
+        elif action == 'add_radiology_calculators':
+            # Implement logic for adding radiology calculators
+            flash('Add Radiology Calculators feature is under construction.', 'info')
+            return redirect(url_for('add_radiology_calculators'))
+
+        elif action == 'user_management':
+            # Redirect to user management page
+            return redirect(url_for('user_management'))
+
+        return redirect(url_for('admin_dashboard'))
+
     users = User.query.all()
     return render_template('admin_dashboard.html', users=users)
 
-@app.route('/admin/update_paid_status/<int:user_id>')
+#Route for adding guidelines :
+@app.route('/admin/add_guidelines', methods=['GET', 'POST'])
 @login_required
-def update_paid_status(user_id):
+def add_guidelines():
     if not current_user.is_admin:
         flash('Access restricted to administrators only.', 'warning')
         return redirect(url_for('index'))
 
-    user = User.query.get_or_404(user_id)
-    user.is_paid = not user.is_paid
-    db.session.commit()
-    flash(f"Updated paid status for {user.username}.", 'success')
-    return redirect(url_for('admin_dashboard'))
+    if request.method == 'POST':
+        # Add your guideline processing logic here
+        flash('Guideline added successfully!', 'success')
+        return redirect(url_for('admin_dashboard'))
+
+    return render_template('add_guidelines.html')
+
+# Route of adding curated contents :
+@app.route('/admin/add_curated_contents', methods=['GET', 'POST'])
+@login_required
+def add_curated_contents():
+    if not current_user.is_admin:
+        flash('Access restricted to administrators only.', 'warning')
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        # Add your curated content processing logic here
+        flash('Curated content added successfully!', 'success')
+        return redirect(url_for('admin_dashboard'))
+
+    return render_template('add_curated_contents.html')
+
+# Route for adding radioloy calculators 
+@app.route('/admin/add_radiology_calculators', methods=['GET', 'POST'])
+@login_required
+def add_radiology_calculators():
+    if not current_user.is_admin:
+        flash('Access restricted to administrators only.', 'warning')
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        # Add your radiology calculators processing logic here
+        flash('Radiology calculator added successfully!', 'success')
+        return redirect(url_for('admin_dashboard'))
+
+    return render_template('add_radiology_calculators.html')
+
+# Route for user management :
+@app.route('/admin/user_management', methods=['GET', 'POST'])
+@login_required
+def user_management():
+    if not current_user.is_admin:
+        flash('Access restricted to administrators only.', 'warning')
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        # Add your user management logic here
+        flash('User management action performed successfully!', 'success')
+        return redirect(url_for('admin_dashboard'))
+
+    users = User.query.all()
+    return render_template('user_management.html', users=users)
+# Rotue fo db managment (other reseting and db visualizing routes are in the end)
+@app.route('/admin/db_management')
+@login_required
+def db_management():
+    if not current_user.is_admin:
+        flash('Access restricted to administrators only.', 'warning')
+        return redirect(url_for('index'))
+
+    # Create the inspector object
+    inspector = inspect(db.engine)  # Ensure `db.engine` is used here
+
+    # Get a list of all table names
+    tables = inspector.get_table_names()
+
+    return render_template('db_management.html', tables=tables)
+
 
 # Add routes for the new features based on navbar and cards
 
@@ -138,10 +241,43 @@ def buy_now():
 def free_trial():
     return render_template('free_trial.html')
 
+# View guidlines 
 @app.route('/guidelines')
 @login_required
 def guidelines():
-    return render_template('guidelines.html')
+    # Fetch all guidelines from the database
+    guidelines = Guideline.query.all()
+
+    # Pass guidelines to the template for rendering
+    return render_template('guidelines.html', guidelines=guidelines)
+
+@app.route('/guideline/<int:id>')
+@login_required
+def serve_guideline(id):
+    guideline = Guideline.query.get_or_404(id)
+    file_name = os.path.basename(guideline.file_path)
+    file_type = guideline.file_type.lower()
+    
+    # Determine the appropriate MIME type for serving the file
+    mime_type = ''
+    if file_type == 'pdf':
+        mime_type = 'application/pdf'
+    elif file_type in ['doc', 'docx']:
+        mime_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    elif file_type == 'html':
+        mime_type = 'text/html'
+    elif file_type == 'xml':
+        mime_type = 'application/xml'
+    else:
+        mime_type = 'application/octet-stream'  # Default for unknown types
+
+    # Serve the file
+    return send_from_directory(
+        directory=os.path.dirname(guideline.file_path),
+        path=file_name,
+        mimetype=mime_type,
+        as_attachment=False  # Serve inline instead of download
+    )
 
 @app.route('/classifications')
 @login_required
@@ -221,14 +357,152 @@ def contact_us():
 def review_us():
     return render_template('review_us.html')
 
-# Reset the database
+# Route to reset users
+@app.route('/admin/reset_users')
+@login_required
+def reset_users():
+    if not current_user.is_admin:
+        flash('Access restricted to administrators only.', 'warning')
+        return redirect(url_for('index'))
+
+    # Delete all users from the database
+    User.query.delete()
+    db.session.commit()
+    flash('All users have been reset successfully!', 'success')
+    return redirect(url_for('admin_dashboard'))
+
+# Route to view database tables
+@app.route('/admin/db_tables')
+@login_required
+def db_tables():
+    if not current_user.is_admin:
+        flash('Access restricted to administrators only.', 'warning')
+        return redirect(url_for('index'))
+
+    # Create the inspector object
+    inspector = inspect(db.engine)
+
+    # Get a list of all table names
+    tables = inspector.get_table_names()
+
+    return render_template('db_tables.html', tables=tables)
+
+@app.route('/admin/db_tables/view/<table_name>')
+@login_required
+def view_table_data(table_name):
+    if not current_user.is_admin:
+        flash('Access restricted to administrators only.', 'warning')
+        return redirect(url_for('index'))
+
+    # Reflect the table from the database
+    table = db.Table(table_name, db.metadata, autoload_with=db.engine)
+
+    # Fetch all data from the table
+    query = db.session.query(table).all()
+
+    # Pass both the rows, the table metadata, and getattr to the template
+    return render_template('view_table_data.html', table_name=table_name, rows=query, table=table, getattr=getattr)
+
+# functiosn to add and delte specfic data row from admin dashborad :
+# Route to delete a row from a specific table
+@app.route('/admin/db_tables/delete/<table_name>/<int:row_id>', methods=['POST'])
+@login_required
+def delete_row(table_name, row_id):
+    if not current_user.is_admin:
+        flash('Access restricted to administrators only.', 'warning')
+        return redirect(url_for('index'))
+
+    # Reflect the table from the database
+    table = db.Table(table_name, db.metadata, autoload_with=db.engine)
+
+    # Find and delete the row using filter_by
+    stmt = table.delete().where(table.c.id == row_id)
+    db.session.execute(stmt)
+    db.session.commit()
+
+    flash(f'Row {row_id} deleted from {table_name}.', 'success')
+    return redirect(url_for('view_table_data', table_name=table_name))
+
+    # Delete the row
+    db.session.delete(row)
+    db.session.commit()
+    flash(f'Row {row_id} has been deleted from {table_name}.', 'success')
+    return redirect(url_for('view_table_data', table_name=table_name))
+
+# Route to add a new row to a specific table
+@app.route('/admin/db_tables/add/<table_name>', methods=['GET', 'POST'])
+@login_required
+def add_row(table_name):
+    if not current_user.is_admin:
+        flash('Access restricted to administrators only.', 'warning')
+        return redirect(url_for('index'))
+
+    table = db.metadata.tables.get(table_name)
+    if table is None:
+        flash(f'Table {table_name} does not exist.', 'danger')
+        return redirect(url_for('db_tables'))
+
+    if request.method == 'POST':
+        try:
+            data = {}
+            for column in table.columns:
+                print(f"Processing column: {column.name}")
+                if column.name != 'id':  # Skip 'id' column
+                    if column.name == 'file_path':  # Handle file upload
+                        if column.name in request.files:
+                            file = request.files.get(column.name)
+                            if file and file.filename:
+                                # Format the file name based on the title and file type
+                                title = request.form.get('title', '').strip().lower().replace(' ', '-')
+                                file_type = request.form.get('file_type', '').strip().lower()
+                                filename = f"{title}.{file_type}"
+
+                                # Ensure the directory exists and save the file
+                                folder_path = os.path.join('files', table_name)
+                                os.makedirs(folder_path, exist_ok=True)
+                                file_path = os.path.join(folder_path, filename)
+                                file.save(file_path)
+
+                                # Store the file path in the data to be inserted
+                                data[column.name] = file_path
+                            else:
+                                flash(f'File not provided for {column.name}.', 'danger')
+                                return redirect(url_for('add_row', table_name=table_name))
+                        else:
+                            flash(f'No file upload field named {column.name} in form.', 'danger')
+                            return redirect(url_for('add_row', table_name=table_name))
+                    else:
+                        # Store the form data for other columns
+                        data[column.name] = request.form.get(column.name, '').strip()
+
+            print(f"Data to be inserted: {data}")
+
+            # Insert the new row into the database
+            insert_stmt = table.insert().values(**data)
+            db.session.execute(insert_stmt)
+            db.session.commit()
+
+            flash(f'New {table_name[:-1]} has been added.', 'success')
+            return redirect(url_for('view_table_data', table_name=table_name))
+
+        except Exception as e:
+            print(f"Error occurred: {str(e)}")
+            flash(f'An error occurred: {str(e)}', 'danger')
+            return redirect(url_for('add_row', table_name=table_name))
+
+    # Render a form to add a new row
+    return render_template('add_row.html', table_name=table_name, columns=table.columns)
+
+
+
+# Reset the database (exept users)
 @app.route('/reset_db')
 @login_required
 def reset_db():
     if not current_user.is_admin:
         flash('Access restricted to administrators only.', 'warning')
         return redirect(url_for('index'))
-    
+
     # Delete all files in the guidelines directory
     folder = os.path.join(basedir, 'files/guidelines')
     for filename in os.listdir(folder):
@@ -240,11 +514,17 @@ def reset_db():
                 shutil.rmtree(file_path)
         except Exception as e:
             print(f'Failed to delete {file_path}. Reason: {e}')
-    
-    # Reset the database
-    db.drop_all()
+
+    # Drop specific tables (but not the User table)
+    meta = db.metadata
+    for table in reversed(meta.sorted_tables):
+        if table.name != 'user':  # Skip the User table
+            db.engine.execute(f'DROP TABLE IF EXISTS {table.name}')
+
+    # Recreate all tables
     db.create_all()
-    flash('Database reset successfully.', 'success')
+
+    flash('Database reset successfully, users preserved.', 'success')
     return redirect(url_for('admin_dashboard'))
 
 if __name__ == "__main__":

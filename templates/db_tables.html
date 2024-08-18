@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Database Tables - Radiology Workstation Companion{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Database Tables</h2>
+    <p>Here you can view the contents of the database tables:</p>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Table Name</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for table in tables %}
+                <tr>
+                    <td>{{ table }}</td>
+                    <td>
+                        <a href="{{ url_for('view_table_data', table_name=table) }}" class="btn btn-info">View</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
