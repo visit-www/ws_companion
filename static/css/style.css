@@ -52,18 +52,29 @@
     grid-template-columns: repeat(5, 1fr);
     gap: 20px;
     padding: 20px;
-    width: 100%;
+    width: 80%;
     max-width: 1400px;
     margin: 0 auto;
 }
 
-.action-card {
+.action-card .card-body{
+    aspect-ratio: 1 / 1; /* Ensures the cards are square */
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     padding: 20px;
-    text-align: center;
-    background-color: #f5f5f5;
     border-radius: 10px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s;
+}
+
+/* Reduce card and text size for smaller screens */
+@media (max-width: 576px) {
+    .action-card {
+        padding: 1rem;
+        font-size: 0.8rem;
+    }
 }
 
 .action-card:hover {
