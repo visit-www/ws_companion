@@ -13,7 +13,7 @@
 
 
 <div class="container my-5">
-    <div class="row g-3">
+    <div class="row g-5">
         {% set cards = [
             {'url': 'guidelines', 'title': 'Guidelines', 'class': 'card-1'},
             {'url': 'classifications', 'title': 'Classifications', 'class': 'card-2'},
@@ -33,10 +33,10 @@
         ] %}
         
         {% for card in cards %}
-        <div class="col-6 col-sm-5 col-md-3 col-lg-2">
-            <a href="{{ url_for(card.url) }}" class="card action-card {{ card.class }} text-center p-3 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">{{ card.title }}</h5>
+        <div class="col-6 col-sm-5 col-md-4 col-lg-4">
+            <a href="{{ url_for(card.url) }}" class="card action-card text-center p-3 h-100">
+                <div class="card-body {{ card.class }}">
+                    <h5 class="card-title ">{{ card.title }}</h5>
                 </div>
             </a>
         </div>

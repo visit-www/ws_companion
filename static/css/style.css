@@ -52,7 +52,7 @@
     grid-template-columns: repeat(5, 1fr);
     gap: 20px;
     padding: 20px;
-    width: 80%;
+    width: 100%;
     max-width: 1400px;
     margin: 0 auto;
 }
@@ -68,12 +68,11 @@
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s;
 }
-
 /* Reduce card and text size for smaller screens */
 @media (max-width: 576px) {
     .action-card {
         padding: 1rem;
-        font-size: 0.8rem;
+        font-size: 0.5rem;
     }
 }
 
