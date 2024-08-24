@@ -10,133 +10,37 @@
 {% endblock %}
 
 {% block content %}
-<!-- Code to displace sucessful login message -->
-<div aria-live="polite" aria-atomic="true" class="position-relative">
-    <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="toast align-items-center custom-toast" role="alert" aria-live="assertive" aria-atomic="true">
-                        <div class="d-flex">
-                            <div class="toast-body text-white">
-                                {{ message }}
-                            </div>
-                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                        </div>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-    </div>
-</div>
+
 
 <div class="container my-5">
     <div class="row g-3">
-        <div class="col-12 col-md-6 col-lg-4">
-            <a href="{{ url_for('guidelines') }}" class="card action-card card-1 text-center p-3 h-100">
+        {% set cards = [
+            {'url': 'guidelines', 'title': 'Guidelines', 'class': 'card-1'},
+            {'url': 'classifications', 'title': 'Classifications', 'class': 'card-2'},
+            {'url': 'differential_diagnosis', 'title': 'Diff. Diagnosis', 'class': 'card-3'},
+            {'url': 'vetting_tools', 'title': 'Vetting Tools', 'class': 'card-4'},
+            {'url': 'anatomy', 'title': 'Anatomy', 'class': 'card-5'},
+            {'url': 'curated_content', 'title': 'Curated Content', 'class': 'card-6'},
+            {'url': 'report_checker', 'title': 'Report Checker', 'class': 'card-7'},
+            {'url': 'rad_calculators', 'title': 'Rad Calculators', 'class': 'card-8'},
+            {'url': 'tnm_staging', 'title': 'TNM Staging', 'class': 'card-9'},
+            {'url': 'image_search', 'title': 'Image Search', 'class': 'card-10'},
+            {'url': 'physics', 'title': 'Physics', 'class': 'card-11'},
+            {'url': 'governance_audits', 'title': 'Governance | Audits', 'class': 'card-12'},
+            {'url': 'courses', 'title': 'Courses', 'class': 'card-13'},
+            {'url': 'research_tools', 'title': 'Research Tools', 'class': 'card-14'},
+            {'url': 'music', 'title': 'Music', 'class': 'card-15'}
+        ] %}
+        
+        {% for card in cards %}
+        <div class="col-6 col-sm-5 col-md-3 col-lg-2">
+            <a href="{{ url_for(card.url) }}" class="card action-card {{ card.class }} text-center p-3 h-100">
                 <div class="card-body">
-                    <h5 class="card-title">Guidelines</h5>
+                    <h5 class="card-title">{{ card.title }}</h5>
                 </div>
             </a>
         </div>
-        <div class="col-12 col-md-6 col-lg-4">
-            <a href="{{ url_for('classifications') }}" class="card action-card card-2 text-center p-3 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Classifications</h5>
-                </div>
-            </a>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-            <a href="{{ url_for('differential_diagnosis') }}" class="card action-card card-3 text-center p-3 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Diff. Diagnosis</h5>
-                </div>
-            </a>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-            <a href="{{ url_for('vetting_tools') }}" class="card action-card card-4 text-center p-3 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Vetting Tools</h5>
-                </div>
-            </a>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-            <a href="{{ url_for('anatomy') }}" class="card action-card card-5 text-center p-3 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Anatomy</h5>
-                </div>
-            </a>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-            <a href="{{ url_for('curated_content') }}" class="card action-card card-6 text-center p-3 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Curated Content</h5>
-                </div>
-            </a>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-            <a href="{{ url_for('report_checker') }}" class="card action-card card-7 text-center p-3 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Report Checker</h5>
-                </div>
-            </a>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-            <a href="{{ url_for('rad_calculators') }}" class="card action-card card-8 text-center p-3 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Rad Calculators</h5>
-                </div>
-            </a>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-            <a href="{{ url_for('tnm_staging') }}" class="card action-card card-9 text-center p-3 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">TNM Staging</h5>
-                </div>
-            </a>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-            <a href="{{ url_for('image_search') }}" class="card action-card card-10 text-center p-3 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Image Search</h5>
-                </div>
-            </a>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-            <a href="{{ url_for('physics') }}" class="card action-card card-11 text-center p-3 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Physics</h5>
-                </div>
-            </a>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-            <a href="{{ url_for('governance_audits') }}" class="card action-card card-12 text-center p-3 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Governance | Audits</h5>
-                </div>
-            </a>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-            <a href="{{ url_for('courses') }}" class="card action-card card-13 text-center p-3 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Courses</h5>
-                </div>
-            </a>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-            <a href="{{ url_for('research_tools') }}" class="card action-card card-14 text-center p-3 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Research Tools</h5>
-                </div>
-            </a>
-        </div>
-        <div class="col-12 col-md-6 col-lg-4">
-            <a href="{{ url_for('music') }}" class="card action-card card-15 text-center p-3 h-100">
-                <div class="card-body">
-                    <h5 class="card-title">Music</h5>
-                </div>
-            </a>
-        </div>
+        {% endfor %}
     </div>
 </div>
 {% endblock %}
