@@ -49,7 +49,25 @@
             <h1 class="display-4">Welcome to the Radiology Workstation Companion App</h1>
         </div>
         {% endblock %}
-
+<!-- Code to displace sucessful login message -->
+<div aria-live="polite" aria-atomic="true" class="position-relative">
+    <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="toast align-items-center custom-toast" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body text-white">
+                                {{ message }}
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+</div>
         <!-- Content Section -->
         {% block content %}
        <!--this is placeholder for contents-->
