@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}View Table - {{ table_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Viewing Table: {{ table_name }}</h2>
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                {% for column in table.columns %}
+                    <th>{{ column.name }}</th>
+                {% endfor %}
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+                <tr>
+                    {% for column in table.columns %}
+                        <td>{{ getattr(row, column.name) }}</td>
+                    {% endfor %}
+                    <td>
+                        <form method="post" action="{{ url_for('main.delete_row', table_name=table_name, row_id=row.id) }}" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this row?');">
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Add New Row Button -->
+    <a href="{{ url_for('main.add_row', table_name=table_name) }}" class="btn btn-primary mt-3">Add {{ table_name }}</a>
+</div>
+{% endblock %}
