@@ -79,7 +79,20 @@
 
 @media (max-width: 530px){
     .action-card{
-        padding: 0.5rem !important;
+        padding: 0.6rem !important;
+    }
+}
+/* Reduce card and text size for smaller screens */
+@media (max-width: 380px) {
+    .card-title{
+        padding: 10px;
+        font-size: 0.7rem !important;
+    }
+}
+
+@media (max-width: 380px){
+    .action-card{
+        padding: 0.7rem !important;
     }
 }
 
@@ -135,4 +148,41 @@
 .custom_input:active{
     background-color: hsl(123, 84%, 85%);
     box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2); /* Slightly larger shadow on active */
+}
+
+/* =================================================================
+styling of the pop up modal :*/
+.modal-header .modal-footer{
+    background-color: #e3e2eb;
+}
+.modal-body {
+    padding: 6px; /* Remove padding around the iframe */
+}
+
+.modal-content {
+    border-radius: 20px; /* Optional: Remove modal border radius if you want it flush */
+    
+}
+
+
+#embedIframe {
+    width: 100%;
+    height: 100%;
+    min-height: 400px; /* Maintain a minimum height for the iframe */
+    border: none; /* Remove border around iframe */
+    background-color: #000;
+    border-radius: 30px;
+    box-shadow:8px 5px 5px 8px #bab9b2;
+}
+
+.modal-dialog {
+    max-width: 100%;
+    width: auto;
+    
+}
+
+.modal-body iframe {
+    width: 100%;
+    height: calc(100vh - 200px); /* Ensure it takes up available height */
+    
 }
