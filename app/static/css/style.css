@@ -167,14 +167,11 @@ styling of the pop up modal :*/
 }
 
 
-#embedIframe {
-    width: 100%;
-    height: 100%;
-    min-height: 400px; /* Maintain a minimum height for the iframe */
-    border: none; /* Remove border around iframe */
+.video-screen {
     background-color: #000;
     border-radius: 30px;
     box-shadow:8px 5px 5px 8px #bab9b2;
+    color:white;
 }
 
 .modal-dialog {

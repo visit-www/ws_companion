@@ -15,6 +15,8 @@
         {% for item in guidelines_with_types %}
             {% set guideline = item.guideline %}
             {% set file_type = item.file_type %}
+            {% set content_type = item.content_type %}
+            {% set embed_code = guideline.embed_code %}
         
         <div class="col-md-6 mb-4">
             <div class="card">
@@ -40,12 +42,12 @@
                             {% else %}
                             <div>
                                 <button class="btn btn-primary" 
-                                data-bs-toggle="modal" 
-                                data-bs-target="#embedCodeModal"
-                                data-embed-code="{{ guideline.embed_code}}"
-                                onclick= "setEmbedCodeFromButton(this)">
-                                View Embed Code
-                            </button>
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#embedCodeModal"
+                                        data-embed-code="{{ embed_code }}"
+                                        onclick="setEmbedCodeFromButton('{{ content_type }}', this)">
+                                    View Embed Code
+                                </button>
                             </div>
                             {% endif %}
                         </div>
@@ -54,6 +56,7 @@
             </div>
         </div>
         {% endfor %}
+    </div>
     </div>
     <p class="mt-4">
         <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Return to Home</a>
