@@ -26,7 +26,7 @@
                         <div class="card-body">
                             <h5 class="card-title">{{ guideline.title }}</h5>
                             <p class="card-text">{{ file_type | upper }}</p>
-                            <p class="card-text">Last updated: {{ guideline.updated_at }}</p>
+                            <p class="card-text">Last updated: {{ guideline.last_updated }}</p>
                         </div>
                         <div class="btn-group">
                             {% if guideline.file_path %}
