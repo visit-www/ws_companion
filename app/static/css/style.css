@@ -153,7 +153,9 @@
 /* =================================================================
 styling of the pop up modal :*/
 .modal-header .modal-footer{
+
     background-color: #e3e2eb;
+    color: white;
 }
 .modal-body {
     padding: 6px; /* Remove padding around the iframe */

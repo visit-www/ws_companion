@@ -7,10 +7,11 @@
         <h5 class="modal-title" id="embedCodeModalLabel">Embedded Content</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body">
-        <!-- Ensure this iframe is correctly placed and has the correct ID -->
-        <iframe id="embedIframe" src="" frameborder="0" allowfullscreen></iframe>
+      <!-- 16:9 aspect ratio -->
+      <div class="embed-responsive embed-responsive-16by9 modal-body">
+        <iframe class="embed-responsive-item" id="embedIframe" src=""></iframe>
       </div>
+      
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
       </div>
