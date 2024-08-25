@@ -43,7 +43,7 @@ def register():
     
     return render_template('register.html')
 
-
+# Log in route
 @bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -62,6 +62,7 @@ def login():
 
     return render_template('login.html')
 
+#Logout route
 @bp.route('/logout')
 @login_required
 def logout():
@@ -131,6 +132,8 @@ def add_user():
 
     return render_template('add_users.html', form=form)
 
+
+# Admin- add gideline route
 @bp.route('/admin/add_guideline', methods=['GET', 'POST'])
 @login_required
 def add_guideline():
@@ -192,7 +195,8 @@ def add_guideline():
 
     return render_template('add_guideline.html', form=form)
 
-# Route for Adding Curated Content
+
+# Admin- add curated content route
 @bp.route('/admin/add_curated_contents', methods=['GET', 'POST'])
 @login_required
 def add_curated_contents():
@@ -207,7 +211,7 @@ def add_curated_contents():
 
     return render_template('add_curated_contents.html')
 
-# Route for Adding Radiology Calculators
+#Admin- add radiology calcuator route
 @bp.route('/admin/add_radiology_calculators', methods=['GET', 'POST'])
 @login_required
 def add_radiology_calculators():
@@ -223,7 +227,7 @@ def add_radiology_calculators():
     return render_template('add_radiology_calculators.html')
 
 
-# Route for Database Management
+# Route for renddering Database Management page
 @bp.route('/admin/db_management')
 @login_required
 def db_management():
@@ -239,15 +243,83 @@ def db_management():
 
     return render_template('db_management.html', tables=tables)
 
-# Add routes for the new features based on navbar and cards
+################################
+# * Route for serving guidlines
+
+# Route for rendering the guidelines page, which shows all guidelines.
+@bp.route('/guidelines')
+@login_required
+def guidelines():
+    # Fetch all guidelines from the database
+    guidelines = db.session.query(Guideline).all()
+    
+    # Extract file type for each guideline
+    guidelines_with_types = []
+    for guideline in guidelines:
+        if guideline.file_path:
+            file_name = os.path.basename(guideline.file_path)
+            file_type = file_name.split('.')[-1].lower()
+        else:
+            file_type = None  # No file available for this guideline
+            
+        guidelines_with_types.append({
+            'guideline': guideline,
+            'file_type': file_type
+        })
+    
+    # Pass guidelines with their file types to the template for rendering
+    return render_template('guidelines.html', guidelines_with_types=guidelines_with_types)
+
+# Route for function that serves specific guideline files. 
+@bp.route('/guideline/<int:id>')
+@login_required
+def serve_guideline(id):
+    # Fetch the specific guideline by ID
+    guideline = db.session.query(Guideline).filter(Guideline.id == id).first()
+    
+    if guideline.file_path:
+        # Extract the file name and determine the file type
+        file_name = os.path.basename(guideline.file_path)
+        file_type = file_name.split('.')[-1].lower()
+    
+        # Define the MIME types for the files
+        mime_type = {
+            'pdf': 'application/pdf',
+            'doc': 'application/msword',
+            'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'html': 'text/html',
+            'xml': 'application/xml'
+        }.get(file_type, 'application/octet-stream')
+    
+        # Determine the absolute directory path
+        full_directory = os.path.abspath(os.path.dirname(guideline.file_path))
+    
+        # Serve the file
+        return send_from_directory(
+        directory=full_directory,
+        path=file_name,
+        mimetype=mime_type,
+        as_attachment=False  # Serve inline instead of downloading
+        )
+    else:
+        flash('No file available for this guideline.', 'warning')
+        return redirect(url_for('main.guidelines'))
+########################################################################
+#Route for nav bar
+
+# Route for home/ Index page
 @bp.route('/')
 def index():
     return render_template('index.html')
 
+#Other nav bar routes
 @bp.route('/pricing')
 def pricing():
     return render_template('pricing.html')
 
+
+########################################################################
+#todo Routes for card items (in development mode)
 @bp.route('/buy_now')
 def buy_now():
     return render_template('buy_now.html')
@@ -255,46 +327,6 @@ def buy_now():
 @bp.route('/free_trial')
 def free_trial():
     return render_template('free_trial.html')
-
-@bp.route('/guidelines')
-@login_required
-def guidelines():
-    # Fetch all guidelines from the database
-    guidelines = db.session.query(Guideline).all()
-
-    # Pass guidelines to the template for rendering
-    return render_template('guidelines.html', guidelines=guidelines)
-
-@bp.route('/guideline/<int:id>')
-@login_required
-def serve_guideline(id):
-    guideline = db.session.query(Guideline).get_or_404(id)
-    file_name = os.path.basename(guideline.file_path)
-    file_type = guideline.file_type.lower()  # Now we trust this field because it's derived from the file
-     # Debugging outputs
-    print(f"Serving file: {file_name}")
-    print(f"File path: {guideline.file_path}")
-    print(f"File type: {file_type}")
-    # Determine the appropriate MIME type
-    mime_type = {
-        'pdf': 'application/pdf',
-        'doc': 'application/msword',
-        'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'html': 'text/html',
-        'xml': 'application/xml'
-    }.get(file_type, 'application/octet-stream')
-
-    # Use an absolute path
-    full_directory = os.path.abspath(os.path.dirname(guideline.file_path))
-
-    # Serve the file
-    return send_from_directory(
-        directory=full_directory,
-        path=file_name,
-        mimetype=mime_type,
-        as_attachment=False  # Serve inline instead of download
-    )
-
 @bp.route('/classifications')
 @login_required
 def classifications():
@@ -373,22 +405,10 @@ def contact_us():
 def review_us():
     return render_template('review_us.html')
 
+########################################################################
+#Datbase management routes
 
-# Route to reset users
-@bp.route('/admin/reset_users')
-@login_required
-def reset_users():
-    if not current_user.is_admin:
-        flash('Access restricted to administrators only.', 'warning')
-        return redirect(url_for('main.index'))
-
-    # Delete all users from the database
-    db.session.query(User).delete()
-    db.session.commit()
-    flash('All users have been reset successfully!', 'success')
-    return redirect(url_for('main.admin_dashboard'))
-
-# Route to view database tables
+# Route to view all database tables
 @bp.route('/admin/db_tables')
 @login_required
 def db_tables():
@@ -404,6 +424,7 @@ def db_tables():
 
     return render_template('db_tables.html', tables=tables)
 
+# * Route of view specific table data
 @bp.route('/admin/db_tables/view/<table_name>')
 @login_required
 def view_table_data(table_name):
@@ -420,7 +441,22 @@ def view_table_data(table_name):
     # Pass both the rows, the table metadata, and getattr to the template
     return render_template('view_table_data.html', table_name=table_name, rows=query, table=table, getattr=getattr)
 
-# Functions to add and delete specific data rows from the admin dashboard:
+
+# >> Route to reset users
+@bp.route('/admin/reset_users')
+@login_required
+def reset_users():
+    if not current_user.is_admin:
+        flash('Access restricted to administrators only.', 'warning')
+        return redirect(url_for('main.index'))
+
+    # Delete all users from the database
+    db.session.query(User).delete()
+    db.session.commit()
+    flash('All users have been reset successfully!', 'success')
+    return redirect(url_for('main.admin_dashboard'))
+
+
 # Route to delete a row from a specific table
 @bp.route('/admin/db_tables/delete/<table_name>/<int:row_id>', methods=['POST'])
 @login_required
@@ -470,8 +506,9 @@ def delete_row(table_name, row_id):
     flash(f'Row {row_id} deleted from {table_name}.', 'success')
     return redirect(url_for('main.view_table_data', table_name=table_name))
 
-
-# Reset the database (except users)
+################################################################
+# ! Debug: Route for Reset the database (except users)
+################################################################
 @bp.route('/reset_db')
 @login_required
 def reset_db():
@@ -506,8 +543,7 @@ def reset_db():
             if table.name != 'user':  # Skip the User table
                 conn.execute(f'DROP TABLE IF EXISTS {table.name}')
 
-    # Recreate all tables
+    #! Recreate all tables
     db.create_all()
-
     flash('Database reset successfully, users preserved.', 'success')
     return redirect(url_for('main.admin_dashboard'))
