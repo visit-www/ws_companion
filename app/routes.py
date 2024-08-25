@@ -253,7 +253,7 @@ def guidelines():
     # Fetch all guidelines from the database
     guidelines = db.session.query(Guideline).all()
     
-    # Extract file type for each guideline
+    # Extract file type and determine content type for each guideline
     guidelines_with_types = []
     for guideline in guidelines:
         if guideline.file_path:
@@ -261,13 +261,32 @@ def guidelines():
             file_type = file_name.split('.')[-1].lower()
         else:
             file_type = None  # No file available for this guideline
-            
+
+        # Determine content type
+        content_type = None
+        embed_code = None
+        if guideline.embed_code:
+            embed_code = guideline.embed_code
+            if '<iframe' in guideline.embed_code:
+                if 'youtube.com' in guideline.embed_code or 'vimeo.com' in guideline.embed_code:
+                    content_type = 'video'
+                else:
+                    content_type = 'webpage'
+            elif '<img' in guideline.embed_code:
+                content_type = 'image'
+            elif '</script>' in guideline.embed_code:
+                content_type = 'script'
+            else:
+                content_type = 'unknown'  # For any other type of embed code
+
         guidelines_with_types.append({
             'guideline': guideline,
-            'file_type': file_type
+            'file_type': file_type,
+            'content_type': content_type,
+            'embed_code': embed_code,
         })
     
-    # Pass guidelines with their file types to the template for rendering
+    # Pass guidelines with their file types and content types to the template for rendering
     return render_template('guidelines.html', guidelines_with_types=guidelines_with_types)
 
 # Route for function that serves specific guideline files. 

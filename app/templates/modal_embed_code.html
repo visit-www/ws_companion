@@ -1,17 +1,24 @@
 <!-- Modal -->
-
 <div class="modal fade" id="embedCodeModal" tabindex="-1" aria-labelledby="embedCodeModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
         <h5 class="modal-title" id="embedCodeModalLabel">Embedded Content</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <!-- 16:9 aspect ratio -->
-      <div class="embed-responsive embed-responsive-16by9 modal-body">
-        <iframe class="embed-responsive-item" id="embedIframe" src=""></iframe>
+      <div class="modal-body">
+        <!-- Container for video content -->
+        <div class="embed-responsive embed-responsive-16by9 video-screen" id="videoContainer" style="display: none;">
+        </div>
+        <!-- Container for webpage content -->
+        <div id="webpageContainer" class ="embed-responsive-16by9 video-screen" style="display: none;">
+          <iframe id="webpageIframe" src="" class="w-100" style="height: 500px; border: none; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); border-radius: 8px;"></iframe>
+        </div>
+        <!-- Container for image content -->
+        <div id="imageContainer" class ="embed-responsive-16by9 video-screen" style="display: none;">
+          <img id="embedImage" src="" alt="Embedded Content" class="img-fluid" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
+        </div>
       </div>
-      
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
       </div>
