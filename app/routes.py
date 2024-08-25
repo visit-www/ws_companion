@@ -3,6 +3,7 @@ from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from .models import User
 from . import db
+from .forms import AddGuidelineForm, AddUserForm
 from .models import Guideline  # Ensure this is imported
 import os
 from flask import Blueprint, render_template, send_from_directory, request, redirect, url_for, flash
@@ -10,6 +11,7 @@ from sqlalchemy import inspect
 from sqlalchemy import Table
 import sqlalchemy as sa
 import shutil
+
 # Create the Blueprint instance
 bp = Blueprint(
     'main', __name__,
@@ -82,8 +84,7 @@ def admin_dashboard():
         action = request.form.get('action')
 
         if action == 'add_guideline':
-            flash('Add Guidelines feature is under construction.', 'info')
-            return redirect(url_for('main.add_guidelines'))
+            return redirect(url_for('main.add_guideline'))
 
         elif action == 'add_curated_contents':
             flash('Add Curated Content feature is under construction.', 'info')
@@ -94,27 +95,102 @@ def admin_dashboard():
             return redirect(url_for('main.add_radiology_calculators'))
 
         elif action == 'user_management':
-            return redirect(url_for('main.user_management'))
+            return redirect(url_for('main.db_tables.html'))
 
         return redirect(url_for('main.admin_dashboard'))
 
     users = db.session.query(User).all()
     return render_template('admin_dashboard.html', users=users)
 
-# Route for Adding Guidelines
-@bp.route('/admin/add_guidelines', methods=['GET', 'POST'])
+# Add user route
+@bp.route('/admin/add_user', methods=['GET', 'POST'])
 @login_required
-def add_guidelines():
+def add_user():
     if not current_user.is_admin:
         flash('Access restricted to administrators only.', 'warning')
         return redirect(url_for('main.index'))
 
-    if request.method == 'POST':
-        # Add your guideline processing logic here
-        flash('Guideline added successfully!', 'success')
-        return redirect(url_for('main.admin_dashboard'))
+    form = AddUserForm()
+    if form.validate_on_submit():
+        hashed_password = generate_password_hash(form.password.data)
+        new_user = User(
+            username=form.username.data,
+            password=hashed_password,
+            is_admin=form.is_admin.data,
+            is_paid=form.is_paid.data
+        )
+        try:
+            db.session.add(new_user)
+            db.session.commit()
+            flash('New user added successfully.', 'success')
+            return redirect(url_for('main.admin_dashboard'))  # Redirect to admin dashboard or another page
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error: {str(e)}', 'danger')
+            return redirect(url_for('main.add_user'))
 
-    return render_template('add_guidelines.html')
+    return render_template('add_users.html', form=form)
+
+@bp.route('/admin/add_guideline', methods=['GET', 'POST'])
+@login_required
+def add_guideline():
+    if not current_user.is_admin:
+        flash('Access restricted to administrators only.', 'warning')
+        return redirect(url_for('main.index'))
+
+    form = AddGuidelineForm()
+
+    if form.validate_on_submit():
+        try:
+            # Data dictionary to hold the form data
+            data = {
+                'title': form.title.data.strip(),
+                'file_type': form.file_type.data,
+                'file_path': None,  # Initialize file_path as None
+                'url': form.url.data.strip() if form.url.data else None,
+                'embed_code': form.embed_code.data.strip() if form.embed_code.data else None
+            }
+
+            # Handle file upload if present
+            if 'file' in request.files:
+                file = request.files['file']
+                if file and file.filename:
+                    # Format the filename based on the title and file type
+                    title = form.title.data.strip().lower().replace(' ', '_')
+                    file_type = file.filename.split('.')[-1].lower()
+                    filename = f"{title}.{file_type}"
+
+                    # Correct directory path
+                    folder_path = os.path.join('app', 'files', 'guideline')
+                    os.makedirs(folder_path, exist_ok=True)
+
+                    # Save the file to the correct location
+                    file_path = os.path.join(folder_path, filename)
+                    file.save(file_path)
+
+                    # Store the file path and type in the data dictionary
+                    data['file_path'] = file_path
+                    data['file_type'] = file_type  # Update file_type with the actual file extension
+
+            # Ensure that at least one content field is provided
+            if not data['file_path'] and not data['url'] and not data['embed_code']:
+                flash('Please provide at least one content type: a file upload, a URL, or an embed code.', 'warning')
+                return redirect(url_for('main.add_guideline'))
+
+            # Insert the new guideline into the database
+            guideline = Guideline(**data)
+            db.session.add(guideline)
+            db.session.commit()
+
+            flash('New guideline has been added successfully.', 'success')
+            return redirect(url_for('main.admin_dashboard'))
+
+        except Exception as e:
+            print(f"Error occurred: {str(e)}")
+            flash(f'An error occurred: {str(e)}', 'danger')
+            return redirect(url_for('main.add_guideline'))
+
+    return render_template('add_guideline.html', form=form)
 
 # Route for Adding Curated Content
 @bp.route('/admin/add_curated_contents', methods=['GET', 'POST'])
@@ -146,21 +222,6 @@ def add_radiology_calculators():
 
     return render_template('add_radiology_calculators.html')
 
-# Route for User Management
-@bp.route('/admin/user_management', methods=['GET', 'POST'])
-@login_required
-def user_management():
-    if not current_user.is_admin:
-        flash('Access restricted to administrators only.', 'warning')
-        return redirect(url_for('main.index'))
-
-    if request.method == 'POST':
-        # Add your user management logic here
-        flash('User management action performed successfully!', 'success')
-        return redirect(url_for('main.admin_dashboard'))
-
-    users = db.session.query(User).all()
-    return render_template('user_management.html', users=users)
 
 # Route for Database Management
 @bp.route('/admin/db_management')
@@ -409,82 +470,6 @@ def delete_row(table_name, row_id):
     flash(f'Row {row_id} deleted from {table_name}.', 'success')
     return redirect(url_for('main.view_table_data', table_name=table_name))
 
-# Route to add a new row to a specific table
-@bp.route('/admin/db_tables/add/<table_name>', methods=['GET', 'POST'])
-@login_required
-def add_row(table_name):
-    if not current_user.is_admin:
-        flash('Access restricted to administrators only.', 'warning')
-        return redirect(url_for('main.index'))
-
-    table = db.metadata.tables.get(table_name)
-    if table is None:
-        flash(f'Table {table_name} does not exist.', 'danger')
-        return redirect(url_for('main.db_tables'))
-
-    if request.method == 'POST':
-        try:
-            data = {}
-            for column in table.columns:
-                if column.name != 'id':  # Skip 'id' column
-                    form_value = request.form.get(column.name, '').strip()
-
-                    # Handle boolean fields
-                    if isinstance(column.type, sa.Boolean):
-                        data[column.name] = form_value.lower() == 'true'
-
-                    # Handle password hashing
-                    elif column.name == 'password':
-                        data[column.name] = generate_password_hash(form_value, method='pbkdf2:sha256')
-
-                    # Handle file uploads
-                    elif column.name == 'file_path' and column.name in request.files:
-                        file = request.files.get(column.name)
-                        if file and file.filename:
-                            # Replace spaces with underscores in the title and format the filename
-                            title = request.form.get('title', '').strip().lower().replace(' ', '_')
-                            file_type = file.filename.split('.')[-1].lower()  # Extract file extension from original file
-                            filename = f"{title}.{file_type}"
-
-                            # Correct directory path
-                            folder_path = os.path.join('app', 'files', 'guideline')
-                            os.makedirs(folder_path, exist_ok=True)
-
-                            # Save the file to the correct location
-                            file_path = os.path.join(folder_path, filename)
-                            file.save(file_path)
-
-                            # Debugging statement
-                            print(f"File saved at: {file_path}")
-
-                            # Store the correct file path and file type in the data
-                            data[column.name] = file_path
-                            data['file_type'] = file_type  # Store the actual file extension
-                        else:
-                            flash(f'File not provided for {column.name}.', 'danger')
-                            return redirect(url_for('main.add_row', table_name=table_name))
-
-                    # Store other form data
-                    else:
-                        data[column.name] = form_value
-
-            print(f"Data to be inserted: {data}")
-
-            # Insert the new row into the database
-            insert_stmt = table.insert().values(**data)
-            db.session.execute(insert_stmt)
-            db.session.commit()
-
-            flash(f'New {table_name[:-1]} has been added.', 'success')
-            return redirect(url_for('main.view_table_data', table_name=table_name))
-
-        except Exception as e:
-            print(f"Error occurred: {str(e)}")
-            flash(f'An error occurred: {str(e)}', 'danger')
-            return redirect(url_for('main.add_row', table_name=table_name))
-
-    # Render a form to add a new row
-    return render_template('add_row.html', table_name=table_name, columns=table.columns)
 
 # Reset the database (except users)
 @bp.route('/reset_db')

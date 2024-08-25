@@ -32,6 +32,10 @@
     </table>
 
     <!-- Add New Row Button -->
-    <a href="{{ url_for('main.add_row', table_name=table_name) }}" class="btn btn-primary mt-3">Add {{ table_name }}</a>
+    {% if table_name != 'user' %}
+        <a href="{{ url_for('main.add_guideline', table_name=table_name) }}" class="btn btn-primary mt-3">Add {{ table_name }}</a>
+    {% else %}
+        <a href="{{ url_for('main.add_user', table_name=table_name) }}" class="btn btn-primary mt-3">Add {{ table_name }}</a>
+    {% endif %}
 </div>
 {% endblock %}

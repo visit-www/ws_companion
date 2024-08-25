@@ -73,7 +73,7 @@
 @media (max-width: 530px) {
     .card-title{
         padding: 10px;
-        font-size: 0.9rem !important;
+        font-size: 0.6rem !important;
     }
 }
 
@@ -127,4 +127,12 @@
 }
 .login-btn:hover{
     background-color: #136733;
+}
+.custom_input{
+    background-color: #d9bbf9;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+}
+.custom_input:active{
+    background-color: hsl(123, 84%, 85%);
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2); /* Slightly larger shadow on active */
 }
