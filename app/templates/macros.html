@@ -1,0 +1,17 @@
+{% macro render_field(field) %}
+<div class="mb-3">
+    <label for="{{ field.id }}" class="form-label">{{ field.label.text }}</label>
+    {% if field.type == 'FileField' %}
+        {{ field(class="form-control custom_input") }}
+    {% elif field.type == 'SelectField' %}
+        {{ field(class="form-select custom_input") }}
+    {% else %}
+        {{ field(class="form-control custom_input " + ("is-valid" if field.data and field.validate() else "is-invalid" if field.errors else "")) }}
+    {% endif %}
+    {% if field.errors %}
+        <div class="invalid-feedback">
+            {{ field.errors[0] }}
+        </div>
+    {% endif %}
+</div>
+{% endmacro %}

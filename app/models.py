@@ -30,8 +30,10 @@ class Guideline(Base):
 
     id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True)
     title: so.Mapped[str] = sa.Column(sa.String(500), nullable=False)
-    file_type: so.Mapped[Optional[str]] = sa.Column(sa.String(10), nullable=True)
+    file_type: so.Mapped[Optional[str]] = sa.Column(sa.String(20), nullable=True)
     file_path: so.Mapped[Optional[str]] = sa.Column(sa.String(256), nullable=True)
+    url: so.Mapped[Optional[str]]=sa.Column(sa.String(256), nullable=True)
+    embed_code: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
 
     def __repr__(self) -> str:
         return f"<Guideline(id={self.id}, title='{self.title}')>"
