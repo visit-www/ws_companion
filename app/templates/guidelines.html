@@ -1,24 +1,25 @@
+
+{% extends "base.html" %}
 {% block modal %}
 <!-- Include the modal -->
 {% include 'modal_embed_code.html' %}
 {% endblock %}
 
-{% extends "base.html" %}
-
 {% block title %}List of Guidelines - Radiology Workstation Companion{% endblock %}
+
 
 
 {% block content %}
 <div class="container mt-5">
     <h1 class="mb-4">Available Guidelines</h1>
-    <div class="row">
+    <div class="row card-box" id="cardContainer">
         {% for item in guidelines_with_types %}
             {% set guideline = item.guideline %}
             {% set file_type = item.file_type %}
             {% set content_type = item.content_type %}
-            {% set embed_code = guideline.embed_code %}
+            {% set embed_code = item.embed_code %}
         
-        <div class="col-md-6 mb-4">
+        <div class="col-md-6 mb-4 card-item">
             <div class="card">
                 <div class="row g-0">
                     <div class="col-md-4">
@@ -56,8 +57,9 @@
             </div>
         </div>
         {% endfor %}
+
     </div>
-    </div>
+</div>
     <p class="mt-4">
         <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Return to Home</a>
     </p>
