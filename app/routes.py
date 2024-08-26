@@ -278,12 +278,17 @@ def guidelines():
                 content_type = 'script'
             else:
                 content_type = 'unknown'  # For any other type of embed code
+        
+        card=str(guideline.id)
+        card_index_class=f"card-{card}"
+        
 
         guidelines_with_types.append({
             'guideline': guideline,
             'file_type': file_type,
             'content_type': content_type,
             'embed_code': embed_code,
+            'card-index':card_index_class,
         })
     
     # Pass guidelines with their file types and content types to the template for rendering
