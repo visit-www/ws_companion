@@ -1,5 +1,5 @@
-
 {% extends "base.html" %}
+
 {% block modal %}
 <!-- Include the modal -->
 {% include 'modal_embed_code.html' %}
@@ -7,62 +7,60 @@
 
 {% block title %}List of Guidelines - Radiology Workstation Companion{% endblock %}
 
-
-
 {% block content %}
 <div class="container mt-5">
     <h1 class="mb-4">Available Guidelines</h1>
-    <div class="row card-box" id="cardContainer">
+    <div class="row card-canvas" id="cardContainer">
         {% for item in guidelines_with_types %}
             {% set guideline = item.guideline %}
             {% set file_type = item.file_type %}
             {% set content_type = item.content_type %}
             {% set embed_code = item.embed_code %}
+            {% set card_index = item.card_index_class %}
         
-        <div class="col-md-6 mb-4 card-item">
-            <div class="card">
-                <div class="row g-0">
-                    <div class="col-md-4">
-                        <img src="{{ url_for('main.static', filename='thumbnails/test.svg') }}" class="img-fluid rounded-start" alt="Thumbnail">
-                    </div>
-                    <div class="col-md-8">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ guideline.title }}</h5>
-                            <p class="card-text">{{ file_type | upper }}</p>
-                            <p class="card-text">Last updated: {{ guideline.last_updated }}</p>
+            <!-- Card Box -->
+            <div class="col-md-6 col-lg-4 mb-4 card-box">
+                <div class="card card-item {{ card_index }}" data-class="{{ card_index }}">
+                    <div class="row g-0">
+                        <div class="col-md-4">
+                            <img src="{{ url_for('main.static', filename='thumbnails/test.svg') }}" class="img-fluid rounded-start" alt="Thumbnail">
                         </div>
-                        <div class="btn-group">
-                            {% if guideline.file_path %}
-                            <div>
-                                <a href="{{ url_for('main.serve_guideline', id=guideline.id) }}" class="btn btn-primary">View Guideline</a>
+                        <div class="col-md-8">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ guideline.title }}</h5>
+                                <p class="card-text">{{ file_type | upper }}</p>
+                                <p class="card-text">Last updated: {{ guideline.last_updated }}</p>
+                                <div class="btn-group">
+                                    {% if guideline.file_path %}
+                                    <div>
+                                        <a href="{{ url_for('main.serve_guideline', id=guideline.id) }}" class="btn btn-primary">View Guideline</a>
+                                    </div>
+                                    {% elif guideline.url %}
+                                    <div>
+                                        <a href="{{ guideline.url }}" class="btn btn-primary">View Guideline</a>
+                                    </div>
+                                    {% else %}
+                                    <div>
+                                        <button class="btn btn-primary" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#embedCodeModal"
+                                                data-embed-code="{{ embed_code }}"
+                                                onclick="setEmbedCodeFromButton('{{ content_type }}', this)">
+                                            View Embed Code
+                                        </button>
+                                    </div>
+                                    {% endif %}
+                                </div>
                             </div>
-                            {% elif guideline.url %}
-                            <div>
-                                <a href="{{ guideline.url }}" class="btn btn-primary">View Guideline</a>
-                            </div>
-                            {% else %}
-                            <div>
-                                <button class="btn btn-primary" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#embedCodeModal"
-                                        data-embed-code="{{ embed_code }}"
-                                        onclick="setEmbedCodeFromButton('{{ content_type }}', this)">
-                                    View Embed Code
-                                </button>
-                            </div>
-                            {% endif %}
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
+            <!-- End Card Box -->
         {% endfor %}
-
     </div>
 </div>
-    <p class="mt-4">
-        <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Return to Home</a>
-    </p>
-</div>
+<p class="mt-4">
+    <a href="{{ url_for('main.index') }}" class="btn btn-secondary">Return to Home</a>
+</p>
 {% endblock %}
-
