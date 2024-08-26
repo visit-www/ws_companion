@@ -524,6 +524,11 @@ def delete_row(table_name, row_id):
 
     flash(f'Row {row_id} deleted from {table_name}.', 'success')
     return redirect(url_for('main.view_table_data', table_name=table_name))
+################################
+# ! Debuging routes
+@bp.route('/debug')
+def debug():
+    return render_template('debug.html')
 
 ################################################################
 # ! Debug: Route for Reset the database (except users)

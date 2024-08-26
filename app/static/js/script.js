@@ -98,3 +98,53 @@ function setEmbedCodeFromButton(type, button) {
 
     });
 }
+//Functions to inject carousal when screen size is small.
+// This function is used in content categories lay out such as guidline.html
+function initCarousel() {
+        alert('function activated')
+        // Remove row class and add carousel-inner to the .card-box element
+        $('.card-box').removeClass('row').addClass('carousel-inner carousel slide');
+        $('.card-box').attr('data-ride', 'carousel');
+    
+        // Add carousel-item class to each card and set the first one as active
+        $('#cardContainer .card-item').addClass('carousel-item');
+        $('#cardContainer .carousel-item').first().addClass('active');
+    
+        // Add carousel controls
+        $('#cardContainer').append(`
+            <a class="carousel-control-prev" href="#cardContainer" role="button" data-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="sr-only">Previous</span>
+            </a>
+            <a class="carousel-control-next" href="#cardContainer" role="button" data-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="sr-only">Next</span>
+            </a>
+        `);
+    }
+function destroyCarousel() {
+        $('.card-box').removeAttr('data-ride');
+    
+        // Remove carousel-inner, carousel, and slide classes, and add row back
+        $('.card-box').removeClass('carousel-inner carousel slide').addClass('row');
+        $('c.card-item').removeClass('carousel-item active');
+    
+        // Remove carousel controls (HTML elements)
+        $('#cardContainer .carousel-control-prev, #cardContainer .carousel-control-next').remove();
+    }
+function checkScreenWidth() {
+        if ($(window).width() <= 468) {
+            if (!$('.card-box').hasClass('carousel')) {
+                initCarousel();
+            }
+        } else {
+            if ($('.card-box').hasClass('carousel')) {
+                destroyCarousel();
+            }
+        }
+    }
+
+$(document).ready(function() {
+        checkScreenWidth();
+        $(window).on('resize', checkScreenWidth);
+    });
