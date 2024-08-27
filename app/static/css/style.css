@@ -188,3 +188,40 @@ styling of the pop up modal :*/
 
 /* =================================================================*/
 /* CSS to style carousel cards on smaller */
+@media (max-width: 486px) {
+    
+    .card-box {
+        background-color: hwb(206 49% 7%);
+        padding: 3%;
+        border-radius: 10px;
+    }
+    .card {
+        width: 70%; /* Width is 100% of the parent minus 20px */
+         /* Height is equal to the width, making it a square */
+        margin-right: 10%;
+        margin-left: 15%; /* Center the card horizontally */
+        border-radius: 10px;
+    }
+
+    /* Optionally, adjust inner elements to maintain design */
+    .card-img {
+        max-width:200px;
+        max-height:200px; /* Adjust image to fit square card */
+    }
+.card-body {
+    width:100%;
+    max-height:200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: #f8f9fa; /* Corrected color code to Bootstrap's default gray background */
+}
+.card-title {
+    font-size: 16px !important;
+    font-weight: 400;
+}
+.card-text{
+    font-size: 9.6px;
+    font-weight: 500;
+}
+} /* Closing brace for the media query */
