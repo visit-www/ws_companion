@@ -6,8 +6,14 @@ document.addEventListener('DOMContentLoaded', function () {
     toastList.forEach(toast => toast.show());
 });
 
-/** function that injects embed code into iframe of modal */
+var lastUsedButton = null;
+var lastUsedType = null;
+
+// Update your existing function to store the last used button and type
 function setEmbedCodeFromButton(type, button) {
+    lastUsedButton = button;
+    lastUsedType = type;
+
     var video_container = document.getElementById('videoContainer');
     var video_iframe = document.getElementById('embediframe');
     var webpage_container = document.getElementById('webpageContainer');
@@ -69,13 +75,19 @@ function setEmbedCodeFromButton(type, button) {
     });
 }
 
+// Trigger the embed code re-injection when the modal is shown
+$('#embedCodeModal').on('shown.bs.modal', function () {
+    if (lastUsedButton && lastUsedType) {
+        setEmbedCodeFromButton(lastUsedType, lastUsedButton);
+    }
+});
 // Functions to inject carousel when screen size is small.
 // Functions to inject carousel when screen size is small.
 function initCarousel() {
     $('.card-canvas').addClass('carousel slide').attr('data-bs-ride', 'carousel');
     $('.card-box').addClass('carousel-inner').removeClass('row');
     $('.card-img').removeClass('img-fluid rounded-start').addClass('carousel-img');
-    $('.card').removeClass('col-md-6 col-lg-4 mb-4').addClass('carousel-item').first().addClass('active');
+    $('.card-item').removeClass('col-md-6 col-lg-4 mb-4').addClass('carousel-item').first().addClass('active');
 
     $('#cardContainer').append(`
         <button class="carousel-control-prev" type="button" data-bs-target="#cardContainer" data-bs-slide="prev">
@@ -88,17 +100,6 @@ function initCarousel() {
         </button>
     `);
 
-    var cards = $('#cardContainer .card-box');
-    var indicatorsContainer = $('<div class="carousel-indicators"></div>');
-
-    cards.each(function (index, card) {
-        var cardClass = $(card).find('.card').attr('data-class');
-        indicatorsContainer.append(`
-            <button type="button" data-bs-target="#cardContainer" data-bs-slide-to="${index}" aria-label="${cardClass}"></button>
-        `);
-    });
-
-    $('#cardContainer').prepend(indicatorsContainer);
     // Initialize the carousel
     $('#cardContainer').carousel();
 }
@@ -106,7 +107,7 @@ function initCarousel() {
 function destroyCarousel() {
     $('.card-canvas').removeClass('carousel slide').removeAttr('data-bs-ride');
     $('.card-box').removeClass('carousel-inner').addClass('row');
-    $('.card').removeClass('carousel-item active').addClass('col-md-6 col-lg-4 mb-4');
+    $('.card-item').removeClass('carousel-item active').addClass('col-md-6 col-lg-4 mb-4');
     $('.card-img').removeClass('carousel-img').addClass('img-fluid rounded-start');
     
     // Removing carousel controls and indicators
