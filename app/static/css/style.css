@@ -185,3 +185,6 @@ styling of the pop up modal :*/
     height: calc(100vh - 200px); /* Ensure it takes up available height */
     
 }
+
+/* =================================================================*/
+/* CSS to style carousel cards on smaller */

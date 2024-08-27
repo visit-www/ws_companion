@@ -15,7 +15,6 @@ function setEmbedCodeFromButton(type, button) {
 
     // Retrieve the embed code from the data attribute
     var embedCode = button.getAttribute('data-embed-code');
-    
     if (type === 'video') {
         video_container.innerHTML = ''; // Clear the container
         video_container.innerHTML = embedCode; // Inject the embed code
@@ -71,11 +70,12 @@ function setEmbedCodeFromButton(type, button) {
 }
 
 // Functions to inject carousel when screen size is small.
+// Functions to inject carousel when screen size is small.
 function initCarousel() {
-    $('.card-canvas').removeClass('row')
     $('.card-canvas').addClass('carousel slide').attr('data-bs-ride', 'carousel');
-    $('.card-box').addClass('carousel-inner');
-    $('#cardContainer .card-item').addClass('carousel-item').first().addClass('active');
+    $('.card-box').addClass('carousel-inner').removeClass('row');
+    $('.card-img').removeClass('img-fluid rounded-start').addClass('carousel-img');
+    $('.card').removeClass('col-md-6 col-lg-4 mb-4').addClass('carousel-item').first().addClass('active');
 
     $('#cardContainer').append(`
         <button class="carousel-control-prev" type="button" data-bs-target="#cardContainer" data-bs-slide="prev">
@@ -88,32 +88,41 @@ function initCarousel() {
         </button>
     `);
 
-    var cards = $('#cardContainer .card-item');
+    var cards = $('#cardContainer .card-box');
     var indicatorsContainer = $('<div class="carousel-indicators"></div>');
 
     cards.each(function (index, card) {
-        var cardClass = $(card).attr('data-class');
+        var cardClass = $(card).find('.card').attr('data-class');
         indicatorsContainer.append(`
-            <button type="button" data-bs-target="#cardContainerIndicators" data-bs-slide-to="${index}" aria-label="${cardClass}"></button>
+            <button type="button" data-bs-target="#cardContainer" data-bs-slide-to="${index}" aria-label="${cardClass}"></button>
         `);
     });
-    $('.carousel').prepend(indicatorsContainer);
+
+    $('#cardContainer').prepend(indicatorsContainer);
+    // Initialize the carousel
+    $('#cardContainer').carousel();
 }
 
 function destroyCarousel() {
     $('.card-canvas').removeClass('carousel slide').removeAttr('data-bs-ride');
     $('.card-box').removeClass('carousel-inner').addClass('row');
-    $('.card-item').removeClass('carousel-item active');
+    $('.card').removeClass('carousel-item active').addClass('col-md-6 col-lg-4 mb-4');
+    $('.card-img').removeClass('carousel-img').addClass('img-fluid rounded-start');
+    
+    // Removing carousel controls and indicators
     $('#cardContainer .carousel-control-prev, #cardContainer .carousel-control-next').remove();
+    $('#cardContainer .carousel-indicators').remove();
 }
 
 function checkScreenWidth() {
     if ($(window).width() <= 468) {
-        if (!$('.card-box').hasClass('carousel')) {
+        if (!$('.card-box').hasClass('carousel-inner')) {
             initCarousel();
+            const carousel = new bootstrap.Carousel('#cardContainer');
+            
         }
     } else {
-        if ($('.card-box').hasClass('carousel')) {
+        if ($('.card-box').hasClass('carousel-inner')) {
             destroyCarousel();
         }
     }
@@ -122,4 +131,5 @@ function checkScreenWidth() {
 $(document).ready(function () {
     checkScreenWidth();
     $(window).on('resize', checkScreenWidth);
+    $('#cardContainer').carousel();  // Initialize the carousel
 });
