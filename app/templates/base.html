@@ -17,6 +17,10 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body>
+{% block modal %}
+<!-- Include the modal -->
+{% include 'modal_embed_code.html' %}
+{% endblock %}
     <div class="main-container">
         <!-- Navbar -->
         {% block nav_bar %}
