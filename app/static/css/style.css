@@ -75,13 +75,13 @@
         padding: 10px;
         font-size: 0.6rem !important;
     }
+    .card.action-card{
+        padding:3px !important;
+        aspect-ratio: 1/1 !important;
+    }
+
 }
 
-@media (max-width: 530px){
-    .action-card{
-        padding: 0.6rem !important;
-    }
-}
 /* Reduce card and text size for smaller screens */
 @media (max-width: 380px) {
     .card-title{
@@ -90,11 +90,6 @@
     }
 }
 
-@media (max-width: 380px){
-    .action-card{
-        padding: 0.7rem !important;
-    }
-}
 
 .action-card:hover {
     transform: translateY(-5px);
@@ -190,38 +185,42 @@ styling of the pop up modal :*/
 /* CSS to style carousel cards on smaller */
 @media (max-width: 486px) {
     
-    .card-box {
-        background-color: hwb(206 49% 7%);
+    .card-box.my-card-box{
         padding: 3%;
         border-radius: 10px;
+        background-color: #488cd4;;
+
     }
-    .card {
-        width: 70%; /* Width is 100% of the parent minus 20px */
-         /* Height is equal to the width, making it a square */
-        margin-right: 10%;
-        margin-left: 15%; /* Center the card horizontally */
+    .card.my-card{
+        width: 80%; /* Width is 100% of the parent minus 20px */
+        aspect-ratio: 1/1 !important;
+         /* Center the card horizontally */
         border-radius: 10px;
+        margin-left: 10%;
+        margin-right: 10%;
+        box-shadow: 3px 2px 3px 3px rgb(169, 204, 232);
     }
 
     /* Optionally, adjust inner elements to maintain design */
     .card-img {
-        max-width:200px;
-        max-height:200px; /* Adjust image to fit square card */
+        height:150px; /* Adjust image to fit square card */
     }
-.card-body {
+.card-body.my-card-body {
     width:100%;
     max-height:200px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: #f8f9fa; /* Corrected color code to Bootstrap's default gray background */
+    overflow: auto;
+
 }
-.card-title {
+.card-title.my-card-title {
     font-size: 16px !important;
     font-weight: 400;
 }
-.card-text{
+.card-text.my-card-text{
     font-size: 9.6px;
     font-weight: 500;
+    padding: 0;
 }
 } /* Closing brace for the media query */

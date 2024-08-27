@@ -84,10 +84,10 @@ $('#embedCodeModal').on('shown.bs.modal', function () {
 // Functions to inject carousel when screen size is small.
 // Functions to inject carousel when screen size is small.
 function initCarousel() {
-    $('.card-canvas').addClass('carousel slide').attr('data-bs-ride', 'carousel');
-    $('.card-box').addClass('carousel-inner').removeClass('row');
+    $('.my-card-canvas').addClass('carousel slide').attr('data-bs-ride', 'carousel');
+    $('.my-card-box').addClass('carousel-inner').removeClass('row');
     $('.card-img').removeClass('img-fluid rounded-start').addClass('carousel-img');
-    $('.card-item').removeClass('col-md-6 col-lg-4 mb-4').addClass('carousel-item').first().addClass('active');
+    $('.my-card-item').removeClass('col-md-6 col-lg-4 mb-4').addClass('carousel-item').first().addClass('active');
 
     $('#cardContainer').append(`
         <button class="carousel-control-prev" type="button" data-bs-target="#cardContainer" data-bs-slide="prev">
@@ -105,9 +105,9 @@ function initCarousel() {
 }
 
 function destroyCarousel() {
-    $('.card-canvas').removeClass('carousel slide').removeAttr('data-bs-ride');
-    $('.card-box').removeClass('carousel-inner').addClass('row');
-    $('.card-item').removeClass('carousel-item active').addClass('col-md-6 col-lg-4 mb-4');
+    $('.my-card-canvas').removeClass('carousel slide').removeAttr('data-bs-ride');
+    $('.my-card-box').removeClass('carousel-inner').addClass('row');
+    $('.my-card-item').removeClass('carousel-item active').addClass('col-md-6 col-lg-4 mb-4');
     $('.card-img').removeClass('carousel-img').addClass('img-fluid rounded-start');
     
     // Removing carousel controls and indicators
@@ -117,13 +117,13 @@ function destroyCarousel() {
 
 function checkScreenWidth() {
     if ($(window).width() <= 468) {
-        if (!$('.card-box').hasClass('carousel-inner')) {
+        if (!$('.my-card-box').hasClass('carousel-inner')) {
             initCarousel();
             const carousel = new bootstrap.Carousel('#cardContainer');
             
         }
     } else {
-        if ($('.card-box').hasClass('carousel-inner')) {
+        if ($('.my-card-box').hasClass('carousel-inner')) {
             destroyCarousel();
         }
     }
@@ -134,3 +134,27 @@ $(document).ready(function () {
     $(window).on('resize', checkScreenWidth);
     $('#cardContainer').carousel();  // Initialize the carousel
 });
+
+// Function to handle the class switching based on screen size
+function updateGridClass() {
+    var element = document.querySelector('.row.my-frame');
+    if (window.innerWidth < 468) {
+        // If the screen width is less than 468px, remove g-5 and add g-3
+        if (element.classList.contains('g-5')) {
+            element.classList.remove('g-5');
+            element.classList.add('g-3');
+        }
+    } else {
+        // If the screen width is greater than or equal to 468px, revert to g-5
+        if (element.classList.contains('g-3')) {
+            element.classList.remove('g-3');
+            element.classList.add('g-5');
+        }
+    }
+}
+
+// Listen for resize events and apply the function
+window.addEventListener('resize', updateGridClass);
+
+// Call the function once when the script loads to set the initial state
+updateGridClass();
