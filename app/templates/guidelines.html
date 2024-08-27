@@ -6,9 +6,9 @@
     <div class="container mt-5">
         <h1 class="mb-4">Available Guidelines</h1>
         <!-- Card Canvas -->
-        <div class="card-canvas" id="cardContainer">
+        <div class="my-card-canvas card-canvas" id="cardContainer">
             <!-- Card Box -->
-            <div class="card-box row">
+            <div class="card-box my-card-box row">
                 {% for item in guidelines_with_types %}
                     {% set guideline = item.guideline %}
                     {% set file_type = item.file_type %}
@@ -16,7 +16,7 @@
                     {% set embed_code = item.embed_code %}
                     {% set card_index = item.card_index %}
                 <!-- Card -->
-                <div class="card col-md-6 col-lg-4 mb-4 card-item" id="{{ card_index }}">
+                <div class="card col-md-6 col-lg-4 mb-4 card-item my-card-item my-card" id="{{ card_index }}">
                     <!-- Card Item -->
                     <div class="row g-0">
                         <!-- Card image -->
@@ -25,10 +25,10 @@
                         </div>
                         <!-- End Card image -->
                         <!-- Card body -->
-                        <div class="col-md-8 card-body">
-                            <h5 class="card-title">{{ guideline.title }}</h5>
-                            <p class="card-text">{{ file_type | upper }}</p>
-                            <p class="card-text">Last updated: {{ guideline.last_updated }}</p>
+                        <div class="col-md-8 card-body my-card-body">
+                            <h5 class="card-title my-card-title">{{ guideline.title }}</h5>
+                            <p class="card-text my-card-text">{{ file_type | upper }}</p>
+                            <p class="card-text my-card-text">Last updated: {{ guideline.last_updated }}</p>
                             <div class="btn-group">
                                 {% if guideline.file_path %}
                                     <div>
