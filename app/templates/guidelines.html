@@ -14,11 +14,11 @@
                     {% set file_type = item.file_type %}
                     {% set content_type = item.content_type %}
                     {% set embed_code = item.embed_code %}
-                    {% set card_index = item.card_index_class %}
+                    {% set card_index = item.card_index %}
                 <!-- Card -->
-                <div class="card col-md-6 col-lg-4 mb-4" data-class="{{ card_index }}">
+                <div class="card col-md-6 col-lg-4 mb-4 card-item" id="{{ card_index }}">
                     <!-- Card Item -->
-                    <div class="row g-0 card-item {{ card_index }}">
+                    <div class="row g-0">
                         <!-- Card image -->
                         <div class="col-md-4">
                             <img src="{{ url_for('main.static', filename='thumbnails/test.svg') }}" class="card-img img-fluid rounded-start" alt="Thumbnail">
