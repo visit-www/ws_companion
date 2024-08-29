@@ -1,7 +1,6 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from flask_admin import Admin
 from config import Config
 from flask_login import LoginManager
 import sqlalchemy.orm as so
@@ -12,7 +11,7 @@ from typing import Type
 db = SQLAlchemy()  # Needed for Flask-SQLAlchemy integration
 login_manager = LoginManager()
 migrate = Migrate()
-admin=Admin() #instntiate Admin class imported from flask-admin. 
+
 
 # Initialize the registry and Base class using SQLAlchemy ORM
 registry_manager: so.registry = so.registry()
