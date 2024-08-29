@@ -6,7 +6,7 @@ from flask_login import LoginManager
 import sqlalchemy.orm as so
 from typing import Type
 
-# Initialize the registry and Base class using SQLAlchemy ORM
+# Initialize the registry and Base class using Sqlalchemy ORM
 registry_manager: so.registry = so.registry()
 Base: Type[so.DeclarativeMeta] = registry_manager.generate_base()
 
@@ -26,7 +26,7 @@ def create_app():
     login_manager.login_view = 'main.login'  # Set the login view for unauthorized users
 
     # User loader function
-    from .models import User, Guideline
+    from .models import User
     @login_manager.user_loader
     def load_user(user_id):
         return db.session.query(User).get(int(user_id))  # Use db.session.query instead of User.query
