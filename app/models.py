@@ -34,3 +34,5 @@ class Guideline(Base):
 
     def __repr__(self) -> str:
         return f"<Guideline(id={self.id}, title='{self.title}')>"
+
+# * Create model for contents tables
