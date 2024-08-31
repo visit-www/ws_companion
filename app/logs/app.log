@@ -1,0 +1,798 @@
+2024-08-30 22:53:48 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-30 22:53:48 INFO: [33mPress CTRL+C to quit[0m
+2024-08-30 22:54:02 INFO: 127.0.0.1 - - [30/Aug/2024 22:54:02] "[33mGET / HTTP/1.1[0m" 404 -
+2024-08-30 22:54:02 INFO: 127.0.0.1 - - [30/Aug/2024 22:54:02] "[33mGET /apple-touch-icon-precomposed.png HTTP/1.1[0m" 404 -
+2024-08-30 22:54:02 INFO: 127.0.0.1 - - [30/Aug/2024 22:54:02] "[33mGET /apple-touch-icon.png HTTP/1.1[0m" 404 -
+2024-08-30 23:01:22 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-30 23:01:22 INFO: [33mPress CTRL+C to quit[0m
+2024-08-30 23:01:35 INFO: 127.0.0.1 - - [30/Aug/2024 23:01:35] "[33mGET / HTTP/1.1[0m" 404 -
+2024-08-30 23:02:54 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-30 23:02:54 INFO: [33mPress CTRL+C to quit[0m
+2024-08-30 23:05:56 INFO: 127.0.0.1 - - [30/Aug/2024 23:05:56] "[33mGET / HTTP/1.1[0m" 404 -
+2024-08-30 23:07:14 INFO: 127.0.0.1 - - [30/Aug/2024 23:07:14] "[33mGET /admin HTTP/1.1[0m" 404 -
+2024-08-30 23:18:18 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-30 23:18:18 INFO: [33mPress CTRL+C to quit[0m
+2024-08-30 23:21:14 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-30 23:21:14 INFO: [33mPress CTRL+C to quit[0m
+2024-08-30 23:21:23 ERROR: Exception on / [GET]
+Traceback (most recent call last):
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/Users/zen/data-science/projects/ws_companion/app/routes.py", line 439, in index
+    return render_template('index.html')
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/templating.py", line 131, in _render
+    rv = template.render(context)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/jinja2/environment.py", line 1304, in render
+    self.environment.handle_exception()
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/jinja2/environment.py", line 939, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/zen/data-science/projects/ws_companion/app/templates/index.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "/Users/zen/data-science/projects/ws_companion/app/templates/base.html", line 83, in top-level template code
+    {% block content %}
+  File "/Users/zen/data-science/projects/ws_companion/app/templates/index.html", line 35, in block 'content'
+    <a href="{{ url_for('main.' + card.url) }}" class="card action-card text-center p-3 h-100">
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 1084, in url_for
+    return self.handle_url_build_error(error, endpoint, values)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 1073, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/werkzeug/routing/map.py", line 924, in build
+    raise BuildError(endpoint, values, method, self)
+werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'main.guidelines'. Did you mean 'main.add_guideline' instead?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 772, in handle_user_exception
+    return self.ensure_sync(handler)(e)  # type: ignore[no-any-return]
+  File "/Users/zen/data-science/projects/ws_companion/app/routes.py", line 28, in handle_exception
+    bp.logger.error(f"Unhandled Exception in Blueprint: {e}", exc_info=True)
+AttributeError: 'Blueprint' object has no attribute 'logger'
+2024-08-30 23:21:23 INFO: 127.0.0.1 - - [30/Aug/2024 23:21:23] "[35m[1mGET / HTTP/1.1[0m" 500 -
+2024-08-30 23:21:23 ERROR: Error on request:
+Traceback (most recent call last):
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/Users/zen/data-science/projects/ws_companion/app/routes.py", line 439, in index
+    return render_template('index.html')
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/templating.py", line 131, in _render
+    rv = template.render(context)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/jinja2/environment.py", line 1304, in render
+    self.environment.handle_exception()
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/jinja2/environment.py", line 939, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/zen/data-science/projects/ws_companion/app/templates/index.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "/Users/zen/data-science/projects/ws_companion/app/templates/base.html", line 83, in top-level template code
+    {% block content %}
+  File "/Users/zen/data-science/projects/ws_companion/app/templates/index.html", line 35, in block 'content'
+    <a href="{{ url_for('main.' + card.url) }}" class="card action-card text-center p-3 h-100">
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 1084, in url_for
+    return self.handle_url_build_error(error, endpoint, values)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 1073, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/werkzeug/routing/map.py", line 924, in build
+    raise BuildError(endpoint, values, method, self)
+werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'main.guidelines'. Did you mean 'main.add_guideline' instead?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 772, in handle_user_exception
+    return self.ensure_sync(handler)(e)  # type: ignore[no-any-return]
+  File "/Users/zen/data-science/projects/ws_companion/app/routes.py", line 28, in handle_exception
+    bp.logger.error(f"Unhandled Exception in Blueprint: {e}", exc_info=True)
+AttributeError: 'Blueprint' object has no attribute 'logger'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/werkzeug/serving.py", line 363, in run_wsgi
+    execute(self.server.app)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/werkzeug/serving.py", line 324, in execute
+    application_iter = app(environ, start_response)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 1498, in __call__
+    return self.wsgi_app(environ, start_response)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 1476, in wsgi_app
+    response = self.handle_exception(e)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 823, in handle_exception
+    server_error = self.ensure_sync(handler)(server_error)
+  File "/Users/zen/data-science/projects/ws_companion/app/routes.py", line 28, in handle_exception
+    bp.logger.error(f"Unhandled Exception in Blueprint: {e}", exc_info=True)
+AttributeError: 'Blueprint' object has no attribute 'logger'
+2024-08-30 23:21:39 ERROR: Exception on / [GET]
+Traceback (most recent call last):
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/Users/zen/data-science/projects/ws_companion/app/routes.py", line 439, in index
+    return render_template('index.html')
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/templating.py", line 131, in _render
+    rv = template.render(context)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/jinja2/environment.py", line 1304, in render
+    self.environment.handle_exception()
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/jinja2/environment.py", line 939, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/zen/data-science/projects/ws_companion/app/templates/index.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "/Users/zen/data-science/projects/ws_companion/app/templates/base.html", line 83, in top-level template code
+    {% block content %}
+  File "/Users/zen/data-science/projects/ws_companion/app/templates/index.html", line 35, in block 'content'
+    <a href="{{ url_for('main.' + card.url) }}" class="card action-card text-center p-3 h-100">
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 1084, in url_for
+    return self.handle_url_build_error(error, endpoint, values)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 1073, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/werkzeug/routing/map.py", line 924, in build
+    raise BuildError(endpoint, values, method, self)
+werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'main.guidelines'. Did you mean 'main.add_guideline' instead?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 772, in handle_user_exception
+    return self.ensure_sync(handler)(e)  # type: ignore[no-any-return]
+  File "/Users/zen/data-science/projects/ws_companion/app/routes.py", line 28, in handle_exception
+    bp.logger.error(f"Unhandled Exception in Blueprint: {e}", exc_info=True)
+AttributeError: 'Blueprint' object has no attribute 'logger'
+2024-08-30 23:21:39 INFO: 127.0.0.1 - - [30/Aug/2024 23:21:39] "[35m[1mGET / HTTP/1.1[0m" 500 -
+2024-08-30 23:21:39 ERROR: Error on request:
+Traceback (most recent call last):
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/Users/zen/data-science/projects/ws_companion/app/routes.py", line 439, in index
+    return render_template('index.html')
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/templating.py", line 150, in render_template
+    return _render(app, template, context)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/templating.py", line 131, in _render
+    rv = template.render(context)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/jinja2/environment.py", line 1304, in render
+    self.environment.handle_exception()
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/jinja2/environment.py", line 939, in handle_exception
+    raise rewrite_traceback_stack(source=source)
+  File "/Users/zen/data-science/projects/ws_companion/app/templates/index.html", line 1, in top-level template code
+    {% extends "base.html" %}
+  File "/Users/zen/data-science/projects/ws_companion/app/templates/base.html", line 83, in top-level template code
+    {% block content %}
+  File "/Users/zen/data-science/projects/ws_companion/app/templates/index.html", line 35, in block 'content'
+    <a href="{{ url_for('main.' + card.url) }}" class="card action-card text-center p-3 h-100">
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 1084, in url_for
+    return self.handle_url_build_error(error, endpoint, values)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 1073, in url_for
+    rv = url_adapter.build(  # type: ignore[union-attr]
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/werkzeug/routing/map.py", line 924, in build
+    raise BuildError(endpoint, values, method, self)
+werkzeug.routing.exceptions.BuildError: Could not build url for endpoint 'main.guidelines'. Did you mean 'main.add_guideline' instead?
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 772, in handle_user_exception
+    return self.ensure_sync(handler)(e)  # type: ignore[no-any-return]
+  File "/Users/zen/data-science/projects/ws_companion/app/routes.py", line 28, in handle_exception
+    bp.logger.error(f"Unhandled Exception in Blueprint: {e}", exc_info=True)
+AttributeError: 'Blueprint' object has no attribute 'logger'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/werkzeug/serving.py", line 363, in run_wsgi
+    execute(self.server.app)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/werkzeug/serving.py", line 324, in execute
+    application_iter = app(environ, start_response)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 1498, in __call__
+    return self.wsgi_app(environ, start_response)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 1476, in wsgi_app
+    response = self.handle_exception(e)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 823, in handle_exception
+    server_error = self.ensure_sync(handler)(server_error)
+  File "/Users/zen/data-science/projects/ws_companion/app/routes.py", line 28, in handle_exception
+    bp.logger.error(f"Unhandled Exception in Blueprint: {e}", exc_info=True)
+AttributeError: 'Blueprint' object has no attribute 'logger'
+2024-08-30 23:24:28 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-30 23:24:28 INFO: [33mPress CTRL+C to quit[0m
+2024-08-30 23:25:40 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-30 23:25:40 INFO: [33mPress CTRL+C to quit[0m
+2024-08-30 23:26:16 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-30 23:26:16 INFO: [33mPress CTRL+C to quit[0m
+2024-08-30 23:26:16 INFO:  * Restarting with stat
+2024-08-30 23:26:16 WARNING:  * Debugger is active!
+2024-08-30 23:26:16 INFO:  * Debugger PIN: 144-413-042
+2024-08-30 23:27:00 INFO: 127.0.0.1 - - [30/Aug/2024 23:27:00] "[35m[1mGET / HTTP/1.1[0m" 500 -
+2024-08-30 23:27:00 INFO: 127.0.0.1 - - [30/Aug/2024 23:27:00] "GET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 200 -
+2024-08-30 23:27:00 INFO: 127.0.0.1 - - [30/Aug/2024 23:27:00] "GET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 200 -
+2024-08-30 23:27:00 INFO: 127.0.0.1 - - [30/Aug/2024 23:27:00] "GET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 200 -
+2024-08-30 23:30:30 INFO:  * Detected change in '/Users/zen/data-science/projects/ws_companion/app/routes.py', reloading
+2024-08-30 23:30:30 INFO:  * Restarting with stat
+2024-08-30 23:30:30 WARNING:  * Debugger is active!
+2024-08-30 23:30:30 INFO:  * Debugger PIN: 144-413-042
+2024-08-30 23:30:38 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-30 23:30:38 INFO: [33mPress CTRL+C to quit[0m
+2024-08-30 23:30:38 INFO:  * Restarting with stat
+2024-08-30 23:30:38 WARNING:  * Debugger is active!
+2024-08-30 23:30:38 INFO:  * Debugger PIN: 144-413-042
+2024-08-30 23:30:45 INFO: 127.0.0.1 - - [30/Aug/2024 23:30:45] "[35m[1mGET / HTTP/1.1[0m" 500 -
+2024-08-30 23:30:45 INFO: 127.0.0.1 - - [30/Aug/2024 23:30:45] "[36mGET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2024-08-30 23:30:45 INFO: 127.0.0.1 - - [30/Aug/2024 23:30:45] "[36mGET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2024-08-30 23:30:45 INFO: 127.0.0.1 - - [30/Aug/2024 23:30:45] "[36mGET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2024-08-30 23:47:34 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-30 23:47:34 INFO: [33mPress CTRL+C to quit[0m
+2024-08-30 23:47:34 INFO:  * Restarting with stat
+2024-08-30 23:47:35 WARNING:  * Debugger is active!
+2024-08-30 23:47:35 INFO:  * Debugger PIN: 144-413-042
+2024-08-30 23:47:40 INFO: 127.0.0.1 - - [30/Aug/2024 23:47:40] "[35m[1mGET / HTTP/1.1[0m" 500 -
+2024-08-30 23:47:40 INFO: 127.0.0.1 - - [30/Aug/2024 23:47:40] "[36mGET /?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2024-08-30 23:47:40 INFO: 127.0.0.1 - - [30/Aug/2024 23:47:40] "[36mGET /?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2024-08-30 23:47:40 INFO: 127.0.0.1 - - [30/Aug/2024 23:47:40] "[36mGET /?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2024-08-30 23:48:30 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-30 23:48:30 INFO: [33mPress CTRL+C to quit[0m
+2024-08-30 23:48:30 INFO:  * Restarting with stat
+2024-08-30 23:48:30 WARNING:  * Debugger is active!
+2024-08-30 23:48:30 INFO:  * Debugger PIN: 144-413-042
+2024-08-30 23:48:35 INFO: 127.0.0.1 - - [30/Aug/2024 23:48:35] "GET / HTTP/1.1" 200 -
+2024-08-30 23:48:35 INFO: 127.0.0.1 - - [30/Aug/2024 23:48:35] "GET /static/css/style.css HTTP/1.1" 200 -
+2024-08-30 23:48:35 INFO: 127.0.0.1 - - [30/Aug/2024 23:48:35] "GET /static/js/script.js HTTP/1.1" 200 -
+2024-08-30 23:48:35 INFO: 127.0.0.1 - - [30/Aug/2024 23:48:35] "GET /static/assets/instagram.svg HTTP/1.1" 200 -
+2024-08-30 23:48:35 INFO: 127.0.0.1 - - [30/Aug/2024 23:48:35] "GET /static/assets/facebook.svg HTTP/1.1" 200 -
+2024-08-30 23:48:35 INFO: 127.0.0.1 - - [30/Aug/2024 23:48:35] "GET /static/assets/twitter.svg HTTP/1.1" 200 -
+2024-08-31 00:24:30 INFO:  * Detected change in '/Users/zen/data-science/projects/ws_companion/app/__init__.py', reloading
+2024-08-31 00:24:30 INFO:  * Restarting with stat
+2024-08-31 00:44:25 INFO:  * Restarting with stat
+2024-08-31 00:44:25 WARNING:  * Debugger is active!
+2024-08-31 00:44:25 INFO:  * Debugger PIN: 144-413-042
+2024-08-31 00:44:30 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 00:44:30 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 00:44:30 INFO:  * Restarting with stat
+2024-08-31 00:44:30 WARNING:  * Debugger is active!
+2024-08-31 00:44:30 INFO:  * Debugger PIN: 144-413-042
+2024-08-31 00:44:44 INFO: 127.0.0.1 - - [31/Aug/2024 00:44:44] "GET / HTTP/1.1" 200 -
+2024-08-31 00:44:44 INFO: 127.0.0.1 - - [31/Aug/2024 00:44:44] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:44:44 INFO: 127.0.0.1 - - [31/Aug/2024 00:44:44] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:44:44 INFO: 127.0.0.1 - - [31/Aug/2024 00:44:44] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:44:44 INFO: 127.0.0.1 - - [31/Aug/2024 00:44:44] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:44:44 INFO: 127.0.0.1 - - [31/Aug/2024 00:44:44] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 00:44:48 INFO: 127.0.0.1 - - [31/Aug/2024 00:44:48] "[32mGET /content/guidelines HTTP/1.1[0m" 302 -
+2024-08-31 00:44:48 INFO: 127.0.0.1 - - [31/Aug/2024 00:44:48] "GET /login?next=/content/guidelines HTTP/1.1" 200 -
+2024-08-31 00:44:48 INFO: 127.0.0.1 - - [31/Aug/2024 00:44:48] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:44:48 INFO: 127.0.0.1 - - [31/Aug/2024 00:44:48] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:44:48 INFO: 127.0.0.1 - - [31/Aug/2024 00:44:48] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:44:48 INFO: 127.0.0.1 - - [31/Aug/2024 00:44:48] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:44:48 INFO: 127.0.0.1 - - [31/Aug/2024 00:44:48] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 00:44:53 INFO: 127.0.0.1 - - [31/Aug/2024 00:44:53] "[35m[1mPOST /login HTTP/1.1[0m" 500 -
+2024-08-31 00:44:53 INFO: 127.0.0.1 - - [31/Aug/2024 00:44:53] "GET /login?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 200 -
+2024-08-31 00:44:53 INFO: 127.0.0.1 - - [31/Aug/2024 00:44:53] "GET /login?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 200 -
+2024-08-31 00:44:53 INFO: 127.0.0.1 - - [31/Aug/2024 00:44:53] "GET /login?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 200 -
+2024-08-31 00:44:53 INFO: 127.0.0.1 - - [31/Aug/2024 00:44:53] "[36mGET /login?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2024-08-31 00:45:11 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:11] "[35m[1mPOST /login HTTP/1.1[0m" 500 -
+2024-08-31 00:45:11 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:11] "[36mGET /login?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:45:11 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:11] "[36mGET /login?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2024-08-31 00:45:11 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:11] "[36mGET /login?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2024-08-31 00:45:15 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:15] "GET /login HTTP/1.1" 200 -
+2024-08-31 00:45:15 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:15] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:45:15 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:15] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:15 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:15] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:15 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:15] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:15 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:15] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 00:45:15 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:15] "GET / HTTP/1.1" 200 -
+2024-08-31 00:45:15 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:15] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:45:15 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:15] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:15 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:15] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:15 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:15] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 00:45:15 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:15] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:16 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:16] "[32mGET /admin/db_tables HTTP/1.1[0m" 302 -
+2024-08-31 00:45:16 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:16] "GET /login?next=/admin/db_tables HTTP/1.1" 200 -
+2024-08-31 00:45:16 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:16] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:45:16 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:16] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:16 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:16] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:16 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:16] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:16 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:16] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 00:45:27 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:27] "GET /login?next=/admin/db_tables HTTP/1.1" 200 -
+2024-08-31 00:45:27 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:27] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:45:27 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:27] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:27 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:27] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:27 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:27] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 00:45:27 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:27] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:30 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:30] "GET /login HTTP/1.1" 200 -
+2024-08-31 00:45:30 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:30] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:45:30 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:30] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:30 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:30] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:30 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:30] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:30 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:30] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 00:45:31 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:31] "GET / HTTP/1.1" 200 -
+2024-08-31 00:45:31 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:31] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:45:31 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:31] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 00:45:31 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:31] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:31 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:31] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:31 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:31] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:33 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:33] "[32mGET /admin/db_tables HTTP/1.1[0m" 302 -
+2024-08-31 00:45:33 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:33] "GET /login?next=/admin/db_tables HTTP/1.1" 200 -
+2024-08-31 00:45:33 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:33] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:45:33 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:33] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:33 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:33] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 00:45:33 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:33] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:33 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:33] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:39 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:39] "GET /login?next=/admin/db_tables HTTP/1.1" 200 -
+2024-08-31 00:45:39 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:39] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:45:39 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:39] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:39 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:39] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:39 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:39] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:39 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:39] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 00:45:42 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:42] "GET / HTTP/1.1" 200 -
+2024-08-31 00:45:42 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:42] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:45:42 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:42] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:42 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:42] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 00:45:42 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:42] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:42 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:42] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:45:45 INFO: 127.0.0.1 - - [31/Aug/2024 00:45:45] "[33mGET /admin HTTP/1.1[0m" 404 -
+2024-08-31 00:46:55 INFO:  * Detected change in '/Users/zen/data-science/projects/ws_companion/app/routes.py', reloading
+2024-08-31 00:46:55 INFO:  * Restarting with stat
+2024-08-31 00:46:55 WARNING:  * Debugger is active!
+2024-08-31 00:46:55 INFO:  * Debugger PIN: 144-413-042
+2024-08-31 00:46:59 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 00:46:59 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 00:46:59 INFO:  * Restarting with stat
+2024-08-31 00:47:00 WARNING:  * Debugger is active!
+2024-08-31 00:47:00 INFO:  * Debugger PIN: 144-413-042
+2024-08-31 00:47:04 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:04] "[33mGET /admin HTTP/1.1[0m" 404 -
+2024-08-31 00:47:11 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:11] "GET / HTTP/1.1" 200 -
+2024-08-31 00:47:11 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:11] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:47:11 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:11] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:11 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:11] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:11 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:11] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:11 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:11] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 00:47:31 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:31] "[33mGET /admin/admin_dashboard HTTP/1.1[0m" 404 -
+2024-08-31 00:47:36 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:36] "GET / HTTP/1.1" 200 -
+2024-08-31 00:47:36 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:36] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:47:36 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:36] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:36 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:36] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 00:47:36 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:36] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:36 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:36] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:38 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:38] "[33mGET /index HTTP/1.1[0m" 404 -
+2024-08-31 00:47:44 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:44] "GET / HTTP/1.1" 200 -
+2024-08-31 00:47:44 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:44] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:47:44 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:44] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:44 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:44] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:44 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:44] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:44 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:44] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 00:47:51 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:51] "GET /login HTTP/1.1" 200 -
+2024-08-31 00:47:52 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:52] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:47:52 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:52] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:52 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:52] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:52 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:52] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:52 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:52] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 00:47:53 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:53] "GET /register HTTP/1.1" 200 -
+2024-08-31 00:47:53 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:53] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:47:53 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:53] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:53 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:53] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:53 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:53] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:53 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:53] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 00:47:55 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:55] "GET /buy_now HTTP/1.1" 200 -
+2024-08-31 00:47:55 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:55] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:47:55 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:55] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:55 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:55] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:55 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:55] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:55 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:55] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 00:47:56 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:56] "GET /free_trial HTTP/1.1" 200 -
+2024-08-31 00:47:56 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:56] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:47:56 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:56] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:56 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:56] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:56 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:56] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:56 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:56] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 00:47:57 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:57] "GET /login HTTP/1.1" 200 -
+2024-08-31 00:47:57 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:57] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:47:57 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:57] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:57 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:57] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:47:57 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:57] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 00:47:57 INFO: 127.0.0.1 - - [31/Aug/2024 00:47:57] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:48:00 INFO: 127.0.0.1 - - [31/Aug/2024 00:48:00] "[35m[1mPOST /login HTTP/1.1[0m" 500 -
+2024-08-31 00:48:00 INFO: 127.0.0.1 - - [31/Aug/2024 00:48:00] "[36mGET /login?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:48:00 INFO: 127.0.0.1 - - [31/Aug/2024 00:48:00] "[36mGET /login?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2024-08-31 00:48:00 INFO: 127.0.0.1 - - [31/Aug/2024 00:48:00] "[36mGET /login?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2024-08-31 00:50:32 INFO:  * Detected change in '/Users/zen/data-science/projects/ws_companion/app/models.py', reloading
+2024-08-31 00:50:32 INFO:  * Restarting with stat
+2024-08-31 00:50:32 WARNING:  * Debugger is active!
+2024-08-31 00:50:32 INFO:  * Debugger PIN: 144-413-042
+2024-08-31 00:50:34 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 00:50:34 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 00:50:34 INFO:  * Restarting with stat
+2024-08-31 00:50:34 WARNING:  * Debugger is active!
+2024-08-31 00:50:34 INFO:  * Debugger PIN: 144-413-042
+2024-08-31 00:50:43 INFO: 127.0.0.1 - - [31/Aug/2024 00:50:43] "GET /login HTTP/1.1" 200 -
+2024-08-31 00:50:43 INFO: 127.0.0.1 - - [31/Aug/2024 00:50:43] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:50:43 INFO: 127.0.0.1 - - [31/Aug/2024 00:50:43] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:50:43 INFO: 127.0.0.1 - - [31/Aug/2024 00:50:43] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:50:43 INFO: 127.0.0.1 - - [31/Aug/2024 00:50:43] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 00:50:43 INFO: 127.0.0.1 - - [31/Aug/2024 00:50:43] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 00:50:48 INFO: 127.0.0.1 - - [31/Aug/2024 00:50:48] "[35m[1mPOST /login HTTP/1.1[0m" 500 -
+2024-08-31 00:50:48 INFO: 127.0.0.1 - - [31/Aug/2024 00:50:48] "[36mGET /login?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2024-08-31 00:50:48 INFO: 127.0.0.1 - - [31/Aug/2024 00:50:48] "[36mGET /login?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2024-08-31 00:50:48 INFO: 127.0.0.1 - - [31/Aug/2024 00:50:48] "[36mGET /login?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2024-08-31 00:59:56 INFO:  * Detected change in '/Users/zen/data-science/projects/ws_companion/app/models.py', reloading
+2024-08-31 00:59:56 INFO:  * Restarting with stat
+2024-08-31 00:59:57 WARNING:  * Debugger is active!
+2024-08-31 00:59:57 INFO:  * Debugger PIN: 144-413-042
+2024-08-31 01:00:00 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 01:00:00 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 01:00:00 INFO:  * Restarting with stat
+2024-08-31 01:00:01 WARNING:  * Debugger is active!
+2024-08-31 01:00:01 INFO:  * Debugger PIN: 144-413-042
+2024-08-31 01:00:09 INFO: 127.0.0.1 - - [31/Aug/2024 01:00:09] "GET / HTTP/1.1" 200 -
+2024-08-31 01:00:09 INFO: 127.0.0.1 - - [31/Aug/2024 01:00:09] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:00:09 INFO: 127.0.0.1 - - [31/Aug/2024 01:00:09] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 01:00:09 INFO: 127.0.0.1 - - [31/Aug/2024 01:00:09] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:00:09 INFO: 127.0.0.1 - - [31/Aug/2024 01:00:09] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:00:09 INFO: 127.0.0.1 - - [31/Aug/2024 01:00:09] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:00:13 INFO: 127.0.0.1 - - [31/Aug/2024 01:00:13] "GET /login HTTP/1.1" 200 -
+2024-08-31 01:00:13 INFO: 127.0.0.1 - - [31/Aug/2024 01:00:13] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:00:13 INFO: 127.0.0.1 - - [31/Aug/2024 01:00:13] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:00:13 INFO: 127.0.0.1 - - [31/Aug/2024 01:00:13] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:00:13 INFO: 127.0.0.1 - - [31/Aug/2024 01:00:13] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 01:00:13 INFO: 127.0.0.1 - - [31/Aug/2024 01:00:13] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:00:16 INFO: 127.0.0.1 - - [31/Aug/2024 01:00:16] "[35m[1mPOST /login HTTP/1.1[0m" 500 -
+2024-08-31 01:00:16 INFO: 127.0.0.1 - - [31/Aug/2024 01:00:16] "[36mGET /login?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:00:16 INFO: 127.0.0.1 - - [31/Aug/2024 01:00:16] "[36mGET /login?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2024-08-31 01:00:16 INFO: 127.0.0.1 - - [31/Aug/2024 01:00:16] "[36mGET /login?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2024-08-31 01:01:30 INFO:  * Detected change in '/Users/zen/data-science/projects/ws_companion/app/models.py', reloading
+2024-08-31 01:01:31 INFO:  * Restarting with stat
+2024-08-31 01:01:31 WARNING:  * Debugger is active!
+2024-08-31 01:01:31 INFO:  * Debugger PIN: 144-413-042
+2024-08-31 01:01:32 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 01:01:32 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 01:01:32 INFO:  * Restarting with stat
+2024-08-31 01:01:33 WARNING:  * Debugger is active!
+2024-08-31 01:01:33 INFO:  * Debugger PIN: 144-413-042
+2024-08-31 01:01:57 INFO: 127.0.0.1 - - [31/Aug/2024 01:01:57] "[35m[1mPOST /login HTTP/1.1[0m" 500 -
+2024-08-31 01:01:57 INFO: 127.0.0.1 - - [31/Aug/2024 01:01:57] "[36mGET /login?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2024-08-31 01:01:57 INFO: 127.0.0.1 - - [31/Aug/2024 01:01:57] "[36mGET /login?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:01:57 INFO: 127.0.0.1 - - [31/Aug/2024 01:01:57] "[36mGET /login?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2024-08-31 01:07:42 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 01:07:42 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 01:07:42 INFO:  * Restarting with stat
+2024-08-31 01:07:42 WARNING:  * Debugger is active!
+2024-08-31 01:07:42 INFO:  * Debugger PIN: 144-413-042
+2024-08-31 01:07:49 INFO: 127.0.0.1 - - [31/Aug/2024 01:07:49] "GET /login HTTP/1.1" 200 -
+2024-08-31 01:07:49 INFO: 127.0.0.1 - - [31/Aug/2024 01:07:49] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:07:49 INFO: 127.0.0.1 - - [31/Aug/2024 01:07:49] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 01:07:49 INFO: 127.0.0.1 - - [31/Aug/2024 01:07:49] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:07:49 INFO: 127.0.0.1 - - [31/Aug/2024 01:07:49] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:07:49 INFO: 127.0.0.1 - - [31/Aug/2024 01:07:49] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:07:51 INFO: 127.0.0.1 - - [31/Aug/2024 01:07:51] "POST /login HTTP/1.1" 200 -
+2024-08-31 01:07:51 INFO: 127.0.0.1 - - [31/Aug/2024 01:07:51] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:07:51 INFO: 127.0.0.1 - - [31/Aug/2024 01:07:51] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:07:51 INFO: 127.0.0.1 - - [31/Aug/2024 01:07:51] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 01:07:51 INFO: 127.0.0.1 - - [31/Aug/2024 01:07:51] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:07:51 INFO: 127.0.0.1 - - [31/Aug/2024 01:07:51] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:07:55 INFO: 127.0.0.1 - - [31/Aug/2024 01:07:55] "POST /login HTTP/1.1" 200 -
+2024-08-31 01:07:55 INFO: 127.0.0.1 - - [31/Aug/2024 01:07:55] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:07:55 INFO: 127.0.0.1 - - [31/Aug/2024 01:07:55] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 01:07:55 INFO: 127.0.0.1 - - [31/Aug/2024 01:07:55] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:07:55 INFO: 127.0.0.1 - - [31/Aug/2024 01:07:55] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:07:55 INFO: 127.0.0.1 - - [31/Aug/2024 01:07:55] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:08:02 INFO: 127.0.0.1 - - [31/Aug/2024 01:08:02] "GET /register HTTP/1.1" 200 -
+2024-08-31 01:08:02 INFO: 127.0.0.1 - - [31/Aug/2024 01:08:02] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:08:02 INFO: 127.0.0.1 - - [31/Aug/2024 01:08:02] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:08:02 INFO: 127.0.0.1 - - [31/Aug/2024 01:08:02] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:08:02 INFO: 127.0.0.1 - - [31/Aug/2024 01:08:02] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:08:02 INFO: 127.0.0.1 - - [31/Aug/2024 01:08:02] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 01:08:22 INFO: 127.0.0.1 - - [31/Aug/2024 01:08:22] "[35m[1mPOST /register HTTP/1.1[0m" 500 -
+2024-08-31 01:08:23 INFO: 127.0.0.1 - - [31/Aug/2024 01:08:23] "GET /register?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1" 200 -
+2024-08-31 01:08:23 INFO: 127.0.0.1 - - [31/Aug/2024 01:08:23] "GET /register?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1" 200 -
+2024-08-31 01:08:23 INFO: 127.0.0.1 - - [31/Aug/2024 01:08:23] "GET /register?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1" 200 -
+2024-08-31 01:08:23 INFO: 127.0.0.1 - - [31/Aug/2024 01:08:23] "[36mGET /register?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2024-08-31 01:11:04 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 01:11:04 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 01:11:04 INFO:  * Restarting with stat
+2024-08-31 01:11:04 WARNING:  * Debugger is active!
+2024-08-31 01:11:04 INFO:  * Debugger PIN: 144-413-042
+2024-08-31 01:11:17 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:17] "[35m[1mPOST /register HTTP/1.1[0m" 500 -
+2024-08-31 01:11:17 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:17] "[36mGET /register?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2024-08-31 01:11:17 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:17] "[36mGET /register?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:11:17 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:17] "[36mGET /register?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2024-08-31 01:11:37 INFO:  * Detected change in '/Users/zen/data-science/projects/ws_companion/app/routes.py', reloading
+2024-08-31 01:11:37 INFO:  * Restarting with stat
+2024-08-31 01:11:38 WARNING:  * Debugger is active!
+2024-08-31 01:11:38 INFO:  * Debugger PIN: 144-413-042
+2024-08-31 01:11:39 INFO:  * Detected change in '/Users/zen/data-science/projects/ws_companion/app/routes.py', reloading
+2024-08-31 01:11:39 INFO:  * Restarting with stat
+2024-08-31 01:11:39 WARNING:  * Debugger is active!
+2024-08-31 01:11:39 INFO:  * Debugger PIN: 144-413-042
+2024-08-31 01:11:40 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 01:11:40 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 01:11:40 INFO:  * Restarting with stat
+2024-08-31 01:11:40 WARNING:  * Debugger is active!
+2024-08-31 01:11:40 INFO:  * Debugger PIN: 144-413-042
+2024-08-31 01:11:45 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:45] "[32mPOST /register HTTP/1.1[0m" 302 -
+2024-08-31 01:11:46 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:46] "GET /login HTTP/1.1" 200 -
+2024-08-31 01:11:46 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:46] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:11:46 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:46] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:11:46 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:46] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 01:11:46 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:46] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:11:46 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:46] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:11:52 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:52] "[32mPOST /login HTTP/1.1[0m" 302 -
+2024-08-31 01:11:52 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:52] "GET / HTTP/1.1" 200 -
+2024-08-31 01:11:52 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:52] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:11:52 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:52] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:11:52 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:52] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:11:52 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:52] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:11:52 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:52] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 01:11:54 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:54] "GET /content/guidelines HTTP/1.1" 200 -
+2024-08-31 01:11:54 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:54] "[36mGET /login?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2024-08-31 01:11:54 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:54] "[36mGET /login?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2024-08-31 01:11:54 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:54] "[36mGET /login?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:11:54 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:54] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:11:54 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:54] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:11:54 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:54] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 01:11:54 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:54] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:11:54 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:54] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:11:55 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:55] "GET / HTTP/1.1" 200 -
+2024-08-31 01:11:55 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:55] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:11:55 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:55] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:11:55 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:55] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:11:55 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:55] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:11:55 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:55] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 01:11:58 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:58] "[32mGET /logout HTTP/1.1[0m" 302 -
+2024-08-31 01:11:58 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:58] "GET /login HTTP/1.1" 200 -
+2024-08-31 01:11:58 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:58] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:11:58 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:58] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:11:58 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:58] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 01:11:58 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:58] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:11:58 INFO: 127.0.0.1 - - [31/Aug/2024 01:11:58] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:12:12 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:12] "POST /login HTTP/1.1" 200 -
+2024-08-31 01:12:12 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:12] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:12:12 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:12] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 01:12:12 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:12] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:12:12 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:12] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:12:12 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:12] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:12:15 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:15] "GET / HTTP/1.1" 200 -
+2024-08-31 01:12:15 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:15] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:12:15 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:15] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:12:15 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:15] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:12:15 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:15] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:12:15 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:15] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 01:12:16 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:16] "[32mGET /content/guidelines HTTP/1.1[0m" 302 -
+2024-08-31 01:12:16 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:16] "GET /login?next=/content/guidelines HTTP/1.1" 200 -
+2024-08-31 01:12:16 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:16] "[36mGET /login?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:12:16 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:16] "[36mGET /login?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2024-08-31 01:12:16 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:16] "[36mGET /login?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2024-08-31 01:12:16 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:16] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:12:16 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:16] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:12:16 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:16] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 01:12:16 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:16] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:12:16 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:16] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:12:21 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:21] "[32mPOST /login HTTP/1.1[0m" 302 -
+2024-08-31 01:12:21 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:21] "GET / HTTP/1.1" 200 -
+2024-08-31 01:12:21 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:21] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:12:21 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:21] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:12:21 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:21] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 01:12:21 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:21] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:12:21 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:21] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:12:22 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:22] "GET /content/guidelines HTTP/1.1" 200 -
+2024-08-31 01:12:22 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:22] "[36mGET /login?__debugger__=yes&cmd=resource&f=console.png HTTP/1.1[0m" 304 -
+2024-08-31 01:12:22 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:22] "[36mGET /login?__debugger__=yes&cmd=resource&f=debugger.js HTTP/1.1[0m" 304 -
+2024-08-31 01:12:22 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:22] "[36mGET /login?__debugger__=yes&cmd=resource&f=style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:12:22 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:22] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 01:12:22 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:22] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 01:12:22 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:22] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:12:22 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:22] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 01:12:22 INFO: 127.0.0.1 - - [31/Aug/2024 01:12:22] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:03:35 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 13:03:35 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 13:06:59 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 13:06:59 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 13:11:45 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 13:11:45 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 13:11:53 INFO: 127.0.0.1 - - [31/Aug/2024 13:11:53] "GET / HTTP/1.1" 200 -
+2024-08-31 13:11:53 INFO: 127.0.0.1 - - [31/Aug/2024 13:11:53] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 13:11:53 INFO: 127.0.0.1 - - [31/Aug/2024 13:11:53] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:11:53 INFO: 127.0.0.1 - - [31/Aug/2024 13:11:53] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:11:53 INFO: 127.0.0.1 - - [31/Aug/2024 13:11:53] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:11:53 INFO: 127.0.0.1 - - [31/Aug/2024 13:11:53] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 13:11:54 INFO: 127.0.0.1 - - [31/Aug/2024 13:11:54] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
+2024-08-31 13:13:04 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 13:13:04 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 13:15:38 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 13:15:38 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 13:16:05 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 13:16:05 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 13:17:37 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 13:17:37 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 13:17:44 INFO: 127.0.0.1 - - [31/Aug/2024 13:17:44] "GET / HTTP/1.1" 200 -
+2024-08-31 13:17:44 INFO: 127.0.0.1 - - [31/Aug/2024 13:17:44] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 13:17:44 INFO: 127.0.0.1 - - [31/Aug/2024 13:17:44] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:17:44 INFO: 127.0.0.1 - - [31/Aug/2024 13:17:44] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:17:44 INFO: 127.0.0.1 - - [31/Aug/2024 13:17:44] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:17:44 INFO: 127.0.0.1 - - [31/Aug/2024 13:17:44] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 13:17:45 INFO: 127.0.0.1 - - [31/Aug/2024 13:17:45] "[32mGET /content/guidelines HTTP/1.1[0m" 302 -
+2024-08-31 13:17:45 INFO: 127.0.0.1 - - [31/Aug/2024 13:17:45] "GET /login?next=/content/guidelines HTTP/1.1" 200 -
+2024-08-31 13:17:45 INFO: 127.0.0.1 - - [31/Aug/2024 13:17:45] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:17:45 INFO: 127.0.0.1 - - [31/Aug/2024 13:17:45] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 13:17:45 INFO: 127.0.0.1 - - [31/Aug/2024 13:17:45] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:17:45 INFO: 127.0.0.1 - - [31/Aug/2024 13:17:45] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:17:45 INFO: 127.0.0.1 - - [31/Aug/2024 13:17:45] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 13:17:52 INFO: 127.0.0.1 - - [31/Aug/2024 13:17:52] "POST /login HTTP/1.1" 200 -
+2024-08-31 13:17:52 INFO: 127.0.0.1 - - [31/Aug/2024 13:17:52] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 13:17:52 INFO: 127.0.0.1 - - [31/Aug/2024 13:17:52] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:17:52 INFO: 127.0.0.1 - - [31/Aug/2024 13:17:52] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:17:52 INFO: 127.0.0.1 - - [31/Aug/2024 13:17:52] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:17:52 INFO: 127.0.0.1 - - [31/Aug/2024 13:17:52] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 13:46:23 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 13:46:23 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 13:46:28 INFO: 127.0.0.1 - - [31/Aug/2024 13:46:28] "GET /login HTTP/1.1" 200 -
+2024-08-31 13:46:28 INFO: 127.0.0.1 - - [31/Aug/2024 13:46:28] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 13:46:28 INFO: 127.0.0.1 - - [31/Aug/2024 13:46:28] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:46:28 INFO: 127.0.0.1 - - [31/Aug/2024 13:46:28] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:46:28 INFO: 127.0.0.1 - - [31/Aug/2024 13:46:28] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:46:28 INFO: 127.0.0.1 - - [31/Aug/2024 13:46:28] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 13:46:32 INFO: 127.0.0.1 - - [31/Aug/2024 13:46:32] "POST /login HTTP/1.1" 200 -
+2024-08-31 13:46:32 INFO: 127.0.0.1 - - [31/Aug/2024 13:46:32] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:46:32 INFO: 127.0.0.1 - - [31/Aug/2024 13:46:32] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 13:46:32 INFO: 127.0.0.1 - - [31/Aug/2024 13:46:32] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:46:32 INFO: 127.0.0.1 - - [31/Aug/2024 13:46:32] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:46:32 INFO: 127.0.0.1 - - [31/Aug/2024 13:46:32] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 13:46:36 INFO: 127.0.0.1 - - [31/Aug/2024 13:46:36] "POST /login HTTP/1.1" 200 -
+2024-08-31 13:46:36 INFO: 127.0.0.1 - - [31/Aug/2024 13:46:36] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 13:46:36 INFO: 127.0.0.1 - - [31/Aug/2024 13:46:36] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:46:36 INFO: 127.0.0.1 - - [31/Aug/2024 13:46:36] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:46:36 INFO: 127.0.0.1 - - [31/Aug/2024 13:46:36] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 13:46:36 INFO: 127.0.0.1 - - [31/Aug/2024 13:46:36] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 15:01:53 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 15:01:53 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 15:01:58 ERROR: Exception on /login [POST]
+Traceback (most recent call last):
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 941, in do_execute
+    cursor.execute(statement, parameters)
+sqlite3.OperationalError: no such column: users.email
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 1473, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 882, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 880, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/flask/app.py", line 865, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+  File "/Users/zen/data-science/projects/ws_companion/app/routes.py", line 61, in login
+    user = db.session.query(User).filter_by(username=username).first()
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/sqlalchemy/orm/query.py", line 2728, in first
+    return self.limit(1)._iter().first()  # type: ignore
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/sqlalchemy/orm/query.py", line 2827, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/sqlalchemy/orm/session.py", line 2362, in execute
+    return self._execute_internal(
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/sqlalchemy/orm/session.py", line 2247, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/sqlalchemy/orm/context.py", line 293, in orm_execute_statement
+    result = conn.execute(
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1418, in execute
+    return meth(
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/sqlalchemy/sql/elements.py", line 515, in _execute_on_connection
+    return connection._execute_clauseelement(
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1640, in _execute_clauseelement
+    ret = self._execute_context(
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 2355, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/opt/homebrew/Caskroom/miniconda/base/envs/radiology_app/lib/python3.10/site-packages/sqlalchemy/engine/default.py", line 941, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.OperationalError: (sqlite3.OperationalError) no such column: users.email
+[SQL: SELECT users.id AS users_id, users.username AS users_username, users.password AS users_password, users.email AS users_email, users.is_paid AS users_is_paid, users.is_admin AS users_is_admin, users.status AS users_status, users.created_at AS users_created_at, users.last_updated AS users_last_updated 
+FROM users 
+WHERE users.username = ?
+ LIMIT ? OFFSET ?]
+[parameters: ('admin', 1, 0)]
+(Background on this error at: https://sqlalche.me/e/20/e3q8)
+2024-08-31 15:01:58 INFO: 127.0.0.1 - - [31/Aug/2024 15:01:58] "[35m[1mPOST /login HTTP/1.1[0m" 500 -
+2024-08-31 15:27:17 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 15:27:17 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 15:27:22 INFO: 127.0.0.1 - - [31/Aug/2024 15:27:22] "POST /login HTTP/1.1" 200 -
+2024-08-31 15:27:22 INFO: 127.0.0.1 - - [31/Aug/2024 15:27:22] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 15:27:22 INFO: 127.0.0.1 - - [31/Aug/2024 15:27:22] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 15:27:22 INFO: 127.0.0.1 - - [31/Aug/2024 15:27:22] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 15:27:22 INFO: 127.0.0.1 - - [31/Aug/2024 15:27:22] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 15:27:22 INFO: 127.0.0.1 - - [31/Aug/2024 15:27:22] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 15:27:27 INFO: 127.0.0.1 - - [31/Aug/2024 15:27:27] "POST /login HTTP/1.1" 200 -
+2024-08-31 15:27:27 INFO: 127.0.0.1 - - [31/Aug/2024 15:27:27] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 15:27:27 INFO: 127.0.0.1 - - [31/Aug/2024 15:27:27] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 15:27:27 INFO: 127.0.0.1 - - [31/Aug/2024 15:27:27] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 15:27:27 INFO: 127.0.0.1 - - [31/Aug/2024 15:27:27] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 15:27:27 INFO: 127.0.0.1 - - [31/Aug/2024 15:27:27] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 15:32:57 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 15:32:57 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 15:32:58 INFO: 127.0.0.1 - - [31/Aug/2024 15:32:58] "GET / HTTP/1.1" 200 -
+2024-08-31 15:32:58 INFO: 127.0.0.1 - - [31/Aug/2024 15:32:58] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 15:32:58 INFO: 127.0.0.1 - - [31/Aug/2024 15:32:58] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 15:32:58 INFO: 127.0.0.1 - - [31/Aug/2024 15:32:58] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 15:32:58 INFO: 127.0.0.1 - - [31/Aug/2024 15:32:58] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 15:32:58 INFO: 127.0.0.1 - - [31/Aug/2024 15:32:58] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 15:33:03 INFO: 127.0.0.1 - - [31/Aug/2024 15:33:03] "[32mGET /content/guidelines HTTP/1.1[0m" 302 -
+2024-08-31 15:33:03 INFO: 127.0.0.1 - - [31/Aug/2024 15:33:03] "GET /login?next=/content/guidelines HTTP/1.1" 200 -
+2024-08-31 15:33:03 INFO: 127.0.0.1 - - [31/Aug/2024 15:33:03] "[36mGET /static/css/style.css HTTP/1.1[0m" 304 -
+2024-08-31 15:33:03 INFO: 127.0.0.1 - - [31/Aug/2024 15:33:03] "[36mGET /static/assets/instagram.svg HTTP/1.1[0m" 304 -
+2024-08-31 15:33:03 INFO: 127.0.0.1 - - [31/Aug/2024 15:33:03] "[36mGET /static/assets/facebook.svg HTTP/1.1[0m" 304 -
+2024-08-31 15:33:03 INFO: 127.0.0.1 - - [31/Aug/2024 15:33:03] "[36mGET /static/assets/twitter.svg HTTP/1.1[0m" 304 -
+2024-08-31 15:33:03 INFO: 127.0.0.1 - - [31/Aug/2024 15:33:03] "[36mGET /static/js/script.js HTTP/1.1[0m" 304 -
+2024-08-31 15:47:56 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 15:47:56 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 15:48:00 INFO: 127.0.0.1 - - [31/Aug/2024 15:48:00] "[33mGET / HTTP/1.1[0m" 404 -
+2024-08-31 15:48:16 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 15:48:16 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 15:48:19 INFO: 127.0.0.1 - - [31/Aug/2024 15:48:19] "[33mGET / HTTP/1.1[0m" 404 -
+2024-08-31 15:49:49 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 15:49:49 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 15:49:54 INFO: 127.0.0.1 - - [31/Aug/2024 15:49:54] "[33mGET / HTTP/1.1[0m" 404 -
+2024-08-31 15:51:46 INFO: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on http://127.0.0.1:5001
+2024-08-31 15:51:46 INFO: [33mPress CTRL+C to quit[0m
+2024-08-31 15:51:51 INFO: 127.0.0.1 - - [31/Aug/2024 15:51:51] "[33mPOST /login HTTP/1.1[0m" 404 -

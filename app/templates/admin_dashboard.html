@@ -4,94 +4,67 @@
 
 {% block content %}
 <div class="container mt-4">
-    <!-- Flash Messages -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="toast-container position-fixed top-0 end-0 p-3">
-                {% for category, message in messages %}
-                    <div class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                        <div class="d-flex">
-                            <div class="toast-body">
-                                {{ message }}
-                            </div>
-                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% endif %}
-    {% endwith %}
-
     <!-- Dashboard Heading -->
     <h1 class="text-center mb-4">Admin Dashboard</h1>
 
     <!-- Admin Cards -->
     <div class="row g-4">
-        <!-- Add Guidelines Card -->
-        <div class="col-md-3">
-            <div class="card text-center shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Add Guidelines</h5>
-                    <p class="card-text">Manage and add new guidelines to the system.</p>
-                    <a href="{{ url_for('main.add_guideline') }}" class="btn btn-primary">Go</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Add Curated Content Card -->
-        <div class="col-md-3">
-            <div class="card text-center shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Add Curated Content</h5>
-                    <p class="card-text">Manage and add new curated content.</p>
-                    <a href="{{ url_for('main.add_curated_contents') }}" class="btn btn-primary">Go</a>
-                </div>
-            </div>
-        </div>
-
-        <!-- Add Radiology Calculator Card -->
-        <div class="col-md-3">
-            <div class="card text-center shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title">Add Radiology Calculator</h5>
-                    <p class="card-text">Manage and add new radiology calculators.</p>
-                    <a href="{{ url_for('main.add_radiology_calculators') }}" class="btn btn-primary">Go</a>
-                </div>
-            </div>
-        </div>
-        <!-- New Database Management Card -->
+        <!-- View and Manage Database Card -->
         <div class="col-md-4">
             <div class="card mb-4">
                 <div class="card-body">
                     <h5 class="card-title">Database Management</h5>
-                    <p class="card-text">Manage the database, view tables, and reset data.</p>
-                    <a href="{{ url_for('main.db_management') }}" class="btn btn-danger">Manage Database</a>
+                    <p class="card-text">Visualise and Manage the database.</p>
+                    <a href="{{ url_for('admin.database_maintanance') }}" class="btn btn-warning">Manage Database</a><!--todo: fix this route-->
+                </div>
+            </div>
+        </div>
+        <!-- Content managment Card -->
+        <div class="col-md-4">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Add Contents</h5>
+                    <p class="card-text">Manage and add new contents to the App.</p>
+                    <form method="POST" action="{{ url_for('admin.admin_dashboard') }}"> <!--todo: fix this route-->
+                        <input type="hidden" name="action" value="add_contents">
+                        <button type="submit" class="btn btn-success">Add Contents</button>
                 </div>
             </div>
         </div>
 
         <!-- User Management Card -->
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="card text-center shadow-sm">
                 <div class="card-body">
-                    <h5 class="card-title">User Management</h5>
-                    <p class="card-text">Manage users and their roles.</p>
-                    <a href="{{ url_for('main.db_management') }}" class="btn btn-primary">Go</a>
+                    <h5 class="card-title">Add Users</h5>
+                    <p class="card-text">Manage and add new contents to the App.</p>
+                    <form method="POST" action="{{ url_for('admin.admin_dashboard') }}"> <!--todo: fix this route-->
+                        <input type="hidden" name="action" value="user_management">
+                        <button type="submit" class="btn btn-success">Manage Users</button>
+                </div>
+            </div>
+        </div>
+    <!-- Reset cards -->
+        <div class="row g-4">
+            <div class="col-md-6 card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Reset Database</h5>
+                    <p class="card-text">Delete all Data except Users</p>
+                    <form method="POST" action="{{ url_for('admin.admin_dashboard') }}"> <!--todo: fix this route-->
+                    <input type="hidden" name="action" value="reset_database">
+                    <button type="submit" class="btn btn-danger">RESET Database</button>
+                </div>
+            </div>
+            <div class="col-md-6 card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Reset Users</h5>
+                    <p class="card-text">Delete all Users except Admins</p>
+                    <form method="POST" action="{{ url_for('admin.admin_dashboard') }}"><!--todo: fix this route-->
+                    <input type="hidden" name="action" value="reset_users">
+                    <button type="submit" class="btn btn-danger">RESET Users</button>
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block script %}
-<script>
-    // Bootstrap Toast Initialization
-    document.addEventListener('DOMContentLoaded', function () {
-        var toastElList = [].slice.call(document.querySelectorAll('.toast'));
-        var toastList = toastElList.map(function (toastEl) {
-            return new bootstrap.Toast(toastEl, { autohide: true, delay: 2000 }).show();
-        });
-    });
-</script>
 {% endblock %}
