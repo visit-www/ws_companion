@@ -1,0 +1,848 @@
+<p>I’ll provide a comprehensive record of all the tables, their detailed
+structures, a visual diagram of the mapping, and a reference document
+for the development of your app’s data structure using SQL and
+Flask.</p>
+<h3 id="comprehensive-record-of-all-tables">1. Comprehensive Record of
+All Tables</h3>
+<p>Here’s the detailed structure for all the tables that we are using in
+the app:</p>
+<h4
+id="user-table-stores-user-details-and-preferences."><strong><code>user</code>
+Table</strong>: Stores user details and preferences.</h4>
+<table>
+<colgroup>
+<col style="width: 13%" />
+<col style="width: 9%" />
+<col style="width: 11%" />
+<col style="width: 7%" />
+<col style="width: 58%" />
+</colgroup>
+<thead>
+<tr>
+<th><strong>Column Name</strong></th>
+<th><strong>Data Type</strong></th>
+<th><strong>Default Value</strong></th>
+<th><strong>Indexed</strong></th>
+<th><strong>Purpose</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>Integer</td>
+<td>Auto-Increment</td>
+<td>Yes (Primary Key)</td>
+<td>Unique identifier for each user.</td>
+</tr>
+<tr>
+<td>user_name</td>
+<td>String</td>
+<td><code>NULL</code> (no default)</td>
+<td>Yes (Unique)</td>
+<td>Unique username for user identification and authentication.</td>
+</tr>
+<tr>
+<td>email</td>
+<td>String</td>
+<td><code>NULL</code> (no default)</td>
+<td>Yes (Unique)</td>
+<td>User email address for notifications and account recovery.</td>
+</tr>
+<tr>
+<td>password</td>
+<td>String</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>Stores the hashed password for secure authentication.</td>
+</tr>
+<tr>
+<td>role</td>
+<td>Enum</td>
+<td><code>user</code></td>
+<td>Yes</td>
+<td>User’s role within the system (<code>user</code>,
+<code>admin</code>, <code>moderator</code>).</td>
+</tr>
+<tr>
+<td>registration_date</td>
+<td>DateTime</td>
+<td><code>CURRENT_TIMESTAMP</code></td>
+<td>No</td>
+<td>Timestamp when the user registered.</td>
+</tr>
+<tr>
+<td>last_login</td>
+<td>DateTime</td>
+<td><code>NULL</code></td>
+<td>No</td>
+<td>Tracks the last login time for monitoring and security.</td>
+</tr>
+<tr>
+<td>subscription_type</td>
+<td>String</td>
+<td><code>Free</code></td>
+<td>No</td>
+<td>Type of subscription (<code>Free</code>, <code>Basic</code>,
+<code>Premium</code>).</td>
+</tr>
+<tr>
+<td>preferred_categories</td>
+<td>Array/Text</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>User’s preferred content categories for personalized
+experience.</td>
+</tr>
+<tr>
+<td>preferred_modules</td>
+<td>Array/Text</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>User’s preferred medical modules for personalized experience.</td>
+</tr>
+<tr>
+<td>bookmarked_content_ids</td>
+<td>Array/Text</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>IDs of content items the user has bookmarked for quick access.</td>
+</tr>
+<tr>
+<td>search_history</td>
+<td>JSON/Text</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>Stores the user’s search history to improve recommendations.</td>
+</tr>
+<tr>
+<td>content_access_history</td>
+<td>JSON/Text</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>Records history of content accessed by the user, for analytics and
+personalization.</td>
+</tr>
+<tr>
+<td>language_preference</td>
+<td>String</td>
+<td><code>English</code></td>
+<td>No</td>
+<td>User’s preferred language for content display.</td>
+</tr>
+<tr>
+<td>is_active</td>
+<td>Boolean</td>
+<td><code>TRUE</code></td>
+<td>No</td>
+<td>Indicates if the user’s account is active.</td>
+</tr>
+<tr>
+<td>failed_login_attempts</td>
+<td>Integer</td>
+<td><code>0</code></td>
+<td>No</td>
+<td>Tracks failed login attempts to implement security measures like
+account lockout.</td>
+</tr>
+<tr>
+<td>account_recovery_token</td>
+<td>String</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>Token used for account recovery.</td>
+</tr>
+</tbody>
+</table>
+<h4
+id="content-table-manages-all-types-of-content-available-in-the-app."><strong><code>content</code>
+Table</strong>: Manages all types of content available in the app.</h4>
+<table>
+<colgroup>
+<col style="width: 12%" />
+<col style="width: 7%" />
+<col style="width: 12%" />
+<col style="width: 6%" />
+<col style="width: 30%" />
+<col style="width: 30%" />
+</colgroup>
+<thead>
+<tr>
+<th><strong>Column Name</strong></th>
+<th><strong>Data Type</strong></th>
+<th><strong>Default Value</strong></th>
+<th><strong>Indexed</strong></th>
+<th><strong>Purpose</strong></th>
+<th><strong>Compliance Note</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>Integer</td>
+<td>Auto-Increment</td>
+<td>Yes (Primary Key)</td>
+<td>Unique identifier for each content item.</td>
+<td>No sensitive information; safe.</td>
+</tr>
+<tr>
+<td>title</td>
+<td>String</td>
+<td><code>NULL</code> (no default)</td>
+<td>Yes</td>
+<td>Title of the content item for display.</td>
+<td>Safe, non-sensitive content.</td>
+</tr>
+<tr>
+<td>description</td>
+<td>Text</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>Brief description or summary of the content.</td>
+<td>Safe, non-sensitive content.</td>
+</tr>
+<tr>
+<td>category</td>
+<td>String</td>
+<td><code>General</code></td>
+<td>Yes</td>
+<td>Specifies the category of content (e.g., guidelines, TNM
+staging).</td>
+<td>Safe, non-sensitive content.</td>
+</tr>
+<tr>
+<td>module</td>
+<td>String</td>
+<td><code>General</code></td>
+<td>Yes</td>
+<td>Specifies the medical module (e.g., breast, lung).</td>
+<td>Safe, non-sensitive content.</td>
+</tr>
+<tr>
+<td>content_type</td>
+<td>String</td>
+<td><code>PDF</code></td>
+<td>Yes</td>
+<td>Type of content (e.g., PDF, HTML, embedded link, URL).</td>
+<td>Safe, non-sensitive content.</td>
+</tr>
+<tr>
+<td>file_name</td>
+<td>String</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>The name of the uploaded file.</td>
+<td>Avoid using special characters; ensure safe file names.</td>
+</tr>
+<tr>
+<td>file_path</td>
+<td>String</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>Path to the file stored in the file system.</td>
+<td>Ensure files are stored securely, not in public directories.</td>
+</tr>
+<tr>
+<td>external_url</td>
+<td>String</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>URL or embed code if content is external.</td>
+<td>Use HTTPS and validate/sanitize all URLs.</td>
+</tr>
+<tr>
+<td>online_resource_url</td>
+<td>String</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>URL to additional online resources related to the content.</td>
+<td>Use HTTPS and validate/sanitize all URLs.</td>
+</tr>
+<tr>
+<td>keywords</td>
+<td>Text</td>
+<td><code>NULL</code> (no default)</td>
+<td>Full-Text</td>
+<td>Relevant keywords to improve search functionality.</td>
+<td>Safe, non-sensitive content.</td>
+</tr>
+<tr>
+<td>author</td>
+<td>String</td>
+<td><code>Admin</code></td>
+<td>No</td>
+<td>Name of the content creator or uploader.</td>
+<td>Anonymize where needed; avoid storing full names.</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>DateTime</td>
+<td><code>CURRENT_TIMESTAMP</code></td>
+<td>No</td>
+<td>Timestamp when the content was created.</td>
+<td>Safe; no security concern.</td>
+</tr>
+<tr>
+<td>updated_at</td>
+<td>DateTime</td>
+<td><code>CURRENT_TIMESTAMP</code></td>
+<td>No</td>
+<td>Timestamp when the content was last updated.</td>
+<td>Safe; no security concern.</td>
+</tr>
+<tr>
+<td>last_accessed</td>
+<td>DateTime</td>
+<td><code>NULL</code></td>
+<td>No</td>
+<td>Timestamp of the last time the content was accessed.</td>
+<td>Safe; no security concern.</td>
+</tr>
+<tr>
+<td>access_count</td>
+<td>Integer</td>
+<td><code>0</code></td>
+<td>No</td>
+<td>Counter that increments each time content is accessed.</td>
+<td>Safe; no security concern.</td>
+</tr>
+<tr>
+<td>user_role_access</td>
+<td>String</td>
+<td><code>All</code></td>
+<td>No</td>
+<td>User roles that have access to the content.</td>
+<td>Validate role checks server-side; avoid hard-coded roles.</td>
+</tr>
+<tr>
+<td>content_tags</td>
+<td>Text</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>Tags to categorize content for filtering and search.</td>
+<td>Safe, non-sensitive content.</td>
+</tr>
+<tr>
+<td>importance_level</td>
+<td>Enum</td>
+<td><code>MEDIUM</code></td>
+<td>No</td>
+<td>Indicates content’s clinical importance or relevance.</td>
+<td>Safe; no security concern.</td>
+</tr>
+<tr>
+<td>language</td>
+<td>String</td>
+<td><code>English</code></td>
+<td>No</td>
+<td>Language of the content for multilingual support.</td>
+<td>Safe; no security concern.</td>
+</tr>
+<tr>
+<td>expiry_date</td>
+<td>Date</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>Date when content becomes obsolete or needs a review.</td>
+<td>Safe; no security concern.</td>
+</tr>
+<tr>
+<td>file_size</td>
+<td>Integer</td>
+<td><code>0</code></td>
+<td>No</td>
+<td>Size of the file (in kilobytes/megabytes).</td>
+<td>Safe; no security concern.</td>
+</tr>
+<tr>
+<td>featured</td>
+<td>Boolean</td>
+<td><code>FALSE</code></td>
+<td>No</td>
+<td>Indicates if the content should be highlighted or featured.</td>
+<td>Safe; no security concern.</td>
+</tr>
+<tr>
+<td>version</td>
+<td>String</td>
+<td><code>1.0</code></td>
+<td>No</td>
+<td>Tracks the version of the content.</td>
+<td>Safe; no security concern.</td>
+</tr>
+<tr>
+<td>related_content</td>
+<td>Array/Text</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>References to related content IDs for discovery.</td>
+<td>Safe; handle carefully to avoid conflicts.</td>
+</tr>
+<tr>
+<td>status</td>
+<td>Enum</td>
+<td><code>DRAFT</code></td>
+<td>Yes</td>
+<td>Indicates the status of the content.</td>
+<td>Safe; no security concern.</td>
+</tr>
+<tr>
+<td>view_duration</td>
+<td>Integer</td>
+<td><code>0</code></td>
+<td>No</td>
+<td>Average time a user spends viewing this content.</td>
+<td>Safe; anonymize and store securely.</td>
+</tr>
+<tr>
+<td>last_uploaded_on</td>
+<td>DateTime</td>
+<td><code>CURRENT_TIMESTAMP</code></td>
+<td>No</td>
+<td>Date and time when the file was last uploaded.</td>
+<td>Safe; no security concern.</td>
+</tr>
+<tr>
+<td>content_access_type</td>
+<td>Boolean</td>
+<td><code>FALSE</code></td>
+<td>Yes</td>
+<td>Indicates if the content is free or paid.</td>
+<td>Safe; no security concern.</td>
+</tr>
+<tr>
+<td>api_endpoint</td>
+<td>String</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>API endpoint for calling LLMs or other databases.</td>
+<td>Use only trusted, public APIs; avoid non-public APIs.</td>
+</tr>
+<tr>
+<td>usage_statistics</td>
+<td>JSON/Text</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>Stores detailed usage statistics.</td>
+<td>Anonymize data to prevent privacy breaches.</td>
+</tr>
+<tr>
+<td>related_api_links</td>
+<td>Array/Text</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>List of related API links for additional insights.</td>
+<td>Use HTTPS; validate and sanitize.</td>
+</tr>
+<tr>
+<td>user_feedback</td>
+<td>Text</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>Captures user feedback or comments.</td>
+<td>Moderate and sanitize input to prevent abuse.</td>
+</tr>
+<tr>
+<td>bookmark_count</td>
+<td>Integer</td>
+<td><code>0</code></td>
+<td>No</td>
+<td>Tracks how many users have bookmarked this content.</td>
+<td>Safe; no security concern.</td>
+</tr>
+<tr>
+<td>interaction_log</td>
+<td>JSON/Text</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>Logs user interactions like clicks, searches.</td>
+<td>Anonymize; store securely; avoid caching on client side.</td>
+</tr>
+<tr>
+<td>estimated_reading_time</td>
+<td>Integer</td>
+<td><code>0</code></td>
+<td>No</td>
+<td>Estimated time to read or consume the content.</td>
+<td>Safe; no security concern.</td>
+</tr>
+<tr>
+<td>accessibility_features</td>
+<td>String</td>
+<td><code>None</code></td>
+<td>No</td>
+<td>Details any special accessibility features.</td>
+<td>Safe; no security concern.</td>
+</tr>
+</tbody>
+</table>
+<h4
+id="user_content-table-manages-interactions-between-users-and-content."><strong><code>user_content</code>
+Table</strong>: Manages interactions between users and content.</h4>
+<table>
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 9%" />
+<col style="width: 14%" />
+<col style="width: 7%" />
+<col style="width: 56%" />
+</colgroup>
+<thead>
+<tr>
+<th><strong>Column Name</strong></th>
+<th><strong>Data Type</strong></th>
+<th><strong>Default Value</strong></th>
+<th><strong>Indexed</strong></th>
+<th><strong>Purpose</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>Integer</td>
+<td>Auto-Increment</td>
+<td>Yes (Primary Key)</td>
+<td>Unique identifier for each interaction.</td>
+</tr>
+<tr>
+<td>user_id</td>
+<td>Integer</td>
+<td><code>NULL</code> (no default)</td>
+<td>Yes (Foreign Key)</td>
+<td>References the unique identifier of the user from the
+<code>user</code> table.</td>
+</tr>
+<tr>
+<td>content_id</td>
+<td>Integer</td>
+<td><code>NULL</code> (no default)</td>
+<td>Yes (Foreign Key)</td>
+<td>References the unique identifier of the content from the
+<code>content</code> table.</td>
+</tr>
+<tr>
+<td>interaction_type</td>
+<td>Enum</td>
+<td><code>viewed</code></td>
+<td>No</td>
+<td>Type of interaction (<code>viewed</code>, <code>bookmarked</code>,
+<code>recommended</code>, etc.).</td>
+</tr>
+<tr>
+<td>interaction_date</td>
+<td>DateTime</td>
+<td><code>CURRENT_TIMESTAMP</code></td>
+<td>No</td>
+<td>Timestamp of when the interaction occurred.</td>
+</tr>
+<tr>
+<td>feedback</td>
+<td>Text</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>Stores user feedback or notes related to the specific
+interaction.</td>
+</tr>
+<tr>
+<td>content_rating</td>
+<td>Integer</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>User-provided rating for the content (e.g., 1-5 stars).</td>
+</tr>
+<tr>
+<td>time_spent</td>
+<td>Integer</td>
+<td><code>0</code></td>
+<td>No</td>
+<td>Time spent (in seconds) by the user on the content during the
+interaction.</td>
+</tr>
+<tr>
+<td>last_interaction</td>
+<td>DateTime</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>Timestamp of the last interaction between the user and the content,
+useful for updating records.</td>
+</tr>
+</tbody>
+</table>
+<h4
+id="subscription_plans-table-manages-different-subscription-plans."><strong><code>subscription_plans</code>
+Table</strong>: Manages different subscription plans.</h4>
+<table>
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 9%" />
+<col style="width: 14%" />
+<col style="width: 7%" />
+<col style="width: 56%" />
+</colgroup>
+<thead>
+<tr>
+<th><strong>Column Name</strong></th>
+<th><strong>Data Type</strong></th>
+<th><strong>Default Value</strong></th>
+<th><strong>Indexed</strong></th>
+<th><strong>Purpose</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>Integer</td>
+<td>Auto-Increment</td>
+<td>Yes (Primary Key)</td>
+<td>Unique identifier for each subscription plan.</td>
+</tr>
+<tr>
+<td>plan_name</td>
+<td>String</td>
+<td><code>NULL</code> (no default)</td>
+<td>Yes (Unique)</td>
+<td>Name of the subscription plan (e.g., Free, Basic, Premium).</td>
+</tr>
+<tr>
+<td>price</td>
+<td>Float</td>
+<td><code>0.0</code></td>
+<td>No</td>
+<td>Cost of the subscription.</td>
+</tr>
+<tr>
+<td>features</td>
+<td>Text</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>Description of features included in each plan.</td>
+</tr>
+<tr>
+<td>validity</td>
+<td>Integer</td>
+<td><code>30</code></td>
+<td>No</td>
+<td>Duration of the subscription in days.</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>DateTime</td>
+<td><code>CURRENT_TIMESTAMP</code></td>
+<td>No</td>
+<td>Timestamp of when the plan was created.</td>
+</tr>
+</tbody>
+</table>
+<h4
+id="notifications-table-manages-notifications-sent-to-users."><strong><code>notifications</code>
+Table</strong>: Manages notifications sent to users.</h4>
+<table>
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 9%" />
+<col style="width: 14%" />
+<col style="width: 7%" />
+<col style="width: 56%" />
+</colgroup>
+<thead>
+<tr>
+<th><strong>Column Name</strong></th>
+<th><strong>Data Type</strong></th>
+<th><strong>Default Value</strong></th>
+<th><strong>Indexed</strong></th>
+<th><strong>Purpose</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>Integer</td>
+<td>Auto-Increment</td>
+<td>Yes (Primary Key)</td>
+<td>Unique identifier for each notification.</td>
+</tr>
+<tr>
+<td>user_id</td>
+<td>Integer</td>
+<td><code>NULL</code> (no default)</td>
+<td>Yes (Foreign Key)</td>
+<td>References the unique identifier of the user from the
+<code>user</code> table.</td>
+</tr>
+<tr>
+<td>content_id</td>
+<td>Integer</td>
+<td><code>NULL</code> (no default)</td>
+<td>Yes (Foreign Key, Optional)</td>
+<td>References the unique identifier of the content from the
+<code>content</code> table, if applicable.</td>
+</tr>
+<tr>
+<td>message</td>
+<td>Text</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>Notification message.</td>
+</tr>
+<tr>
+<td>is_read</td>
+<td>Boolean</td>
+<td><code>FALSE</code></td>
+<td>No</td>
+<td>Status to check if the notification has been read.</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>DateTime</td>
+<td><code>CURRENT_TIMESTAMP</code></td>
+<td>No</td>
+<td>Timestamp of when the notification was sent.</td>
+</tr>
+</tbody>
+</table>
+<h4
+id="content_metadata-table-manages-extended-metadata-for-content."><strong><code>content_metadata</code>
+Table</strong>: Manages extended metadata for content.</h4>
+<table>
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 9%" />
+<col style="width: 14%" />
+<col style="width: 7%" />
+<col style="width: 56%" />
+</colgroup>
+<thead>
+<tr>
+<th><strong>Column Name</strong></th>
+<th><strong>Data Type</strong></th>
+<th><strong>Default Value</strong></th>
+<th><strong>Indexed</strong></th>
+<th><strong>Purpose</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>Integer</td>
+<td>Auto-Increment</td>
+<td>Yes (Primary Key)</td>
+<td>Unique identifier for each metadata entry.</td>
+</tr>
+<tr>
+<td>content_id</td>
+<td>Integer</td>
+<td><code>NULL</code> (no default)</td>
+<td>Yes (Foreign Key)</td>
+<td>References the unique identifier of the content from the
+<code>content</code> table.</td>
+</tr>
+<tr>
+<td>meta_key</td>
+<td>String</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>Key for metadata (e.g., “tags”, “related_topics”).</td>
+</tr>
+<tr>
+<td>meta_value</td>
+<td>Text</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>Value corresponding to the key.</td>
+</tr>
+</tbody>
+</table>
+<h4
+id="api_usage_logs-table-tracks-usage-of-external-apis."><strong><code>api_usage_logs</code>
+Table</strong>: Tracks usage of external APIs.</h4>
+<table>
+<colgroup>
+<col style="width: 11%" />
+<col style="width: 9%" />
+<col style="width: 14%" />
+<col style="width: 7%" />
+<col style="width: 56%" />
+</colgroup>
+<thead>
+<tr>
+<th><strong>Column Name</strong></th>
+<th><strong>Data Type</strong></th>
+<th><strong>Default Value</strong></th>
+<th><strong>Indexed</strong></th>
+<th><strong>Purpose</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>id</td>
+<td>Integer</td>
+<td>Auto-Increment</td>
+<td>Yes (Primary Key)</td>
+<td>Unique identifier for each API usage log entry.</td>
+</tr>
+<tr>
+<td>user_id</td>
+<td>Integer</td>
+<td><code>NULL</code> (no default)</td>
+<td>Yes (Foreign Key, Optional)</td>
+<td>References the unique identifier of the user from the
+<code>user</code> table.</td>
+</tr>
+<tr>
+<td>api_endpoint</td>
+<td>String</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>The API endpoint being called.</td>
+</tr>
+<tr>
+<td>response_time</td>
+<td>Integer</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>Time taken to get a response (in milliseconds).</td>
+</tr>
+<tr>
+<td>request_payload</td>
+<td>Text</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>Payload sent to the API.</td>
+</tr>
+<tr>
+<td>response_code</td>
+<td>Integer</td>
+<td><code>NULL</code> (no default)</td>
+<td>No</td>
+<td>HTTP response code.</td>
+</tr>
+<tr>
+<td>created_at</td>
+<td>DateTime</td>
+<td><code>CURRENT_TIMESTAMP</code></td>
+<td>No</td>
+<td>Timestamp of when the API call was made.</td>
+</tr>
+</tbody>
+</table>
+<h3 id="visual-diagram-of-table-mappings">2. Visual Diagram of Table
+Mappings</h3>
+<p>I will create a visual diagram to show the relationships between
+these tables:</p>
+<figure>
+<img
+src="sandbox:/mnt/data/Database_Structure_Diagram.png?_chatgptios_conversationID=e280008d-4a97-497f-b463-4f57d3971c74&amp;_chatgptios_messageID=9c6ab08a-cb0c-469e-9a55-b2d80ad5b4f7"
+alt="Visual Diagram of Table Mappings" />
+<figcaption aria-hidden="true">Visual Diagram of Table
+Mappings</figcaption>
+</figure>
+<h3 id="comprehensive-reference-document-for-development">3.
+Comprehensive Reference Document for Development</h3>
+<p>I have compiled all this information into a Word document for your
+reference during development.</p>
+<h3 id="download-comprehensive-data-structure-document"><a
+href="sandbox:/mnt/data/App_Data_Structure_Reference.docx?_chatgptios_conversationID=e280008d-4a97-497f-b463-4f57d3971c74&amp;_chatgptios_messageID=9c6ab08a-cb0c-469e-9a55-b2d80ad5b4f7">Download
+Comprehensive Data Structure Document</a></h3>
+<h3 id="next-steps">Next Steps</h3>
+<p>This document and diagram provide a solid foundation for implementing
+your app’s data structure using SQL and Flask. Let me know if you need
+further modifications or additional details!</p>
