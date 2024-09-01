@@ -6,20 +6,20 @@ from . import db
 import os
 
 # * Blueprint setup
-nav_bp = Blueprint(
-    'nav_bp', __name__,
+content_routes_bp = Blueprint(
+    'content_routes', __name__,
     static_folder='static',
     static_url_path='/static'
 )
 
 # Global Error Handling
-#@nav_bp.errorhandler(Exception)
+#@content_routes_bp.errorhandler(Exception)
 #def handle_exception(e):
-#    nav_bp.logger.error(f"Unhandled Exception in Content Navigation Blueprint: {e}", exc_info=True)
+#    content_routes_bp.logger.error(f"Unhandled Exception in Content Navigation Blueprint: {e}", exc_info=True)
 #    return jsonify({'error': 'An internal error occurred'}), 500
 
-# * Content navigation routes
-@nav_bp.route('/<category>', methods=['GET'])
+# * Content navigation routes 
+@content_routes_bp.route('/<category>', methods=['GET'])
 @login_required
 def view_category(category):
     # Fetch contents based on the category from the URL

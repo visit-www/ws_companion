@@ -15,19 +15,23 @@
                 <div class="card-body">
                     <h5 class="card-title">Database Management</h5>
                     <p class="card-text">Visualise and Manage the database.</p>
-                    <a href="{{ url_for('app_admin.database_maintanance') }}" class="btn btn-warning">Manage Database</a><!--todo: fix this route-->
+                    <a href="{{ url_for('app_admin.view_models') }}" class="btn btn-warning">Manage Database</a> <!-- This route should be defined in your Flask routes -->
                 </div>
             </div>
         </div>
-        <!-- Content managment Card -->
+
+        <!-- Content Management Card -->
         <div class="col-md-4">
             <div class="card text-center shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">Add Contents</h5>
                     <p class="card-text">Manage and add new contents to the App.</p>
-                    <form method="POST" action="{{ url_for('app_admin.admin_dashboard') }}"> <!--todo: fix this route-->
-                        <input type="hidden" name="action" value="add_contents">
+                    <!-- Form to add new contents -->
+                    <form method="POST" action="{{ url_for('app_admin.manage_model') }}"> <!-- Fixed the URL route -->
+                        <input type="hidden" name="action" value="add_data">
+                        <input type="hidden" name="button_id" value="contents"> <!-- Ensure the button ID matches the expected model -->
                         <button type="submit" class="btn btn-success">Add Contents</button>
+                    </form>
                 </div>
             </div>
         </div>
@@ -37,31 +41,45 @@
             <div class="card text-center shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">Add Users</h5>
-                    <p class="card-text">Manage and add new contents to the App.</p>
-                    <form method="POST" action="{{ url_for('app_admin.admin_dashboard') }}"> <!--todo: fix this route-->
-                        <input type="hidden" name="action" value="user_management">
+                    <p class="card-text">Manage and add new users to the App.</p>
+                    <form method="POST" action="{{ url_for('app_admin.manage_model') }}"> <!-- Fixed the URL route -->
+                        <input type="hidden" name="action" value="add_data"> 
+                        <input type="hidden" name="button_id" value="users"> <!-- Ensure the button ID matches the expected model -->
                         <button type="submit" class="btn btn-success">Manage Users</button>
+                    </form>
                 </div>
             </div>
         </div>
-    <!-- Reset cards -->
-        <div class="row g-4">
-            <div class="col-md-6 card text-center shadow-sm">
+    </div>
+
+    <!-- Reset Cards -->
+    <div class="row g-4">
+        <!-- Reset Database Card -->
+        <div class="col-md-6">
+            <div class="card text-center shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">Reset Database</h5>
                     <p class="card-text">Delete all Data except Users</p>
-                    <form method="POST" action="{{ url_for('app_admin.admin_dashboard') }}"> <!--todo: fix this route-->
-                    <input type="hidden" name="action" value="reset_database">
-                    <button type="submit" class="btn btn-danger">RESET Database</button>
+                    <form method="POST" action="{{ url_for('app_admin.reset_db') }}" onsubmit="return ConfirmReset();"> <!-- Fixed the URL route -->
+                        <input type="hidden" name="action" value="reset_db">
+                        <input type="hidden" name="button_id" value="db">
+                        <button type="submit" class="btn btn-danger">RESET Database</button>
+                    </form>
                 </div>
             </div>
-            <div class="col-md-6 card text-center shadow-sm">
+        </div>
+
+        <!-- Reset Users Card -->
+        <div class="col-md-6">
+            <div class="card text-center shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">Reset Users</h5>
                     <p class="card-text">Delete all Users except Admins</p>
-                    <form method="POST" action="{{ url_for('app_admin.admin_dashboard') }}"><!--todo: fix this route-->
-                    <input type="hidden" name="action" value="reset_users">
-                    <button type="submit" class="btn btn-danger">RESET Users</button>
+                    <form method="POST" action="{{ url_for('app_admin.reset_db') }}" onsubmit="return ConfirmReset();"> <!-- Fixed the URL route -->
+                        <input type="hidden" name="action" value="reset_users">
+                        <input type="hidden" name="button_id" value="users">
+                        <button type="submit" class="btn btn-danger">RESET Users</button>
+                    </form>
                 </div>
             </div>
         </div>

@@ -45,19 +45,19 @@ def create_app():
         return db.session.query(User).get(int(user_id))  # Use db.session.query instead of User.query
 
     # Register Models in Flask-Admin
-    from .models import User, Guideline, Content, UserData, Reference
-    flask_admin.add_view(ModelView(User, db.session))  # Add User model to Flask-Admin
-    flask_admin.add_view(ModelView(Guideline, db.session))  # Add Guideline model to Flask-Admin
-    flask_admin.add_view(ModelView(Content, db.session))  # Add Content model to Flask-Admin
-    flask_admin.add_view(ModelView(UserData, db.session))  # Add UserData model to Flask-Admin
-    flask_admin.add_view(ModelView(Reference, db.session))  # Add Reference model to Flask-Admin
-    
+    from .models import User, Guideline, Content, UserData, Reference, UserFeedback
+    flask_admin.add_view(ModelView(User, db.session, endpoint='users'))  # Add User model to Flask-Admin
+    flask_admin.add_view(ModelView(Guideline, db.session, endpoint='guidelines'))  # Add Guideline model to Flask-Admin
+    flask_admin.add_view(ModelView(Content, db.session, endpoint='contents'))  # Add Content model to Flask-Admin
+    flask_admin.add_view(ModelView(UserData, db.session, endpoint='user_data'))  # Add UserData model to Flask-Admin
+    flask_admin.add_view(ModelView(Reference, db.session, endpoint='references'))  # Add Reference model to Flask-Admin
+    flask_admin.add_view(ModelView(UserFeedback, db.session, endpoint='user_feedback'))  # Add Reference model to Flask-Admin
     # Register Blueprints
     from .admin_routes import app_admin_bp
     app.register_blueprint(app_admin_bp, url_prefix='/app_admin')
     
-    from .content_routes import nav_bp
-    app.register_blueprint(nav_bp, url_prefix='/content')  # Register with url_prefix if it's for the content navigation site
+    from .content_routes import content_routes_bp
+    app.register_blueprint(content_routes_bp, url_prefix='/content')  # Register with url_prefix if it's for the content navigation site
     
     from .routes import bp  # Import the main blueprint
     app.register_blueprint(bp)  # Register without url_prefix if it's for the main site
