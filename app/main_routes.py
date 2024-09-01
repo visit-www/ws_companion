@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template,jsonify
+from flask import Blueprint, render_template,jsonify, request
 #----------------------------------------------------------------
 # Blueprint configuration
 main_bp = Blueprint(
@@ -21,3 +21,13 @@ main_bp = Blueprint(
 @main_bp.route('/')
 def index():
     return render_template('index.html')
+#!----------------------------------------------------------------
+#!Debugging routes:
+@main_bp.route('/debug')
+def debug():
+    message=("The function failed- Thats why you are seeing this page!") 
+    print(f"----------------------------\n{message}\n----------------------------")
+    # Dynamically fetch the current route's name
+    current_route = request.endpoint
+    return render_template('test_routes.html',route=current_route, message=message)
+#!------------------------------------------------------------------------

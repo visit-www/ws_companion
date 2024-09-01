@@ -15,15 +15,18 @@
             </tr>
         </thead>
         <tbody>
-            {% for table in tables %}
+            {% for table in tables_data %}
+            {% set endpoint =table.endpoint %}
                 <tr>
-                    <td>{{ table }}</td>
+                    <td>{{ table.table_name | upper }}</td>
                     <td>
-                        <a href="{{ url_for('main.view_table_data', table_name=table) }}" class="btn btn-info">View</a>
+                        <!-- Construct the full URL by combining the base URL and the endpoint -->
+                        <a href="{{ url_for('admin.index') }}/{{ endpoint }}" class="btn btn-primary">View</a>
                     </td>
                 </tr>
             {% endfor %}
         </tbody>
+    </table>
     </table>
 </div>
 {% endblock %}

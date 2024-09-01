@@ -375,11 +375,6 @@ def review_us():
 # ===================================================================
 
 # *----------------------------------------------------------------
-# Debug Route
-@bp.route('/debug')
-def debug():
-    return render_template('debug.html')
-
 # *----------------------------------------------------------------
 # Reset the Database (except users)
 @bp.route('/reset_db')

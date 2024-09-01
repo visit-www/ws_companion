@@ -138,23 +138,29 @@ $(document).ready(function () {
 // Function to handle the class switching based on screen size
 function updateGridClass() {
     var element = document.querySelector('.row.my-frame');
-    if (window.innerWidth < 468) {
-        // If the screen width is less than 468px, remove g-5 and add g-3
-        if (element.classList.contains('g-5')) {
-            element.classList.remove('g-5');
-            element.classList.add('g-3');
-        }
-    } else {
-        // If the screen width is greater than or equal to 468px, revert to g-5
-        if (element.classList.contains('g-3')) {
-            element.classList.remove('g-3');
-            element.classList.add('g-5');
+    
+    if (element) {  // Ensure the element exists
+        if (window.innerWidth < 468) {
+            // If the screen width is less than 468px, remove g-5 and add g-3
+            if (element.classList.contains('g-5')) {
+                element.classList.remove('g-5');
+                element.classList.add('g-3');
+            }
+        } else {
+            // If the screen width is greater than or equal to 468px, revert to g-5
+            if (element.classList.contains('g-3')) {
+                element.classList.remove('g-3');
+                element.classList.add('g-5');
+            }
         }
     }
 }
-
 // Listen for resize events and apply the function
 window.addEventListener('resize', updateGridClass);
 
 // Call the function once when the script loads to set the initial state
 updateGridClass();
+ // JavaScript function to confirm the reset action
+function ConfirmReset() {
+    return confirm('Are you sure you want to reset the users? This action cannot be undone.');
+}

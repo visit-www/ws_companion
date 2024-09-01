@@ -87,7 +87,7 @@ class User(UserMixin, Base):
 
 # Gudeline model:
 class Guideline(Base):
-    __tablename__ = "guideline"
+    __tablename__ = "guidelines"
 
     id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True)
     title: so.Mapped[str] = sa.Column(sa.String(500), nullable=False)
