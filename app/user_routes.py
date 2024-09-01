@@ -12,16 +12,16 @@ import shutil
 from datetime import datetime, timezone
 
 # * Blueprint setup
-user_bp = Blueprint(
-    'user', __name__,
+app_user_bp = Blueprint(
+    'app_user', __name__,
     static_folder='static',
     static_url_path='/static'
 )
 
 #todo: Global Error Handling
-#@user_bp.errorhandler(Exception)
+#@app_user_bp.errorhandler(Exception)
 #def handle_exception(e):
-#    user_bp.logger.error(f"Unhandled Exception in Admin Blueprint: {e}", exc_info=True)
+#    app_user_bp.logger.error(f"Unhandled Exception in Admin Blueprint: {e}", exc_info=True)
 #    return jsonify({'error': 'An internal error occurred'}), 500
 
 #----------------------------------------------------------------
@@ -30,7 +30,7 @@ user_bp = Blueprint(
 #----------------------------------------------------------------
 
 # User Login Route
-@user_bp.route('/login', methods=['GET', 'POST'])
+@app_user_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
         username = request.form['username'].strip()
@@ -49,21 +49,21 @@ def login():
     return render_template('login.html')
 
 # Logout route
-@user_bp.route('/logout')
+@app_user_bp.route('/logout')
 
 def logout():
     if not current_user.is_authenticated:   # Ensure user is logged in before allowing access to this route (not using @loginreuired to allow felxible messaging)
         flash("You must be logged in to log out!", "info")
-        return redirect(url_for('user.login'))
+        return redirect(url_for('app_user.login'))
     # debug statements
     print('calling logout function')
     logout_user()
     flash('You have been succefuly logged out.', 'info')
-    return redirect(url_for('user.login'))
+    return redirect(url_for('app_user.login'))
 # *----------------------------------------------------------------
 
 # User Registration Route
-@user_bp.route('/register', methods=['GET', 'POST'])
+@app_user_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username'].strip()
@@ -75,10 +75,10 @@ def register():
         existing_email = db.session.query(User).filter_by(email=email).first()
         if existing_user:
             flash('Username  already exists. Please choose a different one.', 'warning')
-            return redirect(url_for('user.register'))
+            return redirect(url_for('app_user.register'))
         elif existing_email:
             flash('Email already registered. Please choose a different one.', 'warning')
-            return redirect(url_for('user.register'))
+            return redirect(url_for('app_user.register'))
         
         if username and password and email:
             hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
@@ -86,7 +86,7 @@ def register():
             db.session.add(new_user)
             db.session.commit()
             flash('Registration successful! Please log in.', 'success')
-            return redirect(url_for('user.login'))
+            return redirect(url_for('app_user.login'))
         else:
             flash('All fields are required.', 'danger')
     

@@ -37,13 +37,13 @@
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('main.buy_now') }}">Buy Now</a></li>
                         <li class="nav-item"><a class="nav-link" href="{{ url_for('main.free_trial') }}">Free Trial</a></li>
                         {% if current_user.is_authenticated %}
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('user.logout') }}">Logout</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('app_user.logout') }}">Logout</a></li>
                             {% if current_user.is_admin %}
-                                <li class="nav-item"><a class="nav-link" href="{{ url_for('admin.admin_dashboard') }}">Admin Access</a></li>
+                                <li class="nav-item"><a class="nav-link" href="{{ url_for('app_admin.admin_dashboard') }}">Admin Access</a></li>
                             {% endif %}
                         {% else %}
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('user.login') }}">Login</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('user.register') }}">Register</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('app_user.login') }}">Login</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('app_user.register') }}">Register</a></li>
                         {% endif %}
                         
                     </ul>
