@@ -50,7 +50,7 @@ def add_user():
             db.session.add(new_user)
             db.session.commit()
             flash('New user added successfully.', 'success')
-            return redirect(url_for('admin.admin_dashboard'))
+            return redirect(url_for('app_admin.admin_dashboard'))
         except Exception as e:
             db.session.rollback()
             flash(f'Error: {str(e)}', 'danger')
@@ -198,7 +198,7 @@ def add_guideline():
             db.session.commit()
 
             flash('New guideline has been added successfully.', 'success')
-            return redirect(url_for('admin.admin_dashboard'))
+            return redirect(url_for('app_admin.admin_dashboard'))
 
         except Exception as e:
             print(f"Error occurred: {str(e)}")
@@ -219,7 +219,7 @@ def add_curated_contents():
     if request.method == 'POST':
         # Add your curated content processing logic here
         flash('Curated content added successfully!', 'success')
-        return redirect(url_for('admin.admin_dashboard'))
+        return redirect(url_for('app_admin.admin_dashboard'))
 
     return render_template('add_curated_contents.html')
 
@@ -234,7 +234,7 @@ def add_radiology_calculators():
     if request.method == 'POST':
         # Add your radiology calculators processing logic here
         flash('Radiology calculator added successfully!', 'success')
-        return redirect(url_for('admin.admin_dashboard'))
+        return redirect(url_for('app_admin.admin_dashboard'))
 
     return render_template('add_radiology_calculators.html')
 
@@ -413,7 +413,7 @@ def reset_db():
 
     db.create_all()
     flash('Database reset successfully, users preserved.', 'success')
-    return redirect(url_for('admin.admin_dashboard'))
+    return redirect(url_for('app_admin.admin_dashboard'))
 
 
 #todo Routes for card items (in development mode)

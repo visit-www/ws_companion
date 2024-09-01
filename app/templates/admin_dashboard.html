@@ -15,7 +15,7 @@
                 <div class="card-body">
                     <h5 class="card-title">Database Management</h5>
                     <p class="card-text">Visualise and Manage the database.</p>
-                    <a href="{{ url_for('admin.database_maintanance') }}" class="btn btn-warning">Manage Database</a><!--todo: fix this route-->
+                    <a href="{{ url_for('app_admin.database_maintanance') }}" class="btn btn-warning">Manage Database</a><!--todo: fix this route-->
                 </div>
             </div>
         </div>
@@ -25,7 +25,7 @@
                 <div class="card-body">
                     <h5 class="card-title">Add Contents</h5>
                     <p class="card-text">Manage and add new contents to the App.</p>
-                    <form method="POST" action="{{ url_for('admin.admin_dashboard') }}"> <!--todo: fix this route-->
+                    <form method="POST" action="{{ url_for('app_admin.admin_dashboard') }}"> <!--todo: fix this route-->
                         <input type="hidden" name="action" value="add_contents">
                         <button type="submit" class="btn btn-success">Add Contents</button>
                 </div>
@@ -38,7 +38,7 @@
                 <div class="card-body">
                     <h5 class="card-title">Add Users</h5>
                     <p class="card-text">Manage and add new contents to the App.</p>
-                    <form method="POST" action="{{ url_for('admin.admin_dashboard') }}"> <!--todo: fix this route-->
+                    <form method="POST" action="{{ url_for('app_admin.admin_dashboard') }}"> <!--todo: fix this route-->
                         <input type="hidden" name="action" value="user_management">
                         <button type="submit" class="btn btn-success">Manage Users</button>
                 </div>
@@ -50,7 +50,7 @@
                 <div class="card-body">
                     <h5 class="card-title">Reset Database</h5>
                     <p class="card-text">Delete all Data except Users</p>
-                    <form method="POST" action="{{ url_for('admin.admin_dashboard') }}"> <!--todo: fix this route-->
+                    <form method="POST" action="{{ url_for('app_admin.admin_dashboard') }}"> <!--todo: fix this route-->
                     <input type="hidden" name="action" value="reset_database">
                     <button type="submit" class="btn btn-danger">RESET Database</button>
                 </div>
@@ -59,7 +59,7 @@
                 <div class="card-body">
                     <h5 class="card-title">Reset Users</h5>
                     <p class="card-text">Delete all Users except Admins</p>
-                    <form method="POST" action="{{ url_for('admin.admin_dashboard') }}"><!--todo: fix this route-->
+                    <form method="POST" action="{{ url_for('app_admin.admin_dashboard') }}"><!--todo: fix this route-->
                     <input type="hidden" name="action" value="reset_users">
                     <button type="submit" class="btn btn-danger">RESET Users</button>
                 </div>
