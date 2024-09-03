@@ -1,4 +1,6 @@
 from flask import Blueprint, render_template,jsonify, request
+from flask_wtf.csrf import generate_csrf
+from flask import render_template
 #----------------------------------------------------------------
 # Blueprint configuration
 main_bp = Blueprint(

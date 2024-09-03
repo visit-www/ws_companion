@@ -7,7 +7,6 @@ from . import Base  # Import the Base from __init__.py
 from enum import Enum as PyEnum
 from datetime import datetime, timezone
 import json
-
 #********************************
 # * Reusubale defualt values in classes :
 # Default values for categories
@@ -82,8 +81,6 @@ class User(UserMixin, Base):
 
     def __repr__(self):
         return f"<User(id={self.id}, username='{self.username}', email='{self.email}')>"
-    def __repr__(self) -> str:
-        return f"<User(id={self.id}, username='{self.username}')>"
 
 # Gudeline model:
 class Guideline(Base):
@@ -111,7 +108,8 @@ class Content(Base):
     category: so.Mapped[str] = sa.Column(sa.Enum(CategoryNames, name='category_name'), index=True, nullable=False)  # Admin must select from the categories.
     module: so.Mapped[str] = sa.Column(sa.Enum(ModuleNames, name="module_name"), index=True, nullable=False)  # Admin must select from the modules.
     status: so.Mapped[str] = sa.Column(sa.Enum('DRAFT', 'PUBLISHED', 'ARCHIVED', name='status'), default='DRAFT')
-    
+    file:so.Mapped[str] = sa.Column(sa.String(255), index=True,nullable=True)
+    filepath:so.Mapped[str] = sa.Column(sa.String(255), index=True,nullable=True) # uploaded files
     external_url: so.Mapped[Optional[str]] = sa.Column(sa.String(2083), nullable=True)  # Maximum URL length
     embed_code: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
     keywords: so.Mapped[Optional[str]] = sa.Column(sa.Text, index=True, nullable=True)
