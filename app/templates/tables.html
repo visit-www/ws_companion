@@ -17,8 +17,9 @@
         <tbody>
             {% for table in tables_data %}
             {% set endpoint =table.endpoint %}
+            {% set table_name = table.table_name %}
                 <tr>
-                    <td>{{ table.table_name | upper }}</td>
+                    <td>{{ table_name | upper }}</td>
                     <td>
                         <!-- Construct the full URL by combining the base URL and the endpoint -->
                         <a href="{{ url_for('admin.index') }}/{{ endpoint }}" class="btn btn-primary">View</a>

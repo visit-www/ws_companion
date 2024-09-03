@@ -5,7 +5,7 @@ from flask_login import login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from .models import User, Content, Guideline, UserFeedback, UserData, Reference
 from . import db, Base
-from .forms import AddContentForm, AddUserForm
+from .forms import UploadForm
 import json
 import os
 import shutil
@@ -62,32 +62,14 @@ def view_models():
     
     # Use the Base metadata to get all model (table) names
     model_names = Base.metadata.tables.keys()
-    endpoints = {
-        'users': 'users',
-        'guidelines': 'guidelines',
-        'contents': 'contents',
-        'user_data': 'user_data',
-        'references': 'references',
-        'user_feedback': 'user_feedback',
-    }
-    # Example for getting data from one model; adjust this part based on your exact needs
     tables_data = []
     for table_name in model_names:
         if not table_name=='guidelines': # todo: temprorary line - delete this when guidelines model is removed
-            # Reflect the table from the metadata
-            table = Base.metadata.tables[table_name]
-            # Perform a query to get data from the table; adapt 'db.session' usage based on your DB setup
-            rows = db.session.execute(table.select()).fetchall()  # Fetch all rows from the table
-            endpoint=endpoints[table_name]
             # Append data for each table to list
             tables_data.append({
                 'table_name': table_name,
-                'rows': rows,
-                'table': table,
-                'getattr': getattr,
-                'endpoint': endpoint
+                'endpoint': table_name
             })
-
     # Pass the list of tables data to the template
     return render_template('tables.html', tables_data=tables_data)
 #*----------------------------------------------------------------

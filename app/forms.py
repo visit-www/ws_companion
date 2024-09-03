@@ -36,10 +36,10 @@ class AddUserForm(FlaskForm):
     is_paid = BooleanField('Is Paid')
     submit = SubmitField('Add User')
 
-class AddContentForm(FlaskForm):
-    title = StringField('Title', validators=[DataRequired(), Length(max=500)])
-    submit = SubmitField('Add Content')
-
+class UploadForm(FlaskForm):
+    file = FileField('Upload File', validators=[DataRequired()])
+    submit = SubmitField('Upload File', render_kw={"class": "btn btn-primary btn-lg btn-block"})
+    
 class AddRadiologyCalculatorForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired(), Length(max=500)])
     submit = SubmitField('Add Calculator')

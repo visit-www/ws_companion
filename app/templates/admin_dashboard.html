@@ -28,6 +28,7 @@
                     <p class="card-text">Manage and add new contents to the App.</p>
                     <!-- Form to add new contents -->
                     <form method="POST" action="{{ url_for('app_admin.manage_model') }}"> <!-- Fixed the URL route -->
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="action" value="add_data">
                         <input type="hidden" name="button_id" value="contents"> <!-- Ensure the button ID matches the expected model -->
                         <button type="submit" class="btn btn-success">Add Contents</button>
@@ -43,6 +44,7 @@
                     <h5 class="card-title">Add Users</h5>
                     <p class="card-text">Manage and add new users to the App.</p>
                     <form method="POST" action="{{ url_for('app_admin.manage_model') }}"> <!-- Fixed the URL route -->
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="action" value="add_data"> 
                         <input type="hidden" name="button_id" value="users"> <!-- Ensure the button ID matches the expected model -->
                         <button type="submit" class="btn btn-success">Manage Users</button>
@@ -61,6 +63,7 @@
                     <h5 class="card-title">Reset Database</h5>
                     <p class="card-text">Delete all Data except Users</p>
                     <form method="POST" action="{{ url_for('app_admin.reset_db') }}" onsubmit="return ConfirmReset();"> <!-- Fixed the URL route -->
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="action" value="reset_db">
                         <input type="hidden" name="button_id" value="db">
                         <button type="submit" class="btn btn-danger">RESET Database</button>
@@ -76,6 +79,7 @@
                     <h5 class="card-title">Reset Users</h5>
                     <p class="card-text">Delete all Users except Admins</p>
                     <form method="POST" action="{{ url_for('app_admin.reset_db') }}" onsubmit="return ConfirmReset();"> <!-- Fixed the URL route -->
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="action" value="reset_users">
                         <input type="hidden" name="button_id" value="users">
                         <button type="submit" class="btn btn-danger">RESET Users</button>
