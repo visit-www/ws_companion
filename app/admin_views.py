@@ -25,7 +25,7 @@ class MyModelView(ModelView):
     form_args = {
         'file': {  # Matching the column name to ensure proper handling
             'label': 'Select File',
-            'base_path': 'uploads',  # Ensure this is the correct upload directory
+            'base_path': os.path.join("'uploads',  # Ensure this is the correct upload directory
             'allow_overwrite': False,
             'allowed_extensions': ['txt', 'pdf', 'docx', 'png', 'jpg', 'jpeg', 'xlsx', 'pptx', 'html', 'md'],
         }
