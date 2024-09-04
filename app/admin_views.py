@@ -44,7 +44,7 @@ class MyModelView(ModelView):
 
     def custom_delete_file(self, model):
         trash_folder = os.path.join('trash')
-        date = datetime.now(timezone.utc).strftime('%Y-%m-%d_%H-%M-%S')
+        date = datetime.now(timezone.utc).strftime('%Y-%m-%d') 
         current_date_folder = os.path.join(trash_folder, date)
         os.makedirs(current_date_folder, exist_ok=True)
 
@@ -78,7 +78,7 @@ class MyModelView(ModelView):
                             orig_file_path = model.filepath
                             file_name = str(model.file)
                             trash_folder = os.path.join('trash')
-                            date = datetime.now(timezone.utc).strftime('%Y-%m-%d_%H-%M-%S')
+                            date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
                             current_date_folder = os.path.join(trash_folder, date)
                             os.makedirs(current_date_folder, exist_ok=True)
                             shutil.move(orig_file_path, current_date_folder)
