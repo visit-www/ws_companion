@@ -122,7 +122,7 @@ class Content(Base):
 
     # * Columns managed by event listeners
     description: so.Mapped[str] = sa.Column(sa.Text, nullable=True) 
-    version: so.Mapped[str] = sa.Column(sa.String(10), default='1.0')
+    version: so.Mapped[float] = sa.Column(sa.Float, default=1.0)
     created_at: so.Mapped[datetime] = sa.Column(sa.DateTime,default=datetime.now(timezone.utc))  # Set only once on insert
     updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime,default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))  # Updated on each modification
 
@@ -238,11 +238,13 @@ def update_contents_table(mapper, connection, target):
     """Listener to populate default values before inserting or updating."""
     # 2. Populate Description if not provided
     if not target.description:
-        target.description = f"Title: This item belongs to {target.category} and {target.module}"
+        target.description = f"Title: This content belongs to {target.category} and the module name is {target.module}"
     
     # 3. Update version number
     try:
-        target.version = f"{float(target.version) + 0.1}"
-    except ValueError:
-        target.version = "1.0"
+        # Convert to float if it's not already a float
+        target.version = float(target.version) + 0.1
+    except (ValueError, TypeError):
+        # Initialize version as float
+        target.version = 1.0
         

@@ -446,3 +446,13 @@ def save_uploaded_file(file):
 ### **Summary:**
 
 Using `app.config['UPLOAD_FOLDER']` allows for a more maintainable, flexible, and scalable approach to managing file upload paths in your Flask application. It makes it easy to adjust settings as your app evolves and moves through different stages of development and deployment.
+Explanation of how flask-admin stores data in columns with fileuplaod datatype.
+
+In Flask-Admin, the FileUploadField can have its data set in several ways:
+
+    1.    New File Uploaded:
+    •    form.file.data is a file object with a filename attribute. This usually happens when the user selects a new file in the form.
+    2.    No File Uploaded, Retaining Existing File:
+    •    form.file.data is a string representing the existing file path (e.g., when editing other fields without changing the file). This indicates no new file is uploaded.
+    3.    Delete Checkbox Checked:
+    •    The user has chosen to delete the existing file using the “Delete” checkbox provided by FileUploadField. In this case, you handle deletion separately.

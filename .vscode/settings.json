@@ -20,5 +20,18 @@
     },
     "peacock.color": "#42b883",
     "a-file-icon-vscode.saturation": 1,
-    "a-file-icon-vscode.folderColor": "#727272"
+    "a-file-icon-vscode.folderColor": "#727272",
+    "a-file-icon-vscode.activeIconPacks": [
+        "angular",
+        "ngrx",
+        "nest",
+        "react",
+        "redux",
+        "recoil",
+        "vue",
+        "vuex",
+        "rails",
+        "phalcon",
+        "volt"
+    ]
 }
