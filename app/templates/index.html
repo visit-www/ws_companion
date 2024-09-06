@@ -12,29 +12,12 @@
 {% block content %}
 <div class="container my-5 my-container">
     <div class="row g-5 my-frame">
-        {% set cards = [
-            {'url': 'guidelines', 'title': 'Guidelines', 'class': 'card-1'},
-            {'url': 'classifications', 'title': 'Classifications', 'class': 'card-2'},
-            {'url': 'differential_diagnosis', 'title': 'Diff. Diagnosis', 'class': 'card-3'},
-            {'url': 'vetting_tools', 'title': 'Vetting Tools', 'class': 'card-4'},
-            {'url': 'anatomy', 'title': 'Anatomy', 'class': 'card-5'},
-            {'url': 'curated_content', 'title': 'Curated Content', 'class': 'card-6'},
-            {'url': 'report_checker', 'title': 'Report Checker', 'class': 'card-7'},
-            {'url': 'rad_calculators', 'title': 'Rad Calculators', 'class': 'card-8'},
-            {'url': 'tnm_staging', 'title': 'TNM Staging', 'class': 'card-9'},
-            {'url': 'image_search', 'title': 'Image Search', 'class': 'card-10'},
-            {'url': 'physics', 'title': 'Physics', 'class': 'card-11'},
-            {'url': 'governance_audits', 'title': 'Governance | Audits', 'class': 'card-12'},
-            {'url': 'courses', 'title': 'Courses', 'class': 'card-13'},
-            {'url': 'research_tools', 'title': 'Research Tools', 'class': 'card-14'},
-            {'url': 'music', 'title': 'Music', 'class': 'card-15'}
-        ] %}
-        
-        {% for card in cards %}
+    
+        {% for cat,idx in cat_dict.items() %}
         <div class="col-4 col-sm-4 col-md-4 col-lg-3">
-            <a href="{{ url_for('content_routes.view_category', category=card.url) }}" class="card action-card text-center p-3 h-100">
-                <div class="card-body {{ card.class }}">
-                    <h5 class="card-title">{{ card.title }}</h5>
+            <a href="{{ url_for('content_routes.view_category', category=cat) }}" class="card action-card text-center p-3 h-100">
+                <div class="card-body {{'card-'~ idx}}">
+                    <h5 class="card-title">{{ cat }}</h5>
                 </div>
             </a>
         </div>

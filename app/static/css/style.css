@@ -95,6 +95,7 @@
     transform: translateY(-5px);
 }
 /* Different Background Colors for Each Card */
+.card-0 { background-color: #d9bbf9; }
 .card-1 { background-color: #d9d9d9; }
 .card-2 { background-color: #90f1ef; }
 .card-3 { background-color: #ffb7ff; }
@@ -108,8 +109,7 @@
 .card-11 { background-color: #c1fba4; }
 .card-12 { background-color: #e58c8a; }
 .card-13 { background-color: #d9bbf9; }
-.card-14 { background-color: #d9bbf9; }
-.card-15 { background-color: #d9d9d9; }
+.card-14 { background-color: #d9d9d9; }
 
 /* Footer */
 .footer {
