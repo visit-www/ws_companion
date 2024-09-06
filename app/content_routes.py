@@ -30,6 +30,4 @@ def view_category(category):
     if not os.path.exists(os.path.join('app/templates', template_name)):
         flash(f"No page found for category {category}.", 'warning')
         return redirect(url_for('main_routes.index'))  # Redirect to index if the template is missing
-    
-
     return render_template(template_name, contents=contents)
