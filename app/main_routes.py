@@ -51,34 +51,27 @@ def index():
     # Render the 'index.html' template, passing the category dictionary to the template
     return render_template('index.html', cat_dict=cat_dict)
 #!----------------------------------------------------------------
-"""# jsonify data for react :
-#Temporory we will need in react. 
+# Place holder routes for maain page navigations :
 
-@main_bp.route('/api/data')
-def react_index():
-    # Initialize an empty list to hold the formatted category names
-    cat_list = []
+@main_bp.route('/pricing')
+def pricing():
+    return render_template('pricing.html')  # Placeholder HTML for "Pricing" page
 
-    # Loop through each enum member in the CategoryNames enum
-    for enum_object in CategoryNames:
-        # Split the enum member name by underscores into a list of words
-        cat = enum_object.name.split("_")
-        
-        # Capitalize the first letter of each word and join them back into a string
-        capit_cat = [word.capitalize() for word in cat]
-        
-        # Join the capitalized words with spaces to form a readable category name
-        category = " ".join(capit_cat)
-        
-        # Add the formatted category name to the list
-        cat_list.append(category)
+@main_bp.route('/buy')
+def buy_now():
+    return render_template('buy_now.html')  # Placeholder HTML for "Buy NOw" page
 
-    # Create a dictionary mapping each category name to its index
-    cat_dict = {cat: idx for idx, cat in enumerate(cat_list)}
+@main_bp.route('/free-trial')
+def free_trial():
+    return render_template('free_trial.html')  # Placeholder HTML for "Free Trial" page
 
-    # Render the 'index.html' template, passing the category dictionary to the template
-    return jsonify(cat_dict)"""
+@main_bp.route('/contact-us')
+def contact_us():
+    return render_template('contact_us.html')  # Placeholder HTML for "Contact Us" page
 
+@main_bp.route('/review-us')
+def review_us():
+    return render_template('review_us.html')  # Placeholder HTML for "Review Us" page
 # *----------------------------------------------------------------
 #!Debugging routes:
 @main_bp.route('/debug')
