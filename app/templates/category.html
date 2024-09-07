@@ -37,20 +37,21 @@
                                 <div class="mt-auto">
                                     <div class="btn-group">
                                         {% if content.filepath %}
-                                            <a href="{{ url_for('content_routes.view_content', category=category, id=content.id) }}" class="btn btn-primary">View</a>
+                                            <a href="{{ url_for('content_routes.view_document', category=category, id=content.id) }}" class="btn btn-primary">View</a>
                                         {% elif content.external_url %}
                                             <a href="{{ content.external_url }}" target="_blank" class="btn btn-primary">View</a>
                                         {% elif content.embed_code %}
-                                            <button class="btn btn-primary" 
+                                            <button id='embedcodebutton' class="btn btn-primary" 
                                                     data-bs-toggle="modal" 
                                                     data-bs-target="#embedCodeModal"
                                                     data-embed-code="{{ embed_code }}"
                                                     onclick="setEmbedCodeFromButton(this)">
                                                 View Embed Code
                                             </button>
-                                        {% else %}
+                                            {% else %}
                                             <p class="text-muted">No available guideline to view.</p>
                                         {% endif %}
+
                                     </div>
                                 </div>
                             </div>
