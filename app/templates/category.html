@@ -37,7 +37,7 @@
                                 <div class="mt-auto">
                                     <div class="btn-group">
                                         {% if content.filepath %}
-                                            <a href="{{ url_for('content_routes.view_document', category=category, id=content.id) }}" class="btn btn-primary">View</a>
+                                            <a href="{{ url_for('content_routes.view_document', display_name=display_name, category=category, id=content.id) }}" class="btn btn-primary">View</a>
                                         {% elif content.external_url %}
                                             <a href="{{ content.external_url }}" target="_blank" class="btn btn-primary">View</a>
                                         {% elif content.embed_code %}
