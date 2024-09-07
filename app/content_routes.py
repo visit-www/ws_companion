@@ -23,11 +23,11 @@ content_routes_bp = Blueprint(
 @login_required
 def view_category(category):
     # Fetch contents based on the category from the URL
-    contents = db.session.query(Content).filter_by(category=category).all()
-    
-    # Ensure the template exists or provide a default fallback
-    template_name = f"{category}.html"
-    if not os.path.exists(os.path.join('app/templates', template_name)):
-        flash(f"No page found for category {category}.", 'warning')
-        return redirect(url_for('main_routes.index'))  # Redirect to index if the template is missing
-    return render_template(template_name, contents=contents)
+    flash(category)
+    cat_contents= db.session.query(Content).filter_by(category=category).all()
+    flash (cat_contents)
+    return render_template('category.html',contents=cat_contents)
+@content_routes_bp.route('/<category>/<id>', methods=['GET'])
+@login_required
+def view_content(category, id):
+    return("This is intended to be handled by React front end")
