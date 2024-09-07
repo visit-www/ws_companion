@@ -24,7 +24,6 @@ content_routes_bp = Blueprint(
 @content_routes_bp.route('/<category>', methods=['GET'])
 @login_required
 def view_category(category):
-    flash(category)
     # Fetch contents based on the category from the URL
     display_name=request.args.get('display_name')
     cat_contents= db.session.query(Content).filter_by(category=category).all()
