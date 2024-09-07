@@ -25,6 +25,7 @@ def view_category(category):
     # Fetch contents based on the category from the URL
     display_name=request.args.get('display_name')
     cat_contents= db.session.query(Content).filter_by(category=category).all()
+
     return render_template('category.html',contents=cat_contents, display_name=display_name)
 @content_routes_bp.route('/<category>/<id>', methods=['GET'])
 @login_required
