@@ -13,11 +13,11 @@
 <div class="container my-5 my-container">
     <div class="row g-5 my-frame">
     
-        {% for cat,idx in cat_dict.items() %}
+        {% for cat_name,display_list in cat_dict.items() %}
         <div class="col-4 col-sm-4 col-md-4 col-lg-3">
-            <a href="{{ url_for('content_routes.view_category', category=cat) }}" class="card action-card text-center p-3 h-100">
-                <div class="card-body {{'card-'~ idx}}">
-                    <h5 class="card-title">{{ cat }}</h5>
+            <a href="{{ url_for('content_routes.view_category', category=cat_name) }}" class="card action-card text-center p-3 h-100">
+                <div class="card-body {{'card-'~ display_list[-1]}}">
+                    <h5 class="card-title">{{ display_list[0] }}</h5>
                 </div>
             </a>
         </div>
