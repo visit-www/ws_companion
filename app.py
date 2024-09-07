@@ -7,11 +7,6 @@ import threading
 import webbrowser
 import socket
 
-def open_browser():
-    """Open the web browser after the server starts."""
-    local_ip = get_local_ip()
-    webbrowser.open_new(f"http://{local_ip}:5001")
-    
 # Start the application
 if __name__ == "__main__":
     # Start a thread to open the browser after the Flask app starts
