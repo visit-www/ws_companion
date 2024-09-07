@@ -59,7 +59,7 @@
     <!-- Action Buttons -->
     <div class="mt-4">
         <a href="{{ url_for('main_routes.index') }}" class="btn btn-secondary">Back to Home</a>
-        <a href="{{ url_for('content_routes.view_category', category=cat) }}" class="btn btn-primary">Back to Category</a>
+        <a href="{{ url_for('content_routes.view_category', display_name=display_name, category=cat) }}"class="btn btn-primary">Back to Category</a>
     </div>
 </div>
 

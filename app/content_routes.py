@@ -24,6 +24,7 @@ content_routes_bp = Blueprint(
 @content_routes_bp.route('/<category>', methods=['GET'])
 @login_required
 def view_category(category):
+    flash(category)
     # Fetch contents based on the category from the URL
     display_name=request.args.get('display_name')
     cat_contents= db.session.query(Content).filter_by(category=category).all()
@@ -32,16 +33,16 @@ def view_category(category):
 @login_required
 def view_document(category, id):
     category=category.split('.')[-1]
+    display_name=request.args.get('display_name')
     # Fetch the document from the database based on its ID
     document = db.session.query(Content).filter_by(id=id).first()
-    
     # Ensure the document exists
     if not document:
         flash('Document not found', 'warning')
         return redirect(url_for('main_routes.index'))
 
     # Render the document_viewer.html template with the document data
-    return render_template('document_viewer.html', doc=document, cat=category)
+    return render_template('document_viewer.html', doc=document, cat=category, display_name=display_name)
 
 # Route to safely serve files to users in dcoument viewer
 @content_routes_bp.route('/files/<path:filepath>')
