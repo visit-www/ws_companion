@@ -77,9 +77,6 @@ def create_app():
     # user routes
     from .user_routes import app_user_bp
     app.register_blueprint(app_user_bp, url_prefix='/app_user')  # Register with url_prefix if it's for the content navigation site
-    # ! temp routes> To be deleted.
-    from .routes import bp 
-    app.register_blueprint(bp)
     
     # Set up basic logging to a file
     log_dir = 'app/logs'
