@@ -224,3 +224,67 @@ styling of the pop up modal :*/
     padding: 0;
 }
 } /* Closing brace for the media query */
+
+/*----------------------------------------------------------------
+/* Style document viewer   */
+/* Ensure the entire content takes full height minus the navbar and footer */
+.document-viewer-container {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 180px); /* Adjust this value according to the height of your navbar and footer */
+}
+
+/* Flexbox setup for the document viewer */
+.document-viewer {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Sidebar positioned on the left */
+.side-controls {
+    width: 80px; /* Adjust width as needed */
+    background-color: #f8f9fa;
+    padding: 10px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: start;
+    font-size: 0.7rem;
+}
+
+/* Main content area for the document */
+.document-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* Top control bar */
+.top-controls {
+    height: 50px; /* Fixed height for top controls */
+    background-color: #e9ecef;
+    padding: 10px;
+    flex-shrink: 0;
+}
+
+/* Embed element fills the available space */
+.document-embed {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .side-controls {
+        display: none; /* Hide sidebar on smaller screens */
+    }
+    .document-viewer {
+        flex-direction: column; /* Stack top controls on top */
+    }
+}
+.document-display{
+    
+}

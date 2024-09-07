@@ -1,9 +1,11 @@
 # * Imports
-from flask import Blueprint, request, render_template, redirect, url_for, flash, jsonify
+from flask import Blueprint, request, render_template, redirect, url_for, flash, jsonify,send_from_directory
 from flask_login import login_required, current_user
 from .models import Content
 from . import db
 import os
+from config import Config
+upload_folder=Config.UPLOAD_FOLDER
 
 # * Blueprint setup
 content_routes_bp = Blueprint(
@@ -28,5 +30,25 @@ def view_category(category):
     return render_template('category.html',contents=cat_contents, display_name=display_name)
 @content_routes_bp.route('/<category>/<id>', methods=['GET'])
 @login_required
-def view_content(category, id):
-    return("This is intended to be handled by React front end")
+def view_document(category, id):
+    category=category.split('.')[-1]
+    # Fetch the document from the database based on its ID
+    document = db.session.query(Content).filter_by(id=id).first()
+    
+    # Ensure the document exists
+    if not document:
+        flash('Document not found', 'warning')
+        return redirect(url_for('main_routes.index'))
+
+    # Render the document_viewer.html template with the document data
+    return render_template('document_viewer.html', doc=document, cat=category)
+
+# Route to safely serve files to users in dcoument viewer
+@content_routes_bp.route('/files/<path:filepath>')
+@login_required
+def serve_file(filepath):
+    rel_path='/'.join(filepath.split('/')[1:])
+    # Serve files from the UPLOAD_FOLDER
+    served_path=os.path.join(upload_folder, rel_path)
+    print(served_path)
+    return send_from_directory(upload_folder, rel_path)

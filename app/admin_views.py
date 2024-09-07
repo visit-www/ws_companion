@@ -27,7 +27,7 @@ class MyModelView(ModelView):
             'label': 'Select File',
             'base_path': os.path.join('dummy_folder'),
             'allow_overwrite': False,
-            'allowed_extensions': ['txt', 'pdf', 'docx', 'png', 'jpg', 'jpeg', 'xlsx', 'pptx', 'html', 'md'],
+            'allowed_extensions': ['txt', 'pdf', 'pptx','ppt','doc','xls', 'docx', 'png', 'jpg', 'jpeg', 'xlsx', 'pptx', 'html', 'md'],
         }
     }
 

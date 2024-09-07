@@ -6,80 +6,115 @@ document.addEventListener('DOMContentLoaded', function () {
     toastList.forEach(toast => toast.show());
 });
 
-var lastUsedButton = null;
-var lastUsedType = null;
+let lastUsedButton = null;
+let lastUsedType = null;
 
 // Update your existing function to store the last used button and type
-function setEmbedCodeFromButton(type, button) {
-    lastUsedButton = button;
-    lastUsedType = type;
+document.addEventListener('DOMContentLoaded', function () {
+    // Define the function to handle the embed code
+    function setEmbedCodeFromButton(button) {
+        // Retrieve the embed code from the data attribute
+        var embedCode = button.getAttribute('data-embed-code');
 
-    var video_container = document.getElementById('videoContainer');
-    var video_iframe = document.getElementById('embediframe');
-    var webpage_container = document.getElementById('webpageContainer');
-    var image_container = document.getElementById('imageContainer');
+        // Log the embed code to ensure it's retrieved correctly
+        console.log('Embed Code:', embedCode);
 
-    // Retrieve the embed code from the data attribute
-    var embedCode = button.getAttribute('data-embed-code');
-    if (type === 'video') {
-        video_container.innerHTML = ''; // Clear the container
-        video_container.innerHTML = embedCode; // Inject the embed code
-        video_container.style.display = 'block';
-    } else if (type === 'webpage') {
-        webpage_container.innerHTML = '';
-        webpage_container.innerHTML = embedCode;
-        webpage_container.style.display = 'block';
-    } else if (type === 'image') {
-        image_container.innerHTML = '';
-        image_container.innerHTML = embedCode;
-
-        var scriptTag = image_container.querySelector('script');
-        if (scriptTag) {
-            var scriptSrc = scriptTag.src;
-            scriptTag.remove();
-            if (scriptSrc) {
-                var script = document.createElement('script');
-                script.src = scriptSrc;
-                script.async = true;
-                image_container.appendChild(script);
-            }
+        // Verify that 'button' is an HTML element
+        if (!(button instanceof HTMLElement)) {
+            console.error('The provided element is not a valid HTML element.');
+            return; // Stop execution if the element is not valid
         }
-        image_container.style.display = 'block';
-    } else if (type === 'script') {
-        webpage_container.innerHTML = '';
-        webpage_container.innerHTML = embedCode;
 
-        var scriptTag = webpage_container.querySelector('script');
-        if (scriptTag) {
-            var scriptSrc = scriptTag.src;
-            scriptTag.remove();
-            if (scriptSrc) {
-                var script = document.createElement('script');
-                script.src = scriptSrc;
-                script.async = true;
-                webpage_container.appendChild(script);
-            }
+        // Store the last used button
+        lastUsedButton = button;
+
+        // Determine the type of content from the embed code
+        let type = '';
+        if (embedCode.includes('video')) {
+            type = 'video';
+        } else if (embedCode.includes('img')) {
+            type = 'image';
+        } else if (embedCode.includes('script')) {
+            type = 'script';
+        } else {
+            type = 'webpage'; // Default to webpage if no specific type is detected
         }
-        webpage_container.style.display = 'block';
-    } else {
-        webpage_container.innerHTML = embedCode;
-        webpage_container.style.display = 'block';
+
+        // Store the last used type
+        lastUsedType = type;
+
+        // Get the containers for the different content types
+        var video_container = document.getElementById('videoContainer');
+        var webpage_container = document.getElementById('webpageContainer');
+        var image_container = document.getElementById('imageContainer');
+
+        // Clear all containers and display the appropriate one based on type
+        video_container.style.display = 'none';
+        webpage_container.style.display = 'none';
+        image_container.style.display = 'none';
+
+        if (type === 'video') {
+            video_container.innerHTML = embedCode; // Inject the embed code
+            video_container.style.display = 'block';
+        } else if (type === 'webpage') {
+            webpage_container.innerHTML = embedCode;
+            webpage_container.style.display = 'block';
+        } else if (type === 'image') {
+            image_container.innerHTML = embedCode;
+
+            // Handle embedded scripts within images, if necessary
+            var scriptTag = image_container.querySelector('script');
+            if (scriptTag) {
+                var scriptSrc = scriptTag.src;
+                scriptTag.remove();
+                if (scriptSrc) {
+                    var script = document.createElement('script');
+                    script.src = scriptSrc;
+                    script.async = true;
+                    image_container.appendChild(script);
+                }
+            }
+            image_container.style.display = 'block';
+        } else if (type === 'script') {
+            webpage_container.innerHTML = embedCode;
+
+            // Reattach script tags to ensure execution
+            var scriptTag = webpage_container.querySelector('script');
+            if (scriptTag) {
+                var scriptSrc = scriptTag.src;
+                scriptTag.remove();
+                if (scriptSrc) {
+                    var script = document.createElement('script');
+                    script.src = scriptSrc;
+                    script.async = true;
+                    webpage_container.appendChild(script);
+                }
+            }
+            webpage_container.style.display = 'block';
+        } else {
+            // Default case
+            webpage_container.innerHTML = embedCode;
+            webpage_container.style.display = 'block';
+        }
+
+        // Ensure the modal clears content when hidden
+        var embedCodeModal = document.getElementById('embedCodeModal');
+        embedCodeModal.addEventListener('hidden.bs.modal', function () {
+            video_container.innerHTML = '';
+            webpage_container.innerHTML = '';
+            image_container.innerHTML = '';
+        });
     }
 
-    // Close the modal once the embed code is set
-    var embedCodeModal = document.getElementById('embedCodeModal'); // Assuming this is the modal element
-    embedCodeModal.addEventListener('hidden.bs.modal', function () {
-        video_container.innerHTML = '';
-        webpage_container.innerHTML = '';
-        image_container.innerHTML = '';
+    // Make the function globally accessible
+    window.setEmbedCodeFromButton = setEmbedCodeFromButton;
+
+    // Trigger the embed code re-injection when the modal is shown
+    $('#embedCodeModal').on('shown.bs.modal', function () {
+        if (lastUsedButton && lastUsedType) {
+            setEmbedCodeFromButton(lastUsedButton); // Use the stored button element
+        }
     });
-}
-
-// Trigger the embed code re-injection when the modal is shown
-$('#embedCodeModal').on('shown.bs.modal', function () {
-    if (lastUsedButton && lastUsedType) {
-        setEmbedCodeFromButton(lastUsedType, lastUsedButton);
-    }
 });
 // Functions to inject carousel when screen size is small.
 // Functions to inject carousel when screen size is small.
