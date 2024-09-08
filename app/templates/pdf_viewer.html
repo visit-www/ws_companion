@@ -28,7 +28,7 @@
     // Function to update Adobe view
     function updateAdobeView() {
         var adobeDCView = new AdobeDC.View({
-            clientId: "a5f8e2d3a4ba4c2885e1b8ac26d38a78", 
+            clientId: "b60933188af3459881bacce0df8f41d3", //"a5f8e2d3a4ba4c2885e1b8ac26d38a78" >> use this API key for localhost 
             divId: "adobe-dc-view"
         });
 
@@ -36,20 +36,25 @@
         var fileUrl = '{{ file_url }}';
         var fileName = "{{ file_name }}";
         var id = '{{ doc.id }}';
-
-        adobeDCView.previewFile({
-            content: { location: { url: fileUrl } },
-            metaData: {
-                fileName: fileName, 
-                id: id,
-                hasReadOnlyAccess: readOnly
+        // Store the UI options in a constant
+        const previewConfig = {
+                enableFormFilling:true,
+                exitPDFViewerType:'RETURN',
+                enableLinearization:true,
+                showDownloadPDF: false,
+                showZoomControl: false,
+                enableAnnotationAPIs:true,
+                includePDFAnnotations:true,
+                showDisabledSaveButton:false,
+                enableSearchAPIs: true,
             }
-        }, {
-            defaultViewMode: "FIT_WIDTH", 
-            showDownloadPDF: false, 
-            showPrintPDF: false
-        });
-    }
+
+        adobeDCView.previewFile(
+                {content: { location: { url: fileUrl } },
+                metaData: {fileName: fileName,id: id, hasReadOnlyAccess: readOnly}}, 
+                previewConfig,
+                );
+        }
 
     // Initial load of Adobe view
     document.addEventListener("adobe_dc_view_sdk.ready", function() {
@@ -61,6 +66,7 @@
         var button = document.getElementById("toggle_editing");
         // Toggle editing state
         if (button.getAttribute('editing') === "allowed") {
+
             button.setAttribute('editing', "not_allowed");
             readOnly = true;
             button.classList.add("btn-success");
