@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block title %}Document Viewer - Radiology Workstation Companion{% endblock %}
+
+{% block hero_container %}
+<div class="hero-container text-center my-4">
+    <h1 class="display-4">Radiology Workstation Companion App E-Reader</h1>
+</div>
+{% endblock %}
+{%block content %}
+    <div id="adobe-dc-view"></div>
+    <script src="https://acrobatservices.adobe.com/view-sdk/viewer.js"></script>
+    <script type="text/javascript">
+    document.addEventListener("adobe_dc_view_sdk.ready", function()
+    {
+        var adobeDCView = new AdobeDC.View({clientId: "a5f8e2d3a4ba4c2885e1b8ac26d38a78", divId: "adobe-dc-view"});
+        // Passing my own parameters to Adobe script using jinja templating:
+        var fileUrl='{{file_url}}';
+        var fileName="{{file_name}}";
+        adobeDCView.previewFile({
+        content:   {location: {url: fileUrl}},
+        metaData: {fileName: fileName}
+        });
+    });
+    </script>
+
+{% endblock %}

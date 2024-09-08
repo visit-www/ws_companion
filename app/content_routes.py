@@ -39,9 +39,14 @@ def view_document(category, id):
     if not document:
         flash('Document not found', 'warning')
         return redirect(url_for('main_routes.index'))
+    # * generate file_url for eassy passing to adobe pdf script
+    file_url=url_for('content_routes.serve_file', filepath=document.filepath)
+    file_name= f"Reading {document.title.capitalize()}" or "You are reading Document"
 
     # Render the document_viewer.html template with the document data
-    return render_template('document_viewer.html', doc=document, cat=category, display_name=display_name)
+    #return render_template('document_viewer.html', doc=document, cat=category, display_name=display_name)
+    return render_template('pdf_viewer.html', doc=document, cat=category, display_name=display_name, file_url=file_url, file_name=file_name)
+    
 
 # Route to safely serve files to users in dcoument viewer
 @content_routes_bp.route('/files/<path:filepath>')
