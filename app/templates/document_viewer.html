@@ -16,10 +16,10 @@
                 <div class="side-controls">Sidebar</div>
                 <div class="document-content">
                     <div class="top-controls">Top control panel</div>
-                    {% if doc.filepath and doc.filepath.endswith('.pdf') %}
-                    <embed src="{{ url_for('content_routes.serve_file', filepath=doc.filepath) }}"
-                type="application/pdf" download="False" class="document-embed">
-                    {% endif %}
+                    <iframe src="{{ url_for('content_routes.serve_file', filepath=doc.filepath, _external=True) }}"
+                            type="application/pdf"
+                            style="width: 100%; height: 100vh;"
+                            frameborder="0"></iframe>
                 </div>
                 <div class="side-controls">Sidebar</div>
             </div>
@@ -59,7 +59,7 @@
     <!-- Action Buttons -->
     <div class="mt-4">
         <a href="{{ url_for('main_routes.index') }}" class="btn btn-secondary">Back to Home</a>
-        <a href="{{ url_for('content_routes.view_category', display_name=display_name, category=cat) }}"class="btn btn-primary">Back to Category</a>
+        <a href="{{ url_for('content_routes.view_category', display_name=display_name, category=cat) }}" class="btn btn-primary">Back to Category</a>
     </div>
 </div>
 
