@@ -247,4 +247,13 @@ styling of the pop up modal :*/
     
 }
 
-/* Customise the cards in category.html to llok square */
+/* Customisepdf viewer container  */
+#adobe-dc-view {
+    width: 100%;
+    height: 100vh; /* Full viewport height */
+    margin: 0; /* No margins */
+    padding: 0; /* No padding */
+    display: flex; /* Use flex to center content */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+}
