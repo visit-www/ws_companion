@@ -12,9 +12,8 @@
 <div class="container my-4">
     <div class="d-flex justify-content-around align-items-center border p-2">
         <!-- Multiple Buttons Evenly Distributed -->
-        <button type="button" class="btn btn-outline-primary" id="enable_editing" editing="'not_allowed" >Button 1</button>
-        <a href="{{ url_for('content_routes.view_category', display_name=display_name, category=cat) }}" class="btn btn-primary">Back to {{cat|upper}}</a>
-        <button type="button" class="btn btn-outline-secondary">Button 2</button>
+        <button type="button" class=" btn-danger" id="toggle_editing" editing="allowed" >Disable Editing</button>
+        <a href="{{ url_for('content_routes.view_category', display_name=display_name, category=cat) }}" class="btn btn-outline-primary">Back to {{cat|upper}}</a>
     </div>
 <!-- Custom toolbar ends-->
 <!-- Adobe DC View Container starts -->
@@ -24,18 +23,22 @@
 
 <script src="https://acrobatservices.adobe.com/view-sdk/viewer.js"></script>
 <script type="text/javascript">
-    var readOnly = false; // Initialize the variable to true
+    var readOnly = false;
+    
     // Function to update Adobe view
     function updateAdobeView() {
-        var adobeDCView = new AdobeDC.View({clientId: "a5f8e2d3a4ba4c2885e1b8ac26d38a78", divId: "adobe-dc-view"});
-        
+        var adobeDCView = new AdobeDC.View({
+            clientId: "a5f8e2d3a4ba4c2885e1b8ac26d38a78", 
+            divId: "adobe-dc-view"
+        });
+
         // Pass your parameters from Jinja templating
-        var fileUrl = '{{file_url}}';
-        var fileName = "{{file_name}}";
-        var id = '{{doc.id}}';
-        
+        var fileUrl = '{{ file_url }}';
+        var fileName = "{{ file_name }}";
+        var id = '{{ doc.id }}';
+
         adobeDCView.previewFile({
-            content: {location: {url: fileUrl}},
+            content: { location: { url: fileUrl } },
             metaData: {
                 fileName: fileName, 
                 id: id,
@@ -47,30 +50,35 @@
             showPrintPDF: false
         });
     }
+
     // Initial load of Adobe view
     document.addEventListener("adobe_dc_view_sdk.ready", function() {
         updateAdobeView();
     });
-    
+
     // Function to toggle readOnly and update the button appearance
     function toggleEditing() {
-        var button = document.getElementById("enable_editing");
-        if (button.getAttribute('editing') === "not_allowed") {
-            button.setAttribute('editing', "allowed");
-            readOnly = false;
-            button.classList.add("btn-primary");
-            button.classList.remove("btn-outline-primary");
-        } else {
+        var button = document.getElementById("toggle_editing");
+        // Toggle editing state
+        if (button.getAttribute('editing') === "allowed") {
             button.setAttribute('editing', "not_allowed");
             readOnly = true;
-            button.classList.add("btn-outline-primary");
-            button.classList.remove("btn-primary");
+            button.classList.add("btn-success");
+            button.classList.remove("btn-danger");
+            button.innerHTML = 'Enable Editing';
+        } else {
+            button.setAttribute('editing', "allowed");
+            readOnly = false;
+            button.classList.add("btn-danger");
+            button.classList.remove("btn-success");
+            button.innerHTML = 'Disable Editing';
         }
-        // Call function to update Adobe view with the new readOnly value
-        updateAdobeView();
-    }
-    // Set up the event listener for the toggle button
-    document.getElementById("enable_editing").addEventListener("click", toggleEditing);
-    </script>
 
+        // Reload Adobe viewer; use setTimeout only if the viewer needs a delay
+            updateAdobeView();
+    }
+
+    // Set up the event listener for the toggle button
+    document.getElementById("toggle_editing").addEventListener("click", toggleEditing);
+</script>
 {% endblock %}
