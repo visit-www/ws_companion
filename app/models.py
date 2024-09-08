@@ -82,21 +82,6 @@ class User(UserMixin, Base):
     def __repr__(self):
         return f"<User(id={self.id}, username='{self.username}', email='{self.email}')>"
 
-# Gudeline model:
-class Guideline(Base):
-    __tablename__ = "guidelines"
-
-    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True)
-    title: so.Mapped[str] = sa.Column(sa.String(500), nullable=False)
-    file_type: so.Mapped[Optional[str]] = sa.Column(sa.String(20), nullable=True)
-    file_path: so.Mapped[Optional[str]] = sa.Column(sa.String(256), nullable=True)
-    url: so.Mapped[Optional[str]] = sa.Column(sa.String(256), nullable=True)
-    embed_code: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
-    last_updated: so.Mapped[datetime] = sa.Column(sa.DateTime, default=sa.func.now(), onupdate=sa.func.now(), nullable=False)
-
-    def __repr__(self) -> str:
-        return f"<Guideline(id={self.id}, title='{self.title}')>"
-
 # Content model
 class Content(Base):
     __tablename__ = "contents"

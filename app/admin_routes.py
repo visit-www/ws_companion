@@ -1,15 +1,9 @@
 # * Imports
 from flask import Blueprint, request, render_template, redirect, url_for, flash, session, jsonify
 from sqlalchemy import inspect, Table,MetaData
-from flask_login import login_user, login_required, logout_user, current_user
-from werkzeug.security import generate_password_hash, check_password_hash
-from .models import User, Content, Guideline, UserFeedback, UserData, Reference
+from flask_login import login_required, current_user
+from .models import User, Content
 from . import db, Base
-from .forms import UploadForm
-import json
-import os
-import shutil
-from datetime import datetime, timezone
 
 # * Blueprint setup
 app_admin_bp = Blueprint(
@@ -64,9 +58,7 @@ def view_models():
     model_names = Base.metadata.tables.keys()
     tables_data = []
     for table_name in model_names:
-        if not table_name=='guidelines': # todo: temprorary line - delete this when guidelines model is removed
-            # Append data for each table to list
-            tables_data.append({
+        tables_data.append({
                 'table_name': table_name,
                 'endpoint': table_name
             })
