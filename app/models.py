@@ -211,6 +211,23 @@ class Reference(Base):
     def __repr__(self) -> str:
         return f"<Reference(id={self.id}, title='{self.title}', content_id={self.content_id})>"
 
+#*----------------------------------------------------------------
+# Model for saving user content state to restore this state on next loging:
+class UserContentState(Base):
+    __tablename__ = 'user_content_states'
+    id = sa.Column(sa.Integer, primary_key=True)
+    user_id = sa.Column(sa.Integer, sa.ForeignKey('users.id'))
+    content_id = sa.Column(sa.Integer, sa.ForeignKey('contents.id'))
+    modified_file_path = sa.Column(sa.String(255), nullable=True)
+    annotations = sa.Column(sa.Text, nullable=True)  # JSON or text format of annotations
+    created_at = sa.Column(sa.DateTime, default=datetime.now(timezone.utc))
+    updated_at = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+    
+    # Relationships: Define relationship objects with Users and Content models:
+    user = so.relationship('User', backref=so.backref('user_content_states', lazy='dynamic', cascade="all, delete-orphan"))    
+    content = so.relationship('Content', backref=so.backref('user_content_states', lazy='dynamic', cascade="all, delete-orphan"))
+
+
 # ********************************
 
 # ! Define event listeners
