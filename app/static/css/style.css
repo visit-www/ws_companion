@@ -257,3 +257,25 @@ styling of the pop up modal :*/
     justify-content: center; /* Center horizontally */
     align-items: center; /* Center vertically */
 }
+
+/* Responsive adjustments for user account /profile page (user_managment.html) */
+/* Custom CSS for better responsiveness */
+.card {
+    border-radius: 8px; /* Slight rounding for cards */
+}
+
+.img-thumbnail {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Adjust form elements on small screens */
+@media (max-width: 576px) {
+    .form-control {
+        font-size: 14px; /* Slightly smaller font size for inputs */
+    }
+    .btn {
+        width: 100%; /* Buttons take full width on small screens */
+        margin-top: 10px;
+    }
+}

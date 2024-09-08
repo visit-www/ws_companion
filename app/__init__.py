@@ -54,14 +54,15 @@ def create_app():
 
 
     # Register Models in Flask-Admin
-    from .models import User, Content, UserData, Reference, UserFeedback
+    from .models import User, Content, UserData, Reference, UserFeedback,UserContentState
     flask_admin.add_view(ModelView(User, db.session, endpoint='users'))  # Add User model to Flask-Admin
     # Register the custom model view with Flask-Admin
-    flask_admin.add_view(MyModelView(models.Content, db.session,endpoint='contents'))
+    flask_admin.add_view(MyModelView(Content, db.session,endpoint='contents'))
     #flask_admin.add_view(ModelView(Content, db.session, endpoint='contents'))  # Add Content model to Flask-Admin
     flask_admin.add_view(ModelView(UserData, db.session, endpoint='user_data'))  # Add UserData model to Flask-Admin
     flask_admin.add_view(ModelView(Reference, db.session, endpoint='references'))  # Add Reference model to Flask-Admin
     flask_admin.add_view(ModelView(UserFeedback, db.session, endpoint='user_feedback'))  # Add Reference model to Flask-Admin
+    flask_admin.add_view(ModelView(UserContentState, db.session, endpoint='user_content_states'))  # Add Reference model to Flask-Admin
     
     # Register Blueprints
     # app admin routes
