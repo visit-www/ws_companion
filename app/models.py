@@ -7,8 +7,9 @@ from . import Base  # Import the Base from __init__.py
 from enum import Enum as PyEnum
 from datetime import datetime, timezone
 import json
-#********************************
-# * Reusubale defualt values in classes :
+
+# ********************************
+# * Reusable default values in classes :
 # Default values for categories
 class CategoryNames(PyEnum):
     GUIDELINES = 'guidelines'
@@ -25,7 +26,8 @@ class CategoryNames(PyEnum):
     GOVERNANCE_AUDITS = 'governance_audits'
     COURSES = 'courses'
     RESEARCH_TOOLS = 'research_tools'
-    MUSIC = 'music'    
+    MUSIC = 'music'
+    REPORT_TEMPLATE = 'report_template'  # New category added
 
 # * Default values for modules 
 class ModuleNames(PyEnum):
@@ -45,8 +47,8 @@ class ModuleNames(PyEnum):
     INTERVENTIONAL = "interventional"
     NUCLEAR_MEDICINE = "nuclear_medicine"
     RADIOGRAPHERS = "radiographers"
-#*________________________________________________________________
-# * Define Models :
+
+# * Define Models:
 
 # User model:
 class User(UserMixin, Base):
@@ -55,24 +57,22 @@ class User(UserMixin, Base):
     id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True)
     username: so.Mapped[str] = sa.Column(sa.String(150), unique=True, nullable=False, index=True)
     password: so.Mapped[str] = sa.Column(sa.String(150), nullable=False)
-    email: so.Mapped[str] = sa.Column(sa.String(150), unique=True,nullable=False, index=True)
+    email: so.Mapped[str] = sa.Column(sa.String(150), unique=True, nullable=False, index=True)
     is_paid: so.Mapped[Optional[bool]] = sa.Column(sa.Boolean, default=False, nullable=True)
     is_admin: so.Mapped[Optional[bool]] = sa.Column(sa.Boolean, default=False, nullable=True)
     status: so.Mapped[str] = sa.Column(sa.String(50), default='active', nullable=False)  # Account status
-    # Automatically handled by event listeners on update or creation
     created_at: so.Mapped[datetime] = sa.Column(
         sa.DateTime, 
         default=lambda: datetime.now(timezone.utc),  # Correctly uses current UTC time at record creation
         nullable=False
     )
-
     last_updated: so.Mapped[datetime] = sa.Column(
         sa.DateTime, 
         default=lambda: datetime.now(timezone.utc),  # Set on creation
         onupdate=lambda: datetime.now(timezone.utc),  # Updated whenever the record is modified
         nullable=False
     )
-    # Encapsulate functions to hash passwords and to ehck passwords.
+
     def set_password(self, password):
         self.password = generate_password_hash(password)
 
@@ -86,15 +86,13 @@ class User(UserMixin, Base):
 class Content(Base):
     __tablename__ = "contents"
 
-    # * Columns set by admin at the time of content upload
     id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, index=True)
     title: so.Mapped[str] = sa.Column(sa.String(565), index=True, nullable=False)
-    
     category: so.Mapped[str] = sa.Column(sa.Enum(CategoryNames, name='category_name'), index=True, nullable=False)  # Admin must select from the categories.
     module: so.Mapped[str] = sa.Column(sa.Enum(ModuleNames, name="module_name"), index=True, nullable=False)  # Admin must select from the modules.
     status: so.Mapped[str] = sa.Column(sa.Enum('DRAFT', 'PUBLISHED', 'ARCHIVED', name='status'), default='DRAFT')
-    file:so.Mapped[str] = sa.Column(sa.String(255), index=True,nullable=True)
-    filepath:so.Mapped[str] = sa.Column(sa.String(255), index=True,nullable=True) # uploaded files
+    file: so.Mapped[str] = sa.Column(sa.String(255), index=True, nullable=True)
+    filepath: so.Mapped[str] = sa.Column(sa.String(255), index=True, nullable=True)  # Uploaded files
     external_url: so.Mapped[Optional[str]] = sa.Column(sa.String(2083), nullable=True)  # Maximum URL length
     embed_code: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
     keywords: so.Mapped[Optional[str]] = sa.Column(sa.Text, index=True, nullable=True)
@@ -105,36 +103,32 @@ class Content(Base):
     paid_access: so.Mapped[bool] = sa.Column(sa.Boolean, default=False)  # True if paid, False if free
     api_endpoint: so.Mapped[Optional[str]] = sa.Column(sa.String(2083), nullable=True)
 
-    # * Columns managed by event listeners
-    description: so.Mapped[str] = sa.Column(sa.Text, nullable=True) 
+    # Columns managed by event listeners
+    description: so.Mapped[str] = sa.Column(sa.Text, nullable=True)
     version: so.Mapped[float] = sa.Column(sa.Float, default=1.0)
-    created_at: so.Mapped[datetime] = sa.Column(sa.DateTime,default=datetime.now(timezone.utc))  # Set only once on insert
-    updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime,default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))  # Updated on each modification
+    created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc))  # Set only once on insert
+    updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))  # Updated on each modification
 
-    # * Columns managed by session_audit route in routes.py
-    last_accessed: so.Mapped[Optional[datetime]] = sa.Column(sa.DateTime, nullable=True) 
-    access_count: so.Mapped[int] = sa.Column(sa.Integer, default=0)  # !* Managed by session_audit in the relevant route.
+    # Columns managed by session_audit route in routes.py
+    last_accessed: so.Mapped[Optional[datetime]] = sa.Column(sa.DateTime, nullable=True)
+    access_count: so.Mapped[int] = sa.Column(sa.Integer, default=0)  # Managed by session_audit in the relevant route.
     view_duration: so.Mapped[int] = sa.Column(sa.Integer, default=0)  # Time in seconds, managed in session_audit routes in routes.py
-    usage_statistics: so.Mapped[str] = sa.Column(sa.Text, default=json.dumps([{}]))  # * Store as JSON: Managed in session_audit routes in routes.py
+    usage_statistics: so.Mapped[str] = sa.Column(sa.Text, default=json.dumps([{}]))  # Store as JSON: Managed in session_audit routes in routes.py
 
-    # todo: Columns to be handled by add_content route (yet to be implemented)
-    created_by: so.Mapped[str] = sa.Column(sa.String(80), default='Admin')  # todo: To be set in the add_content route in routes.py
+    # Columns to be handled by add_content route (yet to be implemented)
+    created_by: so.Mapped[str] = sa.Column(sa.String(80), default='Admin')  # To be set in the add_content route in routes.py
     file_path: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)
-    file_size: so.Mapped[int] = sa.Column(sa.Integer, default=0)  # todo: To be handled in add_content route
+    file_size: so.Mapped[int] = sa.Column(sa.Integer, default=0)  # To be handled in add_content route
     estimated_reading_time: so.Mapped[int] = sa.Column(sa.Integer, nullable=True)  # In minutes, to be handled later
-    bookmark_count: so.Mapped[int] = sa.Column(sa.Integer, default=0)  # todo: To be handled in add_content route or related route
-    related_content: so.Mapped[str] = sa.Column(sa.Text, default=json.dumps([]))  # todo: To be handled in add_content route
-    related_api_links: so.Mapped[str] = sa.Column(sa.Text, default=json.dumps({}))  # todo: To be handled in add_content route
-    accessibility_features: so.Mapped[str] = sa.Column(sa.Text, default=json.dumps([]))  # todo: Multiple features, handled in add_content route (cant be handled by Enum)
-    #----------------------------------
-    # * Relationships
-    # All relations are defined in specialized models.
+    bookmark_count: so.Mapped[int] = sa.Column(sa.Integer, default=0)  # To be handled in add_content route or related route
+    related_content: so.Mapped[str] = sa.Column(sa.Text, default=json.dumps([]))  # To be handled in add_content route
+    related_api_links: so.Mapped[str] = sa.Column(sa.Text, default=json.dumps({}))  # To be handled in add_content route
+    accessibility_features: so.Mapped[str] = sa.Column(sa.Text, default=json.dumps([]))  # Multiple features, handled in add_content route
 
     def __repr__(self) -> str:
         return f'<Content {self.title}>'
-#------------------------------------------------------------------------------
 
-# UserFeedback model :
+# UserFeedback model
 class UserFeedback(Base):
     __tablename__ = 'user_feedback'
 
@@ -145,76 +139,58 @@ class UserFeedback(Base):
     is_public: so.Mapped[bool] = sa.Column(sa.Boolean, default=False, nullable=False)
     user_display_name: so.Mapped[Optional[str]] = sa.Column(sa.String(100), nullable=True)
 
-    # Relationships: These create convenient access points between models.
-    user = so.relationship('User', backref='feedbacks')  # The 'User' class will have an attribute 'feedbacks' for accessing related UserFeedback records
-    content = so.relationship('Content', backref='feedbacks')  # The 'Content' class will have an attribute 'feedbacks' for accessing related UserFeedback records
+    # Relationships
+    user = so.relationship('User', backref='feedbacks')
+    content = so.relationship('Content', backref='feedbacks')
 
     def __repr__(self) -> str:
         return f"<UserFeedback(id={self.id}, user_display_name='{self.user_display_name}', feedback='{self.feedback[:20]}...')>"
+
 # UserData model: captures user interactions with the contents
 class UserData(Base):
     __tablename__ = 'user_data'
 
-    # Primary Key: Unique identifier for each interaction
     id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
-
-    # Foreign Key: References the unique identifier of the user from the users table
     user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
-
-    # Foreign Key: References the unique identifier of the content from the contents table
     content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id', ondelete='CASCADE'), nullable=False)
-
-    # Enum: Type of interaction (viewed, bookmarked, recommended, etc.)
     interaction_type: so.Mapped[str] = sa.Column(sa.Enum('viewed', 'bookmarked', 'recommended', name='interaction_types'), nullable=False, default='viewed')
-
-    # DateTime: Timestamp of when the interaction occurred
     interaction_date: so.Mapped[datetime] = sa.Column(sa.DateTime, nullable=False, default=datetime.now(timezone.utc))
-
-    # Text: Stores user feedback or notes related to the specific interaction
     feedback: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
-
-    # Integer: User-provided rating for the content (e.g., 1-5 stars)
     content_rating: so.Mapped[Optional[int]] = sa.Column(sa.Integer, nullable=True)
-
-    # Integer: Time spent (in seconds) by the user on the content during the interaction
     time_spent: so.Mapped[int] = sa.Column(sa.Integer, nullable=False)
-
-    # DateTime: Timestamp of the last interaction between the user and the content
     last_interaction: so.Mapped[Optional[datetime]] = sa.Column(sa.DateTime, nullable=True)
-    
-    # Relationships: Define relationship objects with Users and Content models:
-    user = so.relationship('User', backref=so.backref('user_data', lazy='dynamic', cascade="all, delete-orphan"))    
+
+    # Relationships
+    user = so.relationship('User', backref=so.backref('user_data', lazy='dynamic', cascade="all, delete-orphan"))
     content = so.relationship('Content', backref=so.backref('user_data', lazy='dynamic', cascade="all, delete-orphan"))
 
     def __repr__(self) -> str:
         return f"<UserData(id={self.id}, user_id={self.user_id}, content_id={self.content_id})>"
 
-# References model:
+# References model
 class Reference(Base):
     __tablename__ = 'references'
 
     id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
-    
-    content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id'), nullable=False)  # Foreign Key linking to Contents
-    
-    title: so.Mapped[str] = sa.Column(sa.String(255), nullable=False)  # Title of the reference
-    file_path: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)  # File path if reference is a document
-    url: so.Mapped[Optional[str]] = sa.Column(sa.String(2083), nullable=True)  # URL if reference is an online resource
-    embed_code: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)  # Embed code for embeddable content
-    description: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)  # Optional description or notes
-    created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc))  # Timestamp of creation
-    updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))  # Timestamp of last update
-    
-    # Define the relationship back to Content
-    content = so.relationship('Content', backref='references')  # Using backref to link back to Content
+    content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id'), nullable=False)
+    title: so.Mapped[str] = sa.Column(sa.String(255), nullable=False)
+    file_path: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)
+    url: so.Mapped[Optional[str]] = sa.Column(sa.String(2083), nullable=True)
+    embed_code: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
+    description: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
+    created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc))
+    updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+
+    # Relationship back to Content
+    content = so.relationship('Content', backref='references')
 
     def __repr__(self) -> str:
         return f"<Reference(id={self.id}, title='{self.title}', content_id={self.content_id})>"
 
-#*----------------------------------------------------------------
-# Model for saving user content state to restore this state on next loging:
+# Model for saving user content state to restore this state on next login:
 class UserContentState(Base):
     __tablename__ = 'user_content_states'
+
     id = sa.Column(sa.Integer, primary_key=True)
     user_id = sa.Column(sa.Integer, sa.ForeignKey('users.id'))
     content_id = sa.Column(sa.Integer, sa.ForeignKey('contents.id'))
@@ -222,31 +198,103 @@ class UserContentState(Base):
     annotations = sa.Column(sa.Text, nullable=True)  # JSON or text format of annotations
     created_at = sa.Column(sa.DateTime, default=datetime.now(timezone.utc))
     updated_at = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
-    
-    # Relationships: Define relationship objects with Users and Content models:
-    user = so.relationship('User', backref=so.backref('user_content_states', lazy='dynamic', cascade="all, delete-orphan"))    
+
+    # Relationships
+    user = so.relationship('User', backref=so.backref('user_content_states', lazy='dynamic', cascade="all, delete-orphan"))
     content = so.relationship('Content', backref=so.backref('user_content_states', lazy='dynamic', cascade="all, delete-orphan"))
 
+# UserProfile model: stores user preferences and profile information
+class UserProfile(Base):
+    __tablename__ = 'user_profiles'
+
+    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
+    user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id'), nullable=False, unique=True, index=True)
+    profile_pic: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)  # Path to profile picture
+    profile_pic_path: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)  # Path to profile picture for management
+    preferred_categories: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)  # Comma-separated or JSON format
+    preferred_modules: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)  # Comma-separated or JSON format
+    report_templates: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)  # JSON list of template references
+    created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    # Relationship to User
+    user: so.Mapped['User'] = so.relationship('User', backref=so.backref('profile', uselist=False, cascade="all, delete-orphan"))
+
+    def __repr__(self):
+        return f"<UserProfile(id={self.id}, user_id={self.user_id})>"
+
+# Model to store report templates (user controlled):
+class BodyPartEnum(PyEnum):
+    NEURO = 'neuro'
+    HEAD_AND_NECK = 'head and neck'
+    ENT = 'ent'
+    PEDIATRICS = 'pediatrics'
+    MSK = 'msk'
+    LUNG = 'lung'
+    CARDIAC = 'cardiac'
+    ENDOCRINE = 'endocrine'
+    HEPATOBILIARY = 'hepatobiliary'
+    UROLOGY = 'urology'
+    GYNAECOLOGY = 'gynaecology'
+    UPPER_GI = 'upper gi'
+    VASCULAR = 'vascular'
+    ONCOLOGY = 'oncology'
+    MISCELLANEOUS = 'miscellaneous'
+    BREAST = 'breast'
+
+class ModalityEnum(PyEnum):
+    CT = 'ct'
+    X_RAY = 'x-ray'
+    MRI = 'mri'
+    ULTRASOUND = 'ultrasound'
+    NUCLEAR_MEDICINE = 'nuclear medicine'
+    MAMMOGRAPHY = 'mammography'
+
+class ReportTemplate(Base):
+    __tablename__ = 'report_templates'
+
+    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
+    body_part: so.Mapped[BodyPartEnum] = sa.Column(sa.Enum(BodyPartEnum, name='body_part_enum'), nullable=False, index=True)
+    modality: so.Mapped[ModalityEnum] = sa.Column(sa.Enum(ModalityEnum, name='modality_enum'), nullable=False, index=True)
+    template_name: so.Mapped[str] = sa.Column(sa.String(255), nullable=False, unique=True, index=True)
+    tags: so.Mapped[str] = sa.Column(sa.Text, nullable=True)  # Store tags as comma-separated or JSON format
+    is_public: so.Mapped[bool] = sa.Column(sa.Boolean, default=False, nullable=False, index=True)
+
+    # Foreign keys and relationships
+    user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id'), nullable=False, index=True)
+    user: so.Mapped['User'] = so.relationship('User', backref='report_templates')
+
+    # Enum references to match category and module columns in Content model
+    category: so.Mapped[CategoryNames] = sa.Column(sa.Enum(CategoryNames, name='category_name'), nullable=True, index=True)
+    module: so.Mapped[ModuleNames] = sa.Column(sa.Enum(ModuleNames, name='module_name'), nullable=True, index=True)
+
+    # Template content and file upload
+    template_text: so.Mapped[str] = sa.Column(sa.Text, nullable=True)  # For storing copy-paste text of the template
+    file: so.Mapped[str] = sa.Column(sa.String(255), nullable=True)  # Path to the uploaded file (docx, txt only)
+    file_path: so.Mapped[str] = sa.Column(sa.String(255), nullable=True)  # Path where the file is stored on disk
+
+    # Timestamp columns
+    created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), nullable=False)
+    updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc), nullable=False)
+
+    def __repr__(self):
+        return f"<ReportTemplate(id={self.id}, template_name='{self.template_name}', is_public={self.is_public})>"
 
 # ********************************
 
-# ! Define event listeners
-
-# Event listener function to populate default values and update relevant columns
+# Define event listeners
 @sa.event.listens_for(Content, 'before_insert')
 @sa.event.listens_for(Content, 'before_update')
-
 def update_contents_table(mapper, connection, target):
     """Listener to populate default values before inserting or updating."""
-    # 2. Populate Description if not provided
+    # Populate Description if not provided
     if not target.description:
         target.description = f"Title: This content belongs to {target.category} and the module name is {target.module}"
     
-    # 3. Update version number
+    # Update version number
     try:
         # Convert to float if it's not already a float
         target.version = float(target.version) + 0.1
     except (ValueError, TypeError):
         # Initialize version as float
         target.version = 1.0
-        

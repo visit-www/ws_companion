@@ -279,3 +279,12 @@ styling of the pop up modal :*/
         margin-top: 10px;
     }
 }
+
+/* Custom CSS for user_managment.html (Profile page) */
+hr{
+    color:hsl(197, 92%, 31%);   
+}  
+.pic-box {
+    border-color:hsl(197,92%,31%);
+
+}
