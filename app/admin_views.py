@@ -8,6 +8,9 @@ from . import db
 import shutil
 from datetime import datetime, timezone
 
+# ---------------------------------------------------------------
+# * MyrModelView class for handling Admin-related tasks
+# ---------------------------------------------------------------
 class MyModelView(ModelView):
     def is_accessible(self):
         return current_user.is_authenticated and current_user.is_admin
@@ -27,7 +30,7 @@ class MyModelView(ModelView):
             'label': 'Select File',
             'base_path': os.path.join('dummy_folder'),
             'allow_overwrite': False,
-            'allowed_extensions': ['txt', 'pdf', 'pptx','ppt','doc','xls', 'docx', 'png', 'jpg', 'jpeg', 'xlsx', 'pptx', 'html', 'md'],
+            'allowed_extensions': ['txt', 'pdf', 'pptx', 'ppt', 'doc', 'xls', 'docx', 'png', 'jpg', 'jpeg', 'xlsx', 'pptx', 'html', 'md'],
         }
     }
 
@@ -44,7 +47,7 @@ class MyModelView(ModelView):
 
     def custom_delete_file(self, model):
         trash_folder = os.path.join('trash')
-        date = datetime.now(timezone.utc).strftime('%Y-%m-%d') 
+        date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
         current_date_folder = os.path.join(trash_folder, date)
         os.makedirs(current_date_folder, exist_ok=True)
 
@@ -58,7 +61,7 @@ class MyModelView(ModelView):
 
     def on_model_change(self, form, model, is_created):
         upload_file = bool(form.file.data)
-        
+
         try:
             if is_created:
                 if upload_file:
@@ -114,6 +117,126 @@ class MyModelView(ModelView):
                     else:
                         db.session.add(model)
                         db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            flash(f"An error occurred during the update: {e}", 'danger')
+
+    def on_model_delete(self, model):
+        self.custom_delete_file(model)
+        db.session.delete(model)
+        db.session.commit()
+
+# ---------------------------------------------------------------
+# * UserModelView class for handling user-related tasks
+# ---------------------------------------------------------------
+
+class UserModelView(ModelView):
+    def is_accessible(self):
+        # Allow access only to authenticated users (not necessarily admin)
+        return current_user.is_authenticated
+
+    def inaccessible_callback(self, name, **kwargs):
+        flash('Login required to access this page.', 'warning')
+        return redirect(url_for('app_user.login'))
+
+    form_excluded_columns = ['filepath', 'profile_pic_path']
+
+    form_overrides = {
+        'file': FileUploadField
+    }
+
+    form_args = {
+        'file': {
+            'label': 'Select File',
+            'base_path': os.path.join('user_data', 'user_{user_id}_data'.format(user_id=current_user.id)),
+            'allow_overwrite': False,
+            'allowed_extensions': ['txt', 'doc', 'docx', 'pdf', 'jpg', 'jpeg', 'png'],
+        },
+        'profile_pic': {
+            'label': 'Upload Profile Picture',
+            'base_path': os.path.join('user_data', 'user_{user_id}_profile_pic'.format(user_id=current_user.id)),
+            'allow_overwrite': True,
+            'allowed_extensions': ['jpg', 'jpeg', 'png'],
+        }
+    }
+
+    def custom_upload_file(self, form, model):
+        if 'profile_pic' in form:
+            # Handle profile picture separately
+            folder = os.path.join('user_data', 'user_{user_id}_profile_pic'.format(user_id=model.user_id))
+            field = 'profile_pic'
+        else:
+            # General file upload handling
+            folder = os.path.join('user_data', 'user_{user_id}_report_templates'.format(user_id=model.user_id))
+            field = 'file'
+
+        filename = secure_filename(form[field].data.filename)
+        uploaded_file = os.path.join('dummy_folder', filename)
+        os.makedirs(folder, exist_ok=True)
+        shutil.move(uploaded_file, folder)
+        file_path = os.path.join(folder, filename)
+        setattr(model, f"{field}_path", file_path)  # Dynamically set file_path or profile_pic_path
+
+    def custom_delete_file(self, model):
+        trash_folder = os.path.join('trash')
+        date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+        current_date_folder = os.path.join(trash_folder, date)
+        os.makedirs(current_date_folder, exist_ok=True)
+
+        # Handling for general file and profile pictures
+        file_fields = ['file_path', 'profile_pic_path']
+        for field in file_fields:
+            if getattr(model, field) and os.path.exists(getattr(model, field)):
+                try:
+                    shutil.move(getattr(model, field), current_date_folder)
+                    setattr(model, field, None)
+                except OSError as e:
+                    flash(f'Error deleting file: {str(e)}', 'danger')
+
+    def on_model_change(self, form, model, is_created):
+        upload_file = bool(form.file.data) if 'file' in form else False
+        upload_pic = bool(form.profile_pic.data) if 'profile_pic' in form else False
+
+        try:
+            if is_created:
+                if upload_file:
+                    self.custom_upload_file(form, model)
+                if upload_pic:
+                    self.custom_upload_file(form, model)  # Handle profile picture upload
+                db.session.add(model)
+                db.session.commit()
+            else:
+                # Handle updates
+                file_present = bool(model.file)
+                pic_present = bool(model.profile_pic)
+                delete_file = '_file-delete' in request.form
+
+                if file_present or pic_present:
+                    file_field = 'profile_pic' if pic_present else 'file'
+                    current_path = getattr(model, f'{file_field}_path')
+
+                    if current_path and os.path.exists(current_path):
+                        orig_file_path = current_path
+                        file_name = getattr(model, file_field)
+                        trash_folder = os.path.join('trash')
+                        date = datetime.now(timezone.utc).strftime('%Y-%m-%d')
+                        current_date_folder = os.path.join(trash_folder, date)
+                        os.makedirs(current_date_folder, exist_ok=True)
+                        shutil.move(orig_file_path, current_date_folder)
+                        self.custom_upload_file(form, model)
+                        db.session.add(model)
+                        db.session.commit()
+                    else:
+                        self.custom_upload_file(form, model)
+                        db.session.add(model)
+                        db.session.commit()
+                elif delete_file:
+                    self.custom_delete_file(model)
+                    db.session.add(model)
+                    db.session.commit()
+                else:
+                    db.session.add(model)
+                    db.session.commit()
         except Exception as e:
             db.session.rollback()
             flash(f"An error occurred during the update: {e}", 'danger')

@@ -12,12 +12,11 @@ from typing import Type
 import logging
 import os
 
-
 # Initialize the registry and Base class using SQLAlchemy ORM
 app_registry: so.registry = so.registry()
 Base: Type[so.DeclarativeMeta] = app_registry.generate_base()
 
-# Initialize Flask extensions (SQLAlchemy,Flask-migrate,loginmanager,flask-admin,CSRFProtect)
+# Initialize Flask extensions (SQLAlchemy, Flask-Migrate, LoginManager, Flask-Admin, CSRFProtect)
 db = SQLAlchemy()  # Needed for Flask-SQLAlchemy integration
 login_manager = LoginManager()
 migrate = Migrate()
@@ -26,7 +25,7 @@ flask_admin = Admin(
     name='Flask Admin',
     url='/flask_admin',  
     template_mode='bootstrap4',  # Use bootstrap4 for compatibility
-    )
+)
 
 def create_app():
     app = Flask(__name__)
@@ -40,7 +39,6 @@ def create_app():
     csrf.init_app(app)
     flask_admin.init_app(app)
     
-    
     # User loader function
     from .models import User
     @login_manager.user_loader
@@ -49,32 +47,34 @@ def create_app():
     
     # Import models and add to Flask-Admin here to avoid circular import
     with app.app_context():
-        from .models import User,Content, UserData, Reference, UserFeedback
-        from .admin_views import MyModelView
-
+        from .models import User, Content, UserData, Reference, UserFeedback, UserContentState, UserProfile, UserReportTemplate, AdminReportTemplate
+        from .admin_views import MyModelView, UserModelView  # Import both MyModelView and UserModelView
 
     # Register Models in Flask-Admin
-    from .models import User, Content, UserData, Reference, UserFeedback,UserContentState
-    flask_admin.add_view(ModelView(User, db.session, endpoint='users'))  # Add User model to Flask-Admin
-    # Register the custom model view with Flask-Admin
-    flask_admin.add_view(MyModelView(Content, db.session,endpoint='contents'))
-    #flask_admin.add_view(ModelView(Content, db.session, endpoint='contents'))  # Add Content model to Flask-Admin
-    flask_admin.add_view(ModelView(UserData, db.session, endpoint='user_data'))  # Add UserData model to Flask-Admin
-    flask_admin.add_view(ModelView(Reference, db.session, endpoint='references'))  # Add Reference model to Flask-Admin
-    flask_admin.add_view(ModelView(UserFeedback, db.session, endpoint='user_feedback'))  # Add Reference model to Flask-Admin
-    flask_admin.add_view(ModelView(UserContentState, db.session, endpoint='user_content_states'))  # Add Reference model to Flask-Admin
-    
+    # Register admin-related models with MyModelView
+    flask_admin.add_view(MyModelView(Content, db.session, endpoint='contents'))
+    flask_admin.add_view(MyModelView(Reference, db.session, endpoint='references'))
+    flask_admin.add_view(MyModelView(AdminReportTemplate, db.session, endpoint='admin_report_template'))
+
+    # Register user-related models with UserModelView
+    flask_admin.add_view(UserModelView(User, db.session, endpoint='users'))
+    flask_admin.add_view(UserModelView(UserData, db.session, endpoint='user_data'))
+    flask_admin.add_view(UserModelView(UserFeedback, db.session, endpoint='user_feedback'))
+    flask_admin.add_view(UserModelView(UserContentState, db.session, endpoint='user_content_states'))
+    flask_admin.add_view(UserModelView(UserProfile, db.session, endpoint='user_profile'))
+    flask_admin.add_view(UserModelView(UserReportTemplate, db.session, endpoint='user_report_template'))
+
     # Register Blueprints
-    # app admin routes
+    # App admin routes
     from .admin_routes import app_admin_bp
     app.register_blueprint(app_admin_bp, url_prefix='/app_admin')
-    # content routes
+    # Content routes
     from .content_routes import content_routes_bp
     app.register_blueprint(content_routes_bp, url_prefix='/content')  # Register with url_prefix if it's for the content navigation site
-    # main routes
+    # Main routes
     from .main_routes import main_bp  # Using the corrected variable name
     app.register_blueprint(main_bp)
-    # user routes
+    # User routes
     from .user_routes import app_user_bp
     app.register_blueprint(app_user_bp, url_prefix='/app_user')  # Register with url_prefix if it's for the content navigation site
     
@@ -83,7 +83,7 @@ def create_app():
     os.makedirs(log_dir, exist_ok=True)  # Ensure the directory exists
     log_file = os.path.join(log_dir, 'app.log')
 
-    # Important security validations to be perforemd PRIOR to app startup. 
+    # Important security validations to be performed PRIOR to app startup. 
     @app.before_request
     def restrict_admin_access():
         # Restrict access to Flask-Admin views only to admin users
