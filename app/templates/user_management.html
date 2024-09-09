@@ -6,7 +6,7 @@
 
     <!-- Profile Picture and Basic Info -->
     <div class="row mb-4">
-        <div class="col-md-4 col-sm-12 mb-3">
+        <div class="col-md-4 col-sm-12 mb-3 pic-box">
             <div class="card shadow-sm h-100">
                 <div class="card-body text-center">
                     <img src="{{ url_for('static', filename='assets/dummy_profile_pic.png') }}" class="img-thumbnail mb-3" alt="Profile Picture">
@@ -30,7 +30,7 @@
                             <label for="email">Email:</label>
                             <input type="email" id="email" name="email" class="form-control" value="{{ current_user.email }}">
                         </div>
-                        <button type="submit" class="btn btn-primary">Update Email</button>
+                        <button type="submit" class="btn btn-primary mt-2">Update Email</button>
                     </form>
                     <form action="{{ url_for('app_user.change_password') }}" method="post" class="mt-3">
                         <h4>Change Password</h4>
@@ -38,7 +38,11 @@
                             <label for="password">New Password:</label>
                             <input type="password" id="password" name="password" class="form-control">
                         </div>
-                        <button type="submit" class="btn btn-primary">Change Password</button>
+                        <div class="'form-group">
+                            <label for="retype-password">Retype Password</label>
+                            <input type="password" id="retype_password" name="retype_password" class="form-control">
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-2">Change Password</button>
                     </form>
                 </div>
             </div>
@@ -54,7 +58,7 @@
                     <form action="{{ url_for('app_user.update_preferences') }}" method="post">
                         <div class="form-group">
                             <label for="categories">Preferred Categories:</label>
-                            <select id="categories" name="categories" class="form-control" multiple>
+                            <select id="categories" name="categories[]" class="form-control select2" multiple>
                                 {% for category in categories %}
                                     <option value="{{ category.value }}">{{ category.value }}</option>
                                 {% endfor %}
@@ -62,7 +66,7 @@
                         </div>
                         <div class="form-group">
                             <label for="modules">Preferred Modules:</label>
-                            <select id="modules" name="modules" class="form-control" multiple>
+                            <select id="modules" name="modules[]" class="form-control select2" multiple>
                                 {% for module in modules %}
                                     <option value="{{ module.value }}">{{ module.value }}</option>
                                 {% endfor %}
@@ -127,4 +131,23 @@
     </div>
 
 </div>
+{% endblock %}
+
+{% block scripts %}
+{{super()}}
+<!-- Include Select2 CSS and JS (via CDN) -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<!-- Initialize Select2 -->
+<script>
+    $(document).ready(function() {
+        alert("select 2 initiated")
+        $('.select2').select2({
+            width: '100%', // Adjust as needed
+            placeholder: 'Select your preferences',
+            allowClear: true
+        });
+    });
+</script>
 {% endblock %}
