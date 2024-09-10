@@ -2,20 +2,18 @@ from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
 from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField, SelectField
 from wtforms.validators import DataRequired, Length, EqualTo, Optional, URL
+class LoginForm(FlaskForm):
+    username = StringField('Username', validators=[DataRequired()], render_kw={"placeholder": "Enter Username", "class": "form-control"})
+    password = PasswordField('Password', validators=[DataRequired()], render_kw={"placeholder": "Enter Password", "class": "form-control"})
+    submit = SubmitField('Login', render_kw={"class": "btn btn-primary login-btn w-100"})
+    remember = BooleanField('Remember Me')
+
 
 class RegistrationForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired(), Length(min=2, max=150)])
     password = PasswordField('Password', validators=[DataRequired()])
     confirm_password = PasswordField('Confirm Password', validators=[DataRequired(), EqualTo('password')])
     submit = SubmitField('Register')
-
-class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired(), Length(min=2, max=150)])
-    password = PasswordField('Password', validators=[DataRequired()])
-    remember = BooleanField('Remember Me')
-    submit = SubmitField('Login')
-
-
 class AddGuidelineForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired(), Length(max=500)])
     file_type = SelectField('File Type', choices=[

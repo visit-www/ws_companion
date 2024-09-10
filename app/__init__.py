@@ -54,15 +54,15 @@ def create_app():
     # Register admin-related models with MyModelView
     flask_admin.add_view(MyModelView(Content, db.session, endpoint='contents'))
     flask_admin.add_view(MyModelView(Reference, db.session, endpoint='references'))
-    flask_admin.add_view(MyModelView(AdminReportTemplate, db.session, endpoint='admin_report_template'))
+    flask_admin.add_view(MyModelView(AdminReportTemplate, db.session, endpoint='admin_report_templates'))
 
     # Register user-related models with UserModelView
-    flask_admin.add_view(UserModelView(User, db.session, endpoint='users'))
-    flask_admin.add_view(UserModelView(UserData, db.session, endpoint='user_data'))
-    flask_admin.add_view(UserModelView(UserFeedback, db.session, endpoint='user_feedback'))
-    flask_admin.add_view(UserModelView(UserContentState, db.session, endpoint='user_content_states'))
-    flask_admin.add_view(UserModelView(UserProfile, db.session, endpoint='user_profile'))
-    flask_admin.add_view(UserModelView(UserReportTemplate, db.session, endpoint='user_report_template'))
+    flask_admin.add_view(ModelView(User, db.session, endpoint='users'))
+    flask_admin.add_view(ModelView(UserData, db.session, endpoint='user_data'))
+    flask_admin.add_view(ModelView(UserFeedback, db.session, endpoint='user_feedbacks'))
+    flask_admin.add_view(ModelView(UserContentState, db.session, endpoint='user_content_states'))
+    flask_admin.add_view(UserModelView(UserProfile, db.session, endpoint='user_profiles'))
+    flask_admin.add_view(UserModelView(UserReportTemplate, db.session, endpoint='user_report_templates'))
 
     # Register Blueprints
     # App admin routes
