@@ -130,6 +130,16 @@ class MyModelView(ModelView):
 # * UserModelView class for handling user-related tasks
 # ---------------------------------------------------------------
 
+from flask_admin.contrib.sqla import ModelView
+from flask_admin.form import FileUploadField
+from werkzeug.utils import secure_filename
+from flask import redirect, url_for, flash, request
+from flask_login import current_user
+import os
+from . import db
+import shutil
+from datetime import datetime, timezone
+
 class UserModelView(ModelView):
     def is_accessible(self):
         # Allow access only to authenticated users (not necessarily admin)
@@ -142,38 +152,50 @@ class UserModelView(ModelView):
     form_excluded_columns = ['filepath', 'profile_pic_path']
 
     form_overrides = {
-        'file': FileUploadField
+        'file': FileUploadField,
+        'profile_pic': FileUploadField,
     }
 
     form_args = {
         'file': {
             'label': 'Select File',
-            'base_path': os.path.join('user_data', 'user_{user_id}_data'.format(user_id=current_user.id)),
             'allow_overwrite': False,
             'allowed_extensions': ['txt', 'doc', 'docx', 'pdf', 'jpg', 'jpeg', 'png'],
         },
         'profile_pic': {
             'label': 'Upload Profile Picture',
-            'base_path': os.path.join('user_data', 'user_{user_id}_profile_pic'.format(user_id=current_user.id)),
             'allow_overwrite': True,
             'allowed_extensions': ['jpg', 'jpeg', 'png'],
         }
     }
 
+    def _get_user_folder(self, folder_type):
+        """
+        Determine the appropriate folder path based on the folder type and current user.
+        folder_type: 'profile_pic' or 'report_templates'
+        """
+        if current_user.is_authenticated:
+            base_path = 'user_data'
+            if folder_type == 'profile_pic':
+                return os.path.join(base_path, f'user_{current_user.id}_profile_pic')
+            elif folder_type == 'report_templates':
+                return os.path.join(base_path, f'user_{current_user.id}_report_templates')
+        else:
+            raise Exception("User must be logged in to manage files.")
+
     def custom_upload_file(self, form, model):
+        # Determine folder type based on the field being handled
         if 'profile_pic' in form:
-            # Handle profile picture separately
-            folder = os.path.join('user_data', 'user_{user_id}_profile_pic'.format(user_id=model.user_id))
+            folder = self._get_user_folder('profile_pic')
             field = 'profile_pic'
         else:
-            # General file upload handling
-            folder = os.path.join('user_data', 'user_{user_id}_report_templates'.format(user_id=model.user_id))
+            folder = self._get_user_folder('report_templates')
             field = 'file'
 
         filename = secure_filename(form[field].data.filename)
-        uploaded_file = os.path.join('dummy_folder', filename)
-        os.makedirs(folder, exist_ok=True)
-        shutil.move(uploaded_file, folder)
+        uploaded_file = os.path.join('dummy_folder', filename)  # Dummy folder for initial upload
+        os.makedirs(folder, exist_ok=True)  # Ensure the target folder exists
+        shutil.move(uploaded_file, folder)  # Move the file to the user-specific folder
         file_path = os.path.join(folder, filename)
         setattr(model, f"{field}_path", file_path)  # Dynamically set file_path or profile_pic_path
 
@@ -183,7 +205,7 @@ class UserModelView(ModelView):
         current_date_folder = os.path.join(trash_folder, date)
         os.makedirs(current_date_folder, exist_ok=True)
 
-        # Handling for general file and profile pictures
+        # Handling for general files and profile pictures
         file_fields = ['file_path', 'profile_pic_path']
         for field in file_fields:
             if getattr(model, field) and os.path.exists(getattr(model, field)):
@@ -242,6 +264,9 @@ class UserModelView(ModelView):
             flash(f"An error occurred during the update: {e}", 'danger')
 
     def on_model_delete(self, model):
+        self.custom_delete_file(model)
+        db.session.delete(model)
+        db.session.commit()
         self.custom_delete_file(model)
         db.session.delete(model)
         db.session.commit()

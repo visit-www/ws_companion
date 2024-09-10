@@ -253,7 +253,7 @@ class UserContentState(Base):
 
 # 7. UserReportTemplate Model
 class UserReportTemplate(Base):
-    __tablename__ = 'report_templates'
+    __tablename__ = 'user_report_templates'
 
     id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     body_part: so.Mapped[BodyPartEnum] = sa.Column(sa.Enum(BodyPartEnum, name='body_part_enum'), nullable=False, index=True)
@@ -302,7 +302,26 @@ class UserProfile(Base):
     def __repr__(self):
         return f"<UserProfile(id={self.id}, user_id={self.user_id})>"
 
-# ----------------------------------------------------------------
+# 9. UserFeedback Model: stores user feedbacks
+# ----------------------------------------------
+class UserFeedback(Base):
+    __tablename__ = 'user_feedbacks'
+
+    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
+    user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id'), nullable=False)  # References the 'users' table
+    content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id'), nullable=False)  # References the 'contents' table
+    feedback: so.Mapped[str] = sa.Column(sa.Text, nullable=False)
+    is_public: so.Mapped[bool] = sa.Column(sa.Boolean, default=False, nullable=False)
+    user_display_name: so.Mapped[Optional[str]] = sa.Column(sa.String(100), nullable=True)
+
+    # Relationships
+    user = so.relationship('User', backref='feedbacks')  # The 'User' class will have an attribute 'feedbacks' for accessing related UserFeedback records
+    content = so.relationship('Content', backref='feedbacks')  # The 'Content' class will have an attribute 'feedbacks' for accessing related UserFeedback records
+
+    def __repr__(self) -> str:
+        return f"<UserFeedback(id={self.id}, user_display_name='{self.user_display_name}', feedback='{self.feedback[:20]}...')>"
+
+#----------------------------------------------------------------
 # Define event listeners
 @sa.event.listens_for(Content, 'before_insert')
 @sa.event.listens_for(Content, 'before_update')

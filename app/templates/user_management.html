@@ -133,20 +133,22 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
-{{super()}}
-<!-- Include Select2 CSS and JS (via CDN) -->
-<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-
-<!-- Initialize Select2 -->
+{% block script %}
+{{ super() }}
+<!-- Include TomSelect CSS and JS (via CDN) -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.bootstrap5.min.css">
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
+<!-- Initialize TomSelect -->
 <script>
-    $(document).ready(function() {
-        alert("select 2 initiated")
-        $('.select2').select2({
-            width: '100%', // Adjust as needed
-            placeholder: 'Select your preferences',
-            allowClear: true
+    document.addEventListener('DOMContentLoaded', function () {
+        // Initialize Tom Select on all elements with the class 'select2'
+        document.querySelectorAll('.select2').forEach((el) => {
+            new TomSelect(el, {
+                plugins: ['remove_button'], // Optional plugins like remove button for selected items
+                placeholder: 'Select your preferences',
+                allowEmptyOption: true,
+                maxItems: null, // Allow multiple selections
+            });
         });
     });
 </script>

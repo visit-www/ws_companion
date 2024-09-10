@@ -4,6 +4,7 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
 from .models import User, UserContentState, CategoryNames, ModuleNames
 from . import db
+from .forms import LoginForm  # Import the form class
 
 # * Blueprint setup
 app_user_bp = Blueprint(
@@ -19,21 +20,22 @@ app_user_bp = Blueprint(
 # User Login Route
 @app_user_bp.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form['username'].strip()
-        password = request.form['password'].strip()
-
+    form = LoginForm()  # Instantiate the form
+    login_failed = False  # Default value for login_failed
+    if form.validate_on_submit():  # Checks if the form is submitted and valid
+        username = form.username.data.strip()
+        password = form.password.data.strip()
         # Query the user using SQLAlchemy's session
         user = db.session.query(User).filter_by(username=username).first()
-
         if user and user.check_password(password):
             login_user(user)
             flash('Login successful! Welcome back.', 'success')
             return redirect(url_for('main_routes.index'))
         else:
+            login_failed = True
             flash('Login failed. Please check your username and password and try again.', 'danger')
 
-    return render_template('login.html')
+    return render_template('login.html',form=form, login_failed=login_failed)
 
 # Logout route
 @app_user_bp.route('/logout')
