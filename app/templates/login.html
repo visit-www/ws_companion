@@ -11,7 +11,9 @@
                 <div class="card-body">
                     <!-- Use the Flask-WTF form -->
                     <form method="POST" action="{{ url_for('app_user.login') }}">
-                        {{ form.hidden_tag() }}  <!-- Handles CSRF token -->
+                        <!-- Handles CSRF token -->
+                        {{ form.hidden_tag() }} 
+                        <!-- Username input div -->
                         <div class="mb-3">
                             {{ form.username.label(class="form-label") }}
                             {{ form.username(size=32) }}  <!-- Renders the username field with the defined class and attributes -->
@@ -21,24 +23,26 @@
                                 </div>
                             {% endif %}
                         </div>
+                        <!-- Password input div -->
                         <div class="mb-3">
                             {{ form.password.label(class="form-label") }}
-                            {{ form.password(size=32) }}  <!-- Renders the password field with the defined class and attributes -->
-                            {% if form.password.errors %}
-                                <div class="text-danger">
-                                    {{ form.password.errors[0] }}
-                                </div>
-                            {% endif %}
+                            <div class="input-group">
+                                {{ form.password(class="form-control", placeholder="Enter Password", id="password-field") }}
+                                <button type="button" class="btn btn-outline-secondary" id="toggle-password" style="border-left: none;">
+                                    <i class="fa fa-eye-slash" id="toggle-icon"></i>
+                                </button>
+                            </div>
                         </div>
+                        <!-- Remember Me Checkbox -->
                         <div class="form-check mb-3">
-                            {{ form.remember(class="form-check-input", style="transform: scale(1.7); margin:auto; margin-left:20%; ") }}  <!-- Correctly render the checkbox -->
-                            {{ form.remember.label(class="form-check-label") }}  <!-- Correctly render the label -->
+                            {{ form.remember(class="form-check-input", style="transform: scale(1.7); margin:auto; margin-left:20%; ") }}
+                            {{ form.remember.label(class="form-check-label") }}
                         </div>
                         {{ form.submit() }}  <!-- Renders the submit button -->
                     </form>
                 </div>
             </div>
-            <!-- Reset password and retreive username buttons -->
+            <!-- Reset password and retrieve username buttons -->
             <div class="failed_login row justify-content-center" style="display: none;">
                 <div class="col-md-3 mt-3 text-center">
                     <button type="button" class="btn btn-warning" href="#">Forgot Password?</button>
@@ -50,19 +54,19 @@
             <!-- Registration Link -->
             <div class="mt-5 text-center">
                 <h5>Don't have an account?</h5>
-                <a href="{{ url_for('app_user.register') }}" class="btn btn-primary w-25">Register here</a></p>
+                <a href="{{ url_for('app_user.register') }}" class="btn btn-primary w-25">Register here</a>
             </div>
-    
         </div>
     </div>
 </div>
 {% endblock %}
+
 {% block script %}
 {{ super() }}
 <script>
-    let login_failed=null;
     document.addEventListener('DOMContentLoaded', function() {
         // Ensure login_failed is correctly interpreted as a boolean
+        let login_failed;
         login_failed = {{ login_failed | tojson }};
         
         // Check if login_failed is true and display the failed login message
@@ -72,6 +76,20 @@
                 failedLoginElement.style.display = 'flex';
             }
         }
+
+        const togglePassword = document.getElementById('toggle-password');
+        const passwordField = document.getElementById('password-field');
+        const toggleIcon = document.getElementById('toggle-icon');
+
+        togglePassword.addEventListener('click', function() {
+            // Toggle password visibility
+            const type = passwordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            passwordField.setAttribute('type', type);
+            
+            // Toggle eye icon
+            toggleIcon.classList.toggle('fa-eye');
+            toggleIcon.classList.toggle('fa-eye-slash');
+        });
     });
 </script>
 {% endblock %}

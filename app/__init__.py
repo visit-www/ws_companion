@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, url_for, flash
+from flask import Flask, request, redirect, url_for, flash,session
 from flask_login import current_user
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
@@ -11,6 +11,7 @@ import sqlalchemy.orm as so
 from typing import Type
 import logging
 import os
+from datetime import datetime,timedelta,timezone
 
 # Initialize the registry and Base class using SQLAlchemy ORM
 app_registry: so.registry = so.registry()
@@ -27,6 +28,7 @@ flask_admin = Admin(
     template_mode='bootstrap4',  # Use bootstrap4 for compatibility
 )
 
+# Create Flask application instance and configure it with the specified configuration settings
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
@@ -77,11 +79,37 @@ def create_app():
     # User routes
     from .user_routes import app_user_bp
     app.register_blueprint(app_user_bp, url_prefix='/app_user')  # Register with url_prefix if it's for the content navigation site
-    
-    # Set up basic logging to a file
-    log_dir = 'app/logs'
-    os.makedirs(log_dir, exist_ok=True)  # Ensure the directory exists
-    log_file = os.path.join(log_dir, 'app.log')
+    #----------------------------------------------------------------
+    # Functions to manage user ideletimout, warning times and session timeouts :
+    def update_last_activity():
+            session['last_activity'] = datetime.now(timezone.utc)  # Ensure it's timezone-aware
+
+    def check_idle_timeout():
+        last_activity = session.get('last_activity')
+        idle_timeout = app.config.get('SESSION_IDLE_TIMEOUT')  # Default timeout
+        warning_time = app.config.get('SESSION_WARNING_TIME')   # Default warning time
+        if last_activity:
+            # Make sure the comparison is between timezone-aware datetimes
+            time_since_last_activity = datetime.now(timezone.utc) - last_activity
+        else:
+            time_since_last_activity = timedelta(0)  # Initialize as a timedelta object
+
+        if time_since_last_activity > idle_timeout:
+            session.clear()
+            flash('You have been logged out due to inactivity.', 'warning')
+            return redirect(url_for('app_user.login'))
+        elif time_since_last_activity > (idle_timeout - warning_time):
+            session['show_warning'] = True
+        else:
+            session.pop('show_warning', None)
+            
+# ================================================================
+# Functions to be executed before initialization
+    @app.before_request
+    def handle_before_request():
+        if current_user.is_authenticated:
+            check_idle_timeout()
+            update_last_activity()
 
     # Important security validations to be performed PRIOR to app startup. 
     @app.before_request
@@ -91,5 +119,15 @@ def create_app():
             if not (current_user.is_authenticated and current_user.is_admin):
                 flash('Admin access required.', 'warning')
                 return redirect(url_for('main_routes.index'))
+    # Ensure the session is not set to permanent
+    @app.before_request
+    def make_session_non_permanent():
+        session.permanent = False  # Ensures sessions are non-permanent
+        
+    #Logging
+    # Set up basic logging to a file
+    log_dir = 'app/logs'
+    os.makedirs(log_dir, exist_ok=True)  # Ensure the directory exists
+    log_file = os.path.join(log_dir, 'app.log')
 
     return app
