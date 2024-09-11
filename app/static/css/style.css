@@ -248,7 +248,7 @@ styling of the pop up modal :*/
     
 }
 
-/* Customisepdf viewer container  */
+/* Customise pdf viewer container  */
 #adobe-dc-view {
     width: 100%;
     height: 100vh; /* Full viewport height */
@@ -285,3 +285,62 @@ styling of the pop up modal :*/
 hr{
     color:hsl(197, 92%, 31%);   
 }  
+/*------------------------------------------------
+/* Style toast container for flash messages */
+.toast-container {
+    border-radius:8px;
+    padding:8px;
+}
+.toast{
+    border-radius: 10px;
+}
+
+/*------------------------------------------------
+/* Custom styles for reset_user.html */
+.outer-container{
+    width: 80vw;
+}
+.bottom-container{
+    width: 50vw;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 8% !important;
+    margin-bottom: 8% !important;
+}
+.card-custom {
+    background-color: #e0e0e0;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.btn-green {
+    background-color: #a8e6cf;
+    color: black;
+    border: none;
+}
+
+.btn-yellow {
+    background-color: #ffd54f;
+    color: black;
+    border: none;
+}
+
+.btn-blue {
+    background-color: #b2ebf2;
+    color: black;
+    border: none;
+}
+
+.btn-yellow-main {
+    background-color: #ffd54f;
+    color: black;
+    border: none;
+}
+
+@media (max-width: 768px) {
+    .card-custom {
+        margin-bottom: 20px; /* Adds spacing for smaller screens */
+    }
+}

@@ -36,12 +36,11 @@ def login():
             login_user(user, remember=remember)
             session['user_id'] = user.id  # Manually setting session data
             session.modified = True       # Ensure that session modifications are recognized
-            flash('Login successful! Welcome back.', 'success')
-            flash(f"rmember me is set to {remember}")
+            flash(f'Log in succeful! Welcome back {user.username}!<hr style="color:yellow;">', 'success')
             return redirect(url_for('main_routes.index'))
         else:
             login_failed = True
-            flash('Login failed. Please check your username and password and try again.', 'danger')
+            flash('Login failed.<br>Please check your username and password and try again.', 'danger')
 
     return render_template('login.html',form=form, login_failed=login_failed)
 
@@ -86,6 +85,11 @@ def register():
             flash('All fields are required.', 'danger')
     
     return render_template('register.html')
+#* ----------------------------------------------------------------
+# Forget / reset passwrod route:
+@app_user_bp.route('/reset_user', methods=['GET', 'POST'])
+def reset_user():
+    return render_template('reset_user.html')
 
 # *----------------------------------------------------------------
 # User Profile/Account Page and Related Routes
