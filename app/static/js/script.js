@@ -183,6 +183,3 @@ updateGridClass();
 function ConfirmReset() {
     return confirm('Are you sure you want to reset the users? This action cannot be undone.');
 }
-
-
-// TOggle button to shift between list and coarusel view 

@@ -5,6 +5,8 @@ from werkzeug.security import generate_password_hash
 from .models import User, UserContentState, CategoryNames, ModuleNames
 from . import db
 from .forms import LoginForm  # Import the form class
+from config import Config
+from datetime import timedelta
 
 # * Blueprint setup
 app_user_bp = Blueprint(
@@ -25,11 +27,17 @@ def login():
     if form.validate_on_submit():  # Checks if the form is submitted and valid
         username = form.username.data.strip()
         password = form.password.data.strip()
+        remember = 'remember' in request.form  # Check if "Remember Me" was selected
         # Query the user using SQLAlchemy's session
         user = db.session.query(User).filter_by(username=username).first()
         if user and user.check_password(password):
-            login_user(user)
+            # Set the session to be permanent only if "Remember Me" is checked
+            session.permanent = remember
+            login_user(user, remember=remember)
+            session['user_id'] = user.id  # Manually setting session data
+            session.modified = True       # Ensure that session modifications are recognized
             flash('Login successful! Welcome back.', 'success')
+            flash(f"rmember me is set to {remember}")
             return redirect(url_for('main_routes.index'))
         else:
             login_failed = True
