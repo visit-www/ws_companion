@@ -67,15 +67,15 @@
 <!-- Code to displace flash message -->
 
 <div aria-live="polite" aria-atomic="true" class="position-relative">
-    <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3">
+    <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3" style="display: none;">
         {% block messages %}
             {% with messages = get_flashed_messages(with_categories=true) %}
                 {% if messages %}
                     {% for category, message in messages %}
                         <div class="toast align-items-center custom-toast" role="alert" aria-live="assertive" aria-atomic="true">
-                            <div class="d-flex">
-                                <div class="toast-body text-white">
-                                    {{ message }}
+                            <div class="d-flex justify-content-center">
+                                <div class="toast-body text-warning">
+                                    {{ message|safe|upper }}
                                 </div>
                                 <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
                             </div>
@@ -129,9 +129,62 @@
     <script>
         // Bootstrap Toast Initialization
         document.addEventListener('DOMContentLoaded', function () {
+            // Select the toast container
+            var messageContainer = document.querySelector('.toast-container');
+    
+            // Initialize all toast elements
             var toastElList = [].slice.call(document.querySelectorAll('.toast'));
-            var toastList = toastElList.map(function (toastEl) {
-                return new bootstrap.Toast(toastEl, { autohide: true, delay: 2000 }).show();
+            var hasMessage = false; // Flag to check if there are any messages
+    
+            // Iterate over each toast element and initialize only if it has a message
+            toastElList.forEach(function (toastEl) {
+                var messageBody = toastEl.querySelector('.toast-body');
+    
+                // Check if messageBody exists and contains a message
+                if (messageBody && messageBody.textContent.trim() !== '') {
+                    hasMessage = true; // Set flag to true if there's a message
+                    var toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 3500 });
+                    toast.show();
+    
+                    // Listen for the hidden event to hide the container when all toasts are hidden
+                    toastEl.addEventListener('hidden.bs.toast', function () {
+                        // Check if there are any visible toasts left
+                        if (!document.querySelector('.toast.show')) {
+                            messageContainer.style.display = 'none';
+                        }
+                    });
+                }
+            });
+    
+            // Show the toast container if there are messages
+            if (hasMessage) {
+                messageContainer.style.display = 'block';
+            } else {
+                messageContainer.style.display = 'none'; // Ensure it's hidden if there are no messages
+            }
+    
+            // Select all elements with the class 'toast-body'
+            var messageBodies = document.querySelectorAll('.toast-body');
+    
+            // Iterate over all toast bodies to check their content
+            messageBodies.forEach(function (messageBody) {
+                var messageText = messageBody.textContent || messageBody.innerText;
+    
+                // Set default text color to black
+                messageBody.classList.add("text-dark");
+    
+                // Check if the message contains "Login failed" or "Login successful"
+                if (messageText.includes('LOGIN FAILED')) { // Adjust to match the uppercase message
+                    messageBody.classList.remove("text-dark");
+                    messageBody.classList.add ("text-warning"); 
+                } else if (messageText.includes('LOGIN SUCCESSFUL')) {
+                    messageBody.classList.remove("text-warning");
+                    messageBody.classList.add("text-dark");
+                } else {
+                    // Default styling: ensure the text is black if no other conditions match
+                    messageBody.classList.remove("text-warning");
+                    messageBody.classList.add("text-dark");
+                }
             });
         });
     </script>

@@ -45,10 +45,12 @@
             <!-- Reset password and retrieve username buttons -->
             <div class="failed_login row justify-content-center" style="display: none;">
                 <div class="col-md-3 mt-3 text-center">
-                    <button type="button" class="btn btn-warning" href="#">Forgot Password?</button>
+                    <!-- Use anchor tag for links -->
+                    <a class="btn btn-warning" href="{{ url_for('app_user.reset_user') }}">Forgot Password?</a>
                 </div>
                 <div class="col-md-3 mt-3 text-center">
-                    <button type="button" class="btn btn-warning" href="#">Retrieve Username</button>
+                    <!-- Corrected quotes and used anchor tag -->
+                    <a class="btn btn-warning" href="{{ url_for('app_user.reset_user') }}">Retrieve Username</a>
                 </div>
             </div>
             <!-- Registration Link -->
