@@ -87,9 +87,26 @@ def register():
     return render_template('register.html')
 #* ----------------------------------------------------------------
 # Forget / reset passwrod route:
-@app_user_bp.route('/reset_user', methods=['GET', 'POST'])
-def reset_user():
-    return render_template('reset_user.html')
+@app_user_bp.route('/credential_management', methods=['GET', 'POST'])
+def credential_manager():
+    if request.method == 'GET':
+        action=request.args.get('action')
+        if action=="forgot_password":
+            return render_template('credential_manager.html')
+    else:
+        action=request.form.get('action')
+        email=request.form.get('email')
+        if action=='retrieve_password':
+            user_data=db.session.query(User).filter_by(email=email)
+            hash_password=user_data.password
+            password=hash_password.strip()
+            
+            flash(f"user with email= {email} has asked for retrieving the password")
+        elif action=='reset_password':
+            flash(f'user with email= {email} has asked to reset the password')
+        else:
+            flash(f"user with email= {email} has asked to retreive the username")
+    return render_template('credential_manager.html')
 
 # *----------------------------------------------------------------
 # User Profile/Account Page and Related Routes

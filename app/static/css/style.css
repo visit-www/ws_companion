@@ -297,11 +297,9 @@ hr{
 
 /*------------------------------------------------
 /* Custom styles for reset_user.html */
-.outer-container{
-    width: 80vw;
-}
 .bottom-container{
     width: 50vw;
+    background-color: hsl(60, 50%, 98%);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     border-radius: 15px;
     padding: 20px;
@@ -309,35 +307,37 @@ hr{
     margin-bottom: 8% !important;
 }
 .card-custom {
-    background-color: #e0e0e0;
+    background-color:#feffff;
     border-radius: 15px;
     padding: 20px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
+
+/* these custine button classes will make button slightly rounded and give desired colour. */
 .btn-green {
     background-color: #a8e6cf;
     color: black;
     border: none;
-}
-
-.btn-yellow {
-    background-color: #ffd54f;
-    color: black;
-    border: none;
-}
-
-.btn-blue {
-    background-color: #b2ebf2;
-    color: black;
-    border: none;
+    border-radius: 5px;
 }
 
 .btn-yellow-main {
     background-color: #ffd54f;
     color: black;
     border: none;
+    border-radius: 5px;
 }
+
+.btn-blue {
+    background-color: #b2ebf2;
+    color: black;
+    border:none;
+    border-radius: 5px;
+
+}
+
+
 
 @media (max-width: 768px) {
     .card-custom {

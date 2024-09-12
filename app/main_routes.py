@@ -69,6 +69,10 @@ def free_trial():
 def contact_us():
     return render_template('contact_us.html')  # Placeholder HTML for "Contact Us" page
 
+@main_bp.route('/faq')
+def faq():
+    return render_template('faq.html')  # Placeholder HTML for "About Us" page
+
 @main_bp.route('/review-us')
 def review_us():
     return render_template('review_us.html')  # Placeholder HTML for "Review Us" page
