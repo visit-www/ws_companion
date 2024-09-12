@@ -46,11 +46,11 @@
             <div class="failed_login row justify-content-center" style="display: none;">
                 <div class="col-md-3 mt-3 text-center">
                     <!-- Use anchor tag for links -->
-                    <a class="btn btn-warning" href="{{ url_for('app_user.reset_user') }}">Forgot Password?</a>
+                    <a class="btn btn-warning" href="{{ url_for('app_user.credential_manager', action='forgot_password') }}">Forgot Password?</a>
                 </div>
                 <div class="col-md-3 mt-3 text-center">
                     <!-- Corrected quotes and used anchor tag -->
-                    <a class="btn btn-warning" href="{{ url_for('app_user.reset_user') }}">Retrieve Username</a>
+                    <a class="btn btn-warning" href="{{ url_for('app_user.credential_manager',action='forgot_username' )}}">Retrieve Username</a>
                 </div>
             </div>
             <!-- Registration Link -->
