@@ -12,6 +12,7 @@ from typing import Type
 import logging
 import os
 from datetime import datetime,timedelta,timezone
+from flask_mail import Mail
 
 # Initialize the registry and Base class using SQLAlchemy ORM
 app_registry: so.registry = so.registry()
@@ -28,6 +29,9 @@ flask_admin = Admin(
     template_mode='bootstrap4',  # Use bootstrap4 for compatibility
 )
 
+# instantiate flak mail
+mail = Mail()
+
 # Create Flask application instance and configure it with the specified configuration settings
 def create_app():
     app = Flask(__name__)
@@ -40,6 +44,8 @@ def create_app():
     login_manager.login_view = 'app_user.login'  # Set the login view for unauthorized users
     csrf.init_app(app)
     flask_admin.init_app(app)
+    # Initialize Flask-Mail
+    mail.init_app(app)
     
     # User loader function
     from .models import User

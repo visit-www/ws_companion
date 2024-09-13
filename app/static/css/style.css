@@ -303,8 +303,6 @@ hr{
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     border-radius: 15px;
     padding: 20px;
-    margin-top: 8% !important;
-    margin-bottom: 8% !important;
 }
 .card-custom {
     background-color:#feffff;
