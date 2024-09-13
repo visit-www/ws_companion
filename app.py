@@ -16,6 +16,6 @@ def open_browser():
 
 # Start the application
 if __name__ == "__main__":
-    # Start a thread to open the browser after the Flask app starts
-    threading.Timer(1, open_browser).start()  # Wait 1 second before opening the browser
-    app.run(host='0.0.0.0', port=5001, debug=True, use_reloader=True)
+    # Retrieve the port from environment variables for Heroku compatibility
+    port = int(os.environ.get("PORT", 5001))  # Default to 5001 for local development
+    app.run(host='0.0.0.0', port=port, debug=True, use_reloader=True)
