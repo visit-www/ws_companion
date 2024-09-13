@@ -1,13 +1,15 @@
 # * Imports
 from flask import Blueprint, request, render_template, redirect, url_for, flash, session, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
-from werkzeug.security import generate_password_hash
+from werkzeug.security import generate_password_hash,check_password_hash
 from .models import User, UserContentState, CategoryNames, ModuleNames
 from . import db
 from .forms import LoginForm  # Import the form class
 from config import Config
 from datetime import timedelta
-
+from flask_mail import Message
+from . import mail  # Import the mail instance from your app initialization
+from .util import generate_password_reset_token,verify_password_reset_token
 # * Blueprint setup
 app_user_bp = Blueprint(
     'app_user', __name__,
@@ -86,7 +88,7 @@ def register():
     
     return render_template('register.html')
 #* ----------------------------------------------------------------
-# Forget / reset passwrod route:
+# Forget username / reset passwrod route:
 @app_user_bp.route('/credential_management', methods=['GET', 'POST'])
 def credential_manager():
     if request.method == 'GET':
@@ -95,17 +97,48 @@ def credential_manager():
             return render_template('credential_manager.html')
     else:
         action=request.form.get('action')
-        email=request.form.get('email')
-        if action=='retrieve_password':
-            user_data=db.session.query(User).filter_by(email=email)
-            hash_password=user_data.password
-            password=hash_password.strip()
-            
-            flash(f"user with email= {email} has asked for retrieving the password")
-        elif action=='reset_password':
-            flash(f'user with email= {email} has asked to reset the password')
+        input_email=request.form.get('email')
+        user=db.session.query(User).filter_by(email=input_email).first()
+        if user:
+            user_email=user.email
+            if action=='reset_password':
+                try:
+                    # Generate the password reset token
+                    token = generate_password_reset_token({'email': user_email})
+                    
+                    # Create the reset link
+                    reset_link = url_for('app_user.change_password', token=token, _external=True)
+                    
+                    # Prepare the email message
+                    msg = Message('Account Recovery Email from WS Companion', recipients=[user_email])
+                    msg.body = (f'It appears you have forgotten your password. We know how annoying it is! '
+                                f'But do not worry, we have got you covered.\n\nPlease click the link below to reset your password:\n'
+                                f'{reset_link}\n\nThis link is valid only for 10 minutes.')
+                    
+                    # Send the email
+                    mail.send(msg)
+                    
+                    flash('A password reset link has been sent to your email successfully!<hr>This link is valid only for 10 minutes.', 'success')
+                    return redirect(url_for('app_user.login'))
+                except Exception as e:
+                    print(f'Failed to send test email: {str(e)}')
+                    flash(f'Failed to send test email: {str(e)}', 'danger')
+                    return redirect(url_for('app_user.credential_manager'))
+            else: # implies the action must be retrieve_username
+                try:
+                    msg = Message('Account Recovery Email from WS Companion', recipients=[user_email])
+                    msg.body = (f'It appears you have forgotten your username. We know how annoying it is! '
+                                f'But do not worry, we have got you covered.\n\nYour username for the WS Companion account is: {user.username}')
+                    mail.send(msg)
+                    flash('An account recovery email has been sent to your email address successfully!', 'success')
+                    return redirect(url_for('app_user.login'))
+                except Exception as e:
+                    print(f'Failed to send test email: {str(e)}')
+                    flash(f'Failed to send test email: {str(e)}', 'danger')
+                    return redirect(url_for('app_user.credential_manager'))
         else:
-            flash(f"user with email= {email} has asked to retreive the username")
+            flash(f'No user found with this email address! <hr> Please enter the email assocaited with your account.', 'danger')
+            return redirect(url_for('app_user.credential_manager'))
     return render_template('credential_manager.html')
 
 # *----------------------------------------------------------------
@@ -142,15 +175,41 @@ def update_profile():
     flash('Email updated successfully!', 'success')
     return redirect(url_for('app_user.user_management'))
 
-@app_user_bp.route('/change_password', methods=['POST'])
-@login_required
-def change_password():
-    # Placeholder logic for changing password
-    new_password = request.form.get('password')
-    current_user.set_password(new_password)
-    db.session.commit()
-    flash('Password changed successfully!', 'success')
-    return redirect(url_for('app_user.user_management'))
+# Change Password Route
+@app_user_bp.route('/change_password/<token>', methods=['GET', 'POST'])
+def change_password(token):
+    # If POST request, process the form
+    if request.method == 'POST':
+        # Get form data
+        password = request.form.get('password')
+        retyped_password = request.form.get('retyped-password')
+        
+        # Validate passwords match
+        if password != retyped_password:
+            flash('Passwords do not match. Please try again.', 'danger')
+            return render_template('change_password.html', token=token)
+        
+        # Verify token and update password
+        user_data = verify_password_reset_token(token)
+        if not user_data:
+            flash('The reset link is invalid or expired. Please try again.', 'danger')
+            return redirect(url_for('app_user.credential_manager'))
+        
+        # Assume user_data contains email
+        user = db.session.query(User).filter_by(email=user_data.get('email')).first()
+        if not user:
+            flash('No account associated with this email.', 'danger')
+            return redirect(url_for('app_user.credential_manager'))
+        
+        # Update the user's password securely
+        user.set_password(password)  # This method should hash the password before saving
+        db.session.commit()
+        
+        flash('Your password has been reset successfully! You can now log in with your new password.', 'success')
+        return redirect(url_for('app_user.login'))
+    
+    # Render the change password form
+    return render_template('change_password.html', token=token)
 
 @app_user_bp.route('/update_preferences', methods=['POST'])
 @login_required

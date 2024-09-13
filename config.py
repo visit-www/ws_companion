@@ -16,3 +16,14 @@ class Config:
     PERMANENT_SESSION_LIFETIME = timedelta (days=1)  # Set session lifetime to 30 days
     SESSION_IDLE_TIMEOUT = timedelta(minutes=30)  # Set total idle timeout
     SESSION_WARNING_TIME = timedelta(minutes=5)   # Warn the user 5 minutes before timeout
+    
+    # Mail realted configurations...
+    MAIL_SERVER = 'smtp-relay.brevo.com'  # Replace with your SMTP server
+    MAIL_PORT = 587  # Common port for TLS
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = os.getenv('BREVO_SMTP_USERNAME')  # Your email address
+    MAIL_PASSWORD = 'zkZg1Dphfb7BX25G'  # Your email password
+    MAIL_DEFAULT_SENDER = ('My Workstation Companion App', 'support@wscompanion.com')  # Default sender info
+    SECURITY_PASSWORD_SALT = '25df2a0675d39147e5e8f1bf75550f2a'  # Add this if it's not already defined
+    MAIL_MAX_EMAILS = None
+    MAIL_ASCII_ATTACHMENTS = False

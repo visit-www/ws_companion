@@ -143,7 +143,7 @@
                 // Check if messageBody exists and contains a message
                 if (messageBody && messageBody.textContent.trim() !== '') {
                     hasMessage = true; // Set flag to true if there's a message
-                    var toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 3500 });
+                    var toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 5000 });
                     toast.show();
     
                     // Listen for the hidden event to hide the container when all toasts are hidden
