@@ -2,7 +2,7 @@
 from flask import Blueprint, request, render_template, redirect, url_for, flash, session, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash,check_password_hash
-from .models import User, UserContentState, CategoryNames, ModuleNames
+from .models import User, UserContentState, CategoryNames, ModuleNames,UserData
 from . import db
 from .forms import LoginForm  # Import the form class
 from config import Config
@@ -64,8 +64,12 @@ def register():
     if request.method == 'POST':
         username = request.form['username'].strip()
         password = request.form['password'].strip()
+        retyped_password = request.form['retyped_password'].strip()
         email = request.form['email'].strip()
-        
+        # Check if retyped and primary password match
+        if password!= retyped_password:
+            flash('Passwords do not match. Please retype them correctly.', 'warning')
+            return redirect(url_for('app_user.register'))
         # Check if the username or email already exists
         existing_user = db.session.query(User).filter_by(username=username).first()
         existing_email = db.session.query(User).filter_by(email=email).first()
@@ -75,17 +79,75 @@ def register():
         elif existing_email:
             flash('Email already registered. Please choose a different one.', 'warning')
             return redirect(url_for('app_user.register'))
-        
         if username and password and email:
+            # Create and add the new user
+            hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+        # Check if the username or email already exists
+        existing_user = db.session.query(User).filter_by(username=username).first()
+        existing_email = db.session.query(User).filter_by(email=email).first()
+        if existing_user:
+            flash('Username already exists. Please choose a different one.', 'warning')
+            return redirect(url_for('app_user.register'))
+        elif existing_email:
+            flash('Email already registered. Please choose a different one.', 'warning')
+            return redirect(url_for('app_user.register'))
+        if username and password and email:
+            # Create and add the new user
             hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
             new_user = User(username=username, password=hashed_password, email=email)
             db.session.add(new_user)
             db.session.commit()
-            flash('Registration successful! Please log in.', 'success')
+
+            # Initialize UserProfile with default values
+            profile = UserProfile(
+                user_id=new_user.id,
+                profile_pic='dummy_profile_pic.png',
+                profile_pic_path='static/assets/images/dummy_profile_pic.png',
+                preferred_categories=json.dumps([category.value for category in CategoryNames]),
+                preferred_modules=json.dumps([module.value for module in ModuleNames]),
+                report_templates=None,
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc)
+            )
+            db.session.add(profile)
+
+            # Initialize UserData with baseline information
+            user_data = UserData(
+                user_id=new_user.id,
+                content_id=1,  # Assuming some content_id as a placeholder
+                interaction_type='viewed',
+                interaction_date=datetime.now(timezone.utc),
+                feedback=None,
+                content_rating=None,
+                time_spent=0,
+                last_interaction=datetime.now(timezone.utc)
+            )
+            db.session.add(user_data)
+
+            # Initialize UserContentState with baseline information
+            user_content_state = UserContentState(
+                user_id=new_user.id,
+                content_id=1,  # Assuming some content_id as a placeholder
+                modified_file_path=None,
+                annotations=None,
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc)
+            )
+            db.session.add(user_content_state)
+
+            # Initialize UserReportTemplate if needed (or leave as baseline None if preferred)
+            # This can be adapted based on specific requirements for templates
+
+            # Initialize UserFeedback with baseline if needed (or leave as None)
+            # Add logic to initialize UserFeedback based on your specific requirements
+
+            db.session.commit()
+
+            flash('Registration successful! Profile and related data initialized. Please log in.', 'success')
             return redirect(url_for('app_user.login'))
         else:
             flash('All fields are required.', 'danger')
-    
+
     return render_template('register.html')
 #* ----------------------------------------------------------------
 # Forget username / reset passwrod route:
