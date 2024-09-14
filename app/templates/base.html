@@ -25,50 +25,50 @@
 <!-- Include the modal -->
 {% include 'modal_embed_code.html' %}
 {% endblock %}
-    <div class="main-container">
-        <!-- Navbar -->
-        {% block nav_bar %}
-        <nav class="navbar navbar-expand-lg navbar-light bg-light w-100">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="{{ url_for('main_routes.index') }}">My Workstation Companion</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav ms-auto">
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main_routes.index') }}">Home</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main_routes.pricing') }}">Pricing</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main_routes.buy_now') }}">Buy Now</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{{ url_for('main_routes.free_trial') }}">Free Trial</a></li>
-                        {% if current_user.is_authenticated %}
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('app_user.logout') }}">Logout</a></li>
-                            {% if current_user.is_admin %}
-                                <li class="nav-item"><a class="nav-link" href="{{ url_for('app_admin.admin_dashboard') }}">Admin Access</a></li>
-                                {% else %}
-                                <li class="nav-item"><a class="nav-link" href="{{ url_for('app_user.user_management') }}">My Account</a></li>
-                            {% endif %}
+<div class="main-container">
+    <!-- Navbar -->
+    {% block nav_bar %}
+    <nav class="navbar navbar-expand-lg navbar-light bg-light w-100">
+        <div class="container-fluid">
+            <i class="bi bi-shield-fill-check p-lg-4 p-md-4 p-sm-3 py-3" style="color:green; font-size: 1.7em;"></i>
+            <a class="navbar-brand p-md-3 p-sm-3" href="{{ url_for('main_routes.index') }}">My Workstation Companion</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse sm_navbar_items" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main_routes.index') }}">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main_routes.pricing') }}">Pricing</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main_routes.buy_now') }}">Buy Now</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{{ url_for('main_routes.free_trial') }}">Free Trial</a></li>
+                    {% if current_user.is_authenticated %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('app_user.logout') }}">Logout</a></li>
+                        {% if current_user.is_admin %}
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('app_admin.admin_dashboard') }}">Admin Access</a></li>
                         {% else %}
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('app_user.login') }}">Login</a></li>
-                            <li class="nav-item"><a class="nav-link" href="{{ url_for('app_user.register') }}">Register</a></li>
+                            <li class="nav-item"><a class="nav-link" href="{{ url_for('app_user.user_management') }}">My Account</a></li>
                         {% endif %}
-                        
-                    </ul>
-                </div>
+                    {% else %}
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('app_user.login') }}">Login</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{{ url_for('app_user.register') }}">Register</a></li>
+                    {% endif %}
+                </ul>
             </div>
-        </nav>
-        {% endblock %}
+        </div>
+    </nav>
+    {% endblock %}
 
-        {% block hero_container %}
-<div class="hero-container text-center my-5 py-4 bg-light rounded shadow-sm mx-3">
-    <h1 class="display-5 fw-bolder mb-3" style="font-family: 'Inter', sans-serif; color: #343a40;">
-        <span class="bi-file-earmark-text-fill text-success">WSC</span> - A Workstation Companion App
-    </h1>
-    <p class="lead" style="color: #6c757d;">
-        Simplify your radiology workflow with our intuitive and comprehensive tools. 
-        <span class="fst-italic text-success">Because every hero needs a trusty companion.</span>
-    </p>
-</div>
-{% endblock %}
+    {% block hero_container %}
+    <div class="hero-container text-center my-3 py-md-4 py-sm-4 bg-light rounded shadow-sm container-fluid">
+        <h1 class="display-5 fw-bolder mb-3" style="font-family: 'Inter', sans-serif; color: #343a40;">
+            <span class="text-success">WSC</span> - A Workstation Companion App
+        </h1>
+        <p class="lead" style="color: #6c757d;">
+            Simplify your radiology workflow with our intuitive and comprehensive tools. 
+            <span class="fst-italic text-success">Because every hero needs a trusty companion.</span>
+        </p>
+    </div>
+    {% endblock %}
 
 
 

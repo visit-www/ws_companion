@@ -83,7 +83,8 @@
 }
 
 /* Reduce card and text size for smaller screens */
-@media (max-width: 380px) {
+@media (max-width: 600px) {
+    
     .card-title{
         padding: 10px;
         font-size: 0.7rem !important;
@@ -133,6 +134,7 @@
 /*login button */
 .login-btn {
     background-color: #7bf1a8;
+    width: 60% !important;
 }
 .login-btn:hover{
     background-color: #136733;
@@ -413,3 +415,38 @@ hr{
     border-color: #004085;
 }
 
+/* Nvabar ansd hero continae styles */
+/* General Styling Adjustments */
+.navbar-brand {
+    font-size: 1.5rem;
+}
+
+/* Shield Icon */
+.bi-shield-fill-check {
+    font-size: 1.7em;
+}
+
+/* Adjustments for Smaller Screens */
+@media (max-width: 576px) {
+    .navbar-brand {
+        font-size: 1.2rem; /* Smaller navbar brand font size for mobile */
+    }
+    .sm_navbar_items{
+        font-size: 0.9em;
+    }
+    .bi-shield-fill-check {
+        font-size: 1.5em; /* Smaller shield icon */
+    }
+    .hero-container{
+        padding: 18px !important;
+    }
+    .hero-container h1 {
+        font-size: 1.3rem; /* Reduced font size for mobile headings */
+    }
+    .hero-container p {
+        font-size: 0.9rem; /* Reduced font size for mobile subheadings */
+    }
+    .btn-primary{
+        width:40vw !important;
+    }
+}
