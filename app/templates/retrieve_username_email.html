@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f9fa;
+            color: #333;
+            padding: 20px;
+            margin: 0;
+        }
+        .email-container {
+            max-width: 600px;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #f1f5cd;
+        }
+        .header {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            color: #daa411; /* Mussel yellow */
+        }
+        .body {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #555;
+        }
+        .footer {
+            margin-top: 20px;
+            font-size: 16px;
+            text-align: center;
+            color: #5b5731;
+            font-weight: bold; /* Optional, for a stronger effect */
+            text-shadow:3px 3px 2px rgba(25, 1, 1, 0.2); /* Subtle outer shadow for more realism */
+            }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">Lost Your Username? No Biggie!</div>
+        <div class="body">
+            <p>We’ve all been there! Here’s a little reminder of your username:</p>
+            <p><strong>{{ user.username }}</strong></p>
+            <p>If you didn’t request this, feel free to ignore it. No need to panic, your account is still secure! 👍</p>
+        </div>
+        <div class="footer">
+            <p>Cheers,<br>The WS Companion Team</p>
+        </div>
+    </div>
+</body>
+</html>

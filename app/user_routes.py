@@ -107,14 +107,12 @@ def credential_manager():
                     token = generate_password_reset_token({'email': user_email})
                     
                     # Create the reset link
-                    reset_link = url_for('app_user.change_password', token=token, _external=True)
+                    reset_link = url_for('app_user.change_password', token=token, _external=True, _scheme='https')
                     
-                    # Prepare the email message
+                    # Prepare the email message for password reset
                     msg = Message('Account Recovery Email from WS Companion', recipients=[user_email])
-                    msg.body = (f'It appears you have forgotten your password. We know how annoying it is! '
-                                f'But do not worry, we have got you covered.\n\nPlease click the link below to reset your password:\n'
-                                f'{reset_link}\n\nThis link is valid only for 10 minutes.')
-                    
+                    msg.html = render_template('reset_password_email.html', reset_link=reset_link)
+                    msg.body = render_template('reset_password_email.txt', reset_link=reset_link)
                     # Send the email
                     mail.send(msg)
                     
@@ -126,9 +124,10 @@ def credential_manager():
                     return redirect(url_for('app_user.credential_manager'))
             else: # implies the action must be retrieve_username
                 try:
+                    # Prepare the email message for username retrieval
                     msg = Message('Account Recovery Email from WS Companion', recipients=[user_email])
-                    msg.body = (f'It appears you have forgotten your username. We know how annoying it is! '
-                                f'But do not worry, we have got you covered.\n\nYour username for the WS Companion account is: {user.username}')
+                    msg.html = render_template('retrieve_username_email.html', user=user)
+                    msg.body = render_template('retrieve_username_email.txt', user=user)
                     mail.send(msg)
                     flash('An account recovery email has been sent to your email address successfully!', 'success')
                     return redirect(url_for('app_user.login'))
@@ -140,40 +139,6 @@ def credential_manager():
             flash(f'No user found with this email address! <hr> Please enter the email assocaited with your account.', 'danger')
             return redirect(url_for('app_user.credential_manager'))
     return render_template('credential_manager.html')
-
-# *----------------------------------------------------------------
-# User Profile/Account Page and Related Routes
-# *----------------------------------------------------------------
-
-# Route to serve the user_management page
-@app_user_bp.route('/account', methods=['GET'])
-@login_required
-def user_management():
-    categories = CategoryNames  # Use Enum to populate the categories select box
-    modules = ModuleNames  # Use Enum to populate the modules select box
-    return render_template('user_management.html', categories=categories, modules=modules)
-
-# Placeholder routes for profile functionalities
-
-@app_user_bp.route('/upload_profile_pic', methods=['POST'])
-@login_required
-def upload_profile_pic():
-    # Placeholder logic for uploading profile pic
-    file = request.files['profile_pic']
-    if file:
-        # Handle file saving logic
-        flash('Profile picture updated successfully!', 'success')
-    return redirect(url_for('app_user.user_management'))
-
-@app_user_bp.route('/update_profile', methods=['POST'])
-@login_required
-def update_profile():
-    # Placeholder logic for updating email
-    email = request.form.get('email')
-    current_user.email = email
-    db.session.commit()
-    flash('Email updated successfully!', 'success')
-    return redirect(url_for('app_user.user_management'))
 
 # Change Password Route
 @app_user_bp.route('/change_password/<token>', methods=['GET', 'POST'])
@@ -211,46 +176,56 @@ def change_password(token):
     # Render the change password form
     return render_template('change_password.html', token=token)
 
-@app_user_bp.route('/update_preferences', methods=['POST'])
+# *----------------------------------------------------------------
+# User Profile/Account Page and Related Routes
+# *----------------------------------------------------------------
+# Route to serve the user_management page
+@app_user_bp.route('/account', methods=['GET'])
 @login_required
-def update_preferences():
-    # Placeholder logic for saving preferred categories and modules
-    categories = request.form.getlist('categories')
-    modules = request.form.getlist('modules')
-    # Save preferences to UserContentState or another appropriate place
-    flash('Preferences updated successfully!', 'success')
-    return redirect(url_for('app_user.user_management'))
+def user_management():
+    categories = CategoryNames  # Use Enum to populate the categories select box
+    modules = ModuleNames  # Use Enum to populate the modules select box
+    return render_template('user_management.html', categories=categories, modules=modules)
+# ===============================
+# PROFILE MANAGEMENT ROUTES
+# ===============================
 
-@app_user_bp.route('/check_subscription', methods=['GET'])
+@app_user_bp.route('/profile_manager', methods=['GET', 'POST'])
 @login_required
-def check_subscription():
-    # Placeholder route for checking subscriptions
-    flash('Checking subscriptions...', 'info')
-    return redirect(url_for('app_user.user_management'))
+def profile_manager():
+    # Placeholder for profile management actions (upload picture, update profile, contact info)
+    if request.method == 'POST':
+        # Handle profile management logic here
+        flash('Profile management functionality will be implemented here.', 'info')
+    categories = CategoryNames
+    modules = ModuleNames
+    return render_template('user_management.html', categories=categories, modules=modules)
 
-@app_user_bp.route('/request_content', methods=['POST'])
-@login_required
-def request_content():
-    # Placeholder logic for content request
-    content_request = request.form.get('content_request')
-    # Handle content request logic
-    flash('Content request submitted!', 'success')
-    return redirect(url_for('app_user.user_management'))
+# ===============================
+# FINANCE MANAGEMENT ROUTES
+# ===============================
 
-@app_user_bp.route('/request_music_playlist', methods=['POST'])
+@app_user_bp.route('/finance_manager', methods=['GET', 'POST'])
 @login_required
-def request_music_playlist():
-    # Placeholder logic for music playlist request
-    music_request = request.form.get('music_request')
-    # Handle music request logic
-    flash('Music playlist request submitted!', 'success')
-    return redirect(url_for('app_user.user_management'))
+def finance_manager():
+    # Placeholder for finance-related actions
+    if request.method == 'POST':
+        # Handle finance management logic here
+        flash('Finance management functionality will be implemented here.', 'info')
+    return render_template('finance_manager.html')
 
-@app_user_bp.route('/add_report_template', methods=['POST'])
+# Removed individual finance routes like check_subscription as they are now covered by finance_manager.
+
+# ===============================
+# SECURITY MANAGEMENT ROUTES
+# ===============================
+
+@app_user_bp.route('/security_manager', methods=['GET', 'POST'])
 @login_required
-def add_report_template():
-    # Placeholder logic for adding personal report templates
-    template_name = request.form.get('report_template')
-    # Save to UserContentState or related model
-    flash('Report template added successfully!', 'success')
-    return redirect(url_for('app_user.user_management'))
+def security_manager():
+    # Placeholder for security settings management (update questions, setup authenticator)
+    if request.method == 'POST':
+        # Handle security management logic here
+        flash('Security management functionality will be implemented here.', 'info')
+    return render_template('account_security.html')
+

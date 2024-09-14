@@ -1,0 +1,10 @@
+Lost Your Username? No Biggie!
+
+We’ve all been there! Here’s a little reminder of your username:
+
+{{ user.username }}
+
+If you didn’t request this, feel free to ignore it. No need to panic, your account is still secure! 👍
+
+Cheers,
+The WS Companion Team

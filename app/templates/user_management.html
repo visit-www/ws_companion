@@ -1,74 +1,121 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container mt-4">
-    <h2>User Profile</h2>
+    <h2 class="mb-3">Manage Your Account</h2>
     <hr>
 
-    <!-- Profile Picture and Basic Info -->
-    <div class="row mb-4">
-        <div class="col-md-4 col-sm-12 mb-3 pic-box">
-            <div class="card shadow-sm h-100">
+    <!-- Basic Info and Profile Picture Section -->
+    <div class="row mb-5">
+        <div class="col-md-8 col-sm-12">
+            <div class="card shadow-sm h-100 p-3 pastel-light-green">
+                <div class="card-body">
+                    <h4>Basic Information</h4>
+                    <form action="{{ url_for('app_user.profile_manager') }}" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="form-group mb-3">
+                            <label for="username">Username:</label>
+                            <input type="text" id="username" name="username" class="form-control" value="{{ current_user.username }}">
+                            <button type="submit" name="action" value="change_username" class="btn btn-primary mt-2">Update Username</button>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="email">Email:</label>
+                            <input type="email" id="email" name="email" class="form-control" value="{{ current_user.email }}">
+                            <button type="submit" name="action" value="change_email" class="btn btn-primary mt-2">Update Email</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 col-sm-12">
+            <div class="card shadow-sm h-100 p-3 pastel-light-green">
                 <div class="card-body text-center">
                     <img src="{{ url_for('static', filename='assets/dummy_profile_pic.png') }}" class="img-thumbnail mb-3" alt="Profile Picture">
-                    <form action="{{ url_for('app_user.upload_profile_pic') }}" method="post" enctype="multipart/form-data">
+                    <form action="{{ url_for('app_user.profile_manager') }}" method="post" enctype="multipart/form-data">
                         <input type="file" name="profile_pic" class="form-control mt-2">
                         <button type="submit" class="btn btn-primary btn-sm mt-2">Upload Profile Picture</button>
                     </form>
                 </div>
             </div>
         </div>
-        <div class="col-md-8 col-sm-12">
-            <div class="card shadow-sm h-100">
+    </div>
+
+    <!-- Subscription Status Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card shadow-sm h-100 p-3" id="subscription-status">
                 <div class="card-body">
-                    <h4>Basic Information</h4>
-                    <form action="{{ url_for('app_user.update_profile') }}" method="post">
-                        <div class="form-group">
-                            <label for="username">Username:</label>
-                            <input type="text" id="username" class="form-control" value="{{ current_user.username }}" readonly>
-                        </div>
-                        <div class="form-group">
-                            <label for="email">Email:</label>
-                            <input type="email" id="email" name="email" class="form-control" value="{{ current_user.email }}">
-                        </div>
-                        <button type="submit" class="btn btn-primary mt-2">Update Email</button>
-                    </form>
-                    <form action="{{ url_for('app_user.change_password') }}" method="post" class="mt-3">
-                        <h4>Change Password</h4>
-                        <div class="form-group">
-                            <label for="password">New Password:</label>
-                            <input type="password" id="password" name="password" class="form-control">
-                        </div>
-                        <div class="'form-group">
-                            <label for="retype-password">Retype Password</label>
-                            <input type="password" id="retype_password" name="retype_password" class="form-control">
-                        </div>
-                        <button type="submit" class="btn btn-primary mt-2">Change Password</button>
-                    </form>
+                    <h4>Subscription Status</h4>
+                    <p>Status: <span id="subscription-status-text" class="fw-bold">{{ 'Paid' if current_user.is_paid else 'Free' }}</span></p>
+                    <a href="{{ url_for('app_user.finance_manager') }}" class="btn btn-primary">Check Subscriptions</a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Customization Options -->
-    <div class="row mb-4">
-        <div class="col-md-6 col-sm-12 mb-3">
-            <div class="card shadow-sm h-100" style="background-color: #f8f9fa;">
+    <!-- Secure Your Account Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card shadow-sm h-100 p-4 pastel-light-blue">
+                <div class="card-body">
+                    <h4>Secure Your Account</h4>
+
+                    <!-- Change Password Section -->
+                    <form action="{{ url_for('app_user.credential_manager') }}" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="form-group mb-3">
+                            <label for="password">New Password:</label>
+                            <input type="password" id="password" name="new_password" class="form-control">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="retype-password">Retype Password:</label>
+                            <input type="password" id="retype_password" name="retype_password" class="form-control">
+                        </div>
+                        <button type="submit" name="action" value="change_password" class="btn btn-primary mt-2">Change Password</button>
+                    </form>
+
+                    <!-- Account Recovery Section -->
+                    <h5 class="mt-4">Contact Information for Account Recovery</h5>
+                    <form action="{{ url_for('app_user.profile_manager') }}" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="form-group mb-3">
+                            <label for="recovery_phone">Recovery Contact Number:</label>
+                            <input type="text" id="recovery_phone" name="recovery_phone" class="form-control">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="recovery_email">Recovery Email:</label>
+                            <input type="email" id="recovery_email" name="recovery_email" class="form-control">
+                        </div>
+                        <button type="submit" class="btn btn-primary mt-2">Update Contact Information</button>
+                    </form>
+
+                    <!-- Authenticator App Setup -->
+                    <h5 class="mt-4">Two-Factor Authentication</h5>
+                    <a href="{{ url_for('app_user.security_manager') }}" class="btn btn-primary">Set Up Authenticator App</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Customize Home Page Section (Full Width) -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card shadow-sm h-100 p-3 pastel-light-peach">
                 <div class="card-body">
                     <h4>Customize Home Page</h4>
-                    <form action="{{ url_for('app_user.update_preferences') }}" method="post">
-                        <div class="form-group">
+                    <form action="{{ url_for('app_user.profile_manager') }}" method="post">
+                        <div class="form-group mb-3">
                             <label for="categories">Preferred Categories:</label>
                             <select id="categories" name="categories[]" class="form-control select2" multiple>
                                 {% for category in categories %}
-                                    <option value="{{ category.value }}">{{ category.value }}</option>
+                                <option value="{{ category.value }}">{{ category.value }}</option>
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="form-group">
+                        <div class="form-group mb-3">
                             <label for="modules">Preferred Modules:</label>
                             <select id="modules" name="modules[]" class="form-control select2" multiple>
                                 {% for module in modules %}
-                                    <option value="{{ module.value }}">{{ module.value }}</option>
+                                <option value="{{ module.value }}">{{ module.value }}</option>
                                 {% endfor %}
                             </select>
                         </div>
@@ -77,52 +124,32 @@
                 </div>
             </div>
         </div>
-
-        <div class="col-md-6 col-sm-12 mb-3">
-            <div class="card shadow-sm h-100" style="background-color: #e9ecef;">
-                <div class="card-body">
-                    <h4>Account & Subscriptions</h4>
-                    <p>Status: {{ 'Paid' if current_user.is_paid else 'Free' }}</p>
-                    <a href="{{ url_for('app_user.check_subscription') }}" class="btn btn-primary">Check Subscriptions</a>
-                </div>
-            </div>
-        </div>
     </div>
 
-    <!-- Requests Section -->
-    <div class="row mb-4">
-        <div class="col-md-6 col-sm-12 mb-3">
-            <div class="card shadow-sm h-100" style="background-color: #f8f9fa;">
+    <!-- Customized Report Templates Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="card shadow-sm h-100 p-3 pastel-grey">
                 <div class="card-body">
-                    <h4>Request Content</h4>
-                    <form action="{{ url_for('app_user.request_content') }}" method="post">
-                        <textarea name="content_request" class="form-control" rows="3" placeholder="Describe the content you need..."></textarea>
-                        <button type="submit" class="btn btn-primary mt-2">Request Content</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6 col-sm-12 mb-3">
-            <div class="card shadow-sm h-100" style="background-color: #e9ecef;">
-                <div class="card-body">
-                    <h4>Request Music Playlist</h4>
-                    <form action="{{ url_for('app_user.request_music_playlist') }}" method="post">
-                        <textarea name="music_request" class="form-control" rows="3" placeholder="Describe your preferred music..."></textarea>
-                        <button type="submit" class="btn btn-primary mt-2">Request Playlist</button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Personal Report Templates -->
-    <div class="row">
-        <div class="col-md-12 col-sm-12">
-            <div class="card shadow-sm h-100" style="background-color: #f8f9fa;">
-                <div class="card-body">
-                    <h4>Personal Report Templates</h4>
-                    <form action="{{ url_for('app_user.add_report_template') }}" method="post">
-                        <input type="text" name="report_template" class="form-control" placeholder="Add a new template name">
+                    <h4>Customized Report Templates</h4>
+                    <form action="{{ url_for('app_user.profile_manager') }}" method="post" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="form-group mb-3">
+                            <label for="report_title">Report Title:</label>
+                            <input type="text" id="report_title" name="report_title" class="form-control" placeholder="Enter report title">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="modules">Select Modules:</label>
+                            <select id="modules" name="modules[]" class="form-control select2" multiple>
+                                {% for module in modules %}
+                                <option value="{{ module.value }}">{{ module.value }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label for="template_file">Upload Template (PDF/Word):</label>
+                            <input type="file" id="template_file" name="template_file" class="form-control">
+                        </div>
                         <button type="submit" class="btn btn-primary mt-2">Add Template</button>
                     </form>
                 </div>
@@ -135,21 +162,27 @@
 
 {% block script %}
 {{ super() }}
-<!-- Include TomSelect CSS and JS (via CDN) -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.bootstrap5.min.css">
 <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
-<!-- Initialize TomSelect -->
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Initialize Tom Select on all elements with the class 'select2'
         document.querySelectorAll('.select2').forEach((el) => {
             new TomSelect(el, {
-                plugins: ['remove_button'], // Optional plugins like remove button for selected items
+                plugins: ['remove_button'],
                 placeholder: 'Select your preferences',
                 allowEmptyOption: true,
-                maxItems: null, // Allow multiple selections
+                maxItems: null,
             });
         });
+
+        // Change background color based on subscription status
+        const statusText = document.getElementById('subscription-status-text').textContent.trim();
+        const statusDiv = document.getElementById('subscription-status');
+        if (statusText === 'Paid') {
+            statusDiv.classList.add('bg-success', 'text-white'); // Bootstrap success for paid
+        } else {
+            statusDiv.classList.add('bg-warning', 'text-dark'); // Bootstrap warning for free
+        }
     });
 </script>
 {% endblock %}

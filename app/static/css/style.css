@@ -342,3 +342,74 @@ hr{
         margin-bottom: 20px; /* Adds spacing for smaller screens */
     }
 }
+
+/********************************
+/* Custom classes for background colors of cards, containers, and divs */
+.pastel-finance-status {
+    transition: background-color 0.3s ease;
+}
+
+/* Adjusted to fit Bootstrap color palette */
+.pastel-light {
+    background-color: #F8F9FA; /* Bootstrap light grey */
+}
+
+.pastel-light-blue {
+    background-color: #E9F7FD; /* Lightened Bootstrap primary */
+}
+
+.pastel-light-peach {
+    background-color: #FFF8E1; /* Lightened and softened peach closer to Bootstrap */
+}
+
+.pastel-light-green {
+    background-color: #DFF6DD; /* Very soft green, matching Bootstrap success */
+}
+
+.pastel-pink {
+    background-color: #FDE2E2; /* Soft, warm pink */
+}
+
+.pastel-light-orange {
+    background-color: #FFEFD5; /* Lightened pastel orange */
+}
+
+.pastel-light-yellow {
+    background-color: #FFFBEA; /* Light yellow, softer than Bootstrap warning */
+}
+
+/* Custom shade for Subscription Status */
+.pastel-status-paid {
+    background-color: #D4EDDA; /* Bootstrap success green for paid status */
+}
+
+.pastel-status-free {
+    background-color: #FFF3CD; /* Bootstrap yellow for free status */
+}
+
+/* Customized Report Templates Section */
+.pastel-grey {
+    background-color: #E2E3E5; /* Bootstrap grey */
+}
+
+/* Additional spacing for better readability between sections */
+.mb-5 {
+    margin-bottom: 3rem !important;
+}
+
+/* Adjust text color for better readability */
+.text-primary {
+    color: #007BFF !important; /* Ensure text remains clear and visible */
+}
+
+/* Button styles */
+.btn-primary {
+    background-color: #007BFF;
+    border-color: #007BFF;
+}
+
+.btn-primary:hover {
+    background-color: #0056b3;
+    border-color: #004085;
+}
+
