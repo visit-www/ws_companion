@@ -2,14 +2,16 @@
 from flask import Blueprint, request, render_template, redirect, url_for, flash, session, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash,check_password_hash
-from .models import User, UserContentState, CategoryNames, ModuleNames,UserData
+from .models import User, UserContentState, CategoryNames, ModuleNames,UserData, UserProfile 
 from . import db
 from .forms import LoginForm  # Import the form class
 from config import Config
-from datetime import timedelta
+from datetime import timedelta, datetime, timezone
 from flask_mail import Message
 from . import mail  # Import the mail instance from your app initialization
 from .util import generate_password_reset_token,verify_password_reset_token
+import json
+
 # * Blueprint setup
 app_user_bp = Blueprint(
     'app_user', __name__,
