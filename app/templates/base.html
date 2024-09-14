@@ -58,12 +58,20 @@
         </nav>
         {% endblock %}
 
-        <!-- Hero Section -->
         {% block hero_container %}
-        <div class="hero-container text-center my-4">
-            <h1 class="display-4">Welcome to the Radiology Workstation Companion App</h1>
-        </div>
-        {% endblock %}
+<div class="hero-container text-center my-5 py-4 bg-light rounded shadow-sm mx-3">
+    <h1 class="display-5 fw-bolder mb-3" style="font-family: 'Inter', sans-serif; color: #343a40;">
+        <span class="bi-file-earmark-text-fill text-success">WSC</span> - A Workstation Companion App
+    </h1>
+    <p class="lead" style="color: #6c757d;">
+        Simplify your radiology workflow with our intuitive and comprehensive tools. 
+        <span class="fst-italic text-success">Because every hero needs a trusty companion.</span>
+    </p>
+</div>
+{% endblock %}
+
+
+
 <!-- Code to displace flash message -->
 
 <div aria-live="polite" aria-atomic="true" class="position-relative">

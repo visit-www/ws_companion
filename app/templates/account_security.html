@@ -1,0 +1,65 @@
+<!-- templates/account_security.html -->
+<div class="row mb-4">
+    <!-- Security Questions -->
+    <div class="col-md-6 col-sm-12 mb-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h4>Security Questions</h4>
+                <form action="{{ url_for('app_user.security_manager') }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="form-group">
+                        <label for="security_question">Select a Security Question:</label>
+                        <select id="security_question" name="security_question" class="form-control">
+                            <option value="" disabled selected>Select a question</option>
+                            <option value="mother_maiden_name">What is your mother’s maiden name?</option>
+                            <option value="first_pet">What was the name of your first pet?</option>
+                            <option value="first_school">What was the name of your first school?</option>
+                        </select>
+                    </div>
+                    <div class="form-group mt-2">
+                        <label for="security_answer">Answer:</label>
+                        <input type="text" id="security_answer" name="security_answer" class="form-control">
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2">Save Security Question</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Phone Number and Alternate Email -->
+    <div class="col-md-6 col-sm-12 mb-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h4>Contact Information</h4>
+                <form action="{{ url_for('app_user.security_manager') }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <div class="form-group">
+                        <label for="phone_number">Phone Number:</label>
+                        <input type="text" id="phone_number" name="phone_number" class="form-control" placeholder="Enter your phone number">
+                    </div>
+                    <div class="form-group mt-2">
+                        <label for="alternate_email">Alternate Email:</label>
+                        <input type="email" id="alternate_email" name="alternate_email" class="form-control" placeholder="Enter an alternate email">
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-2">Save Contact Information</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Authenticator Setup -->
+<div class="row mb-4">
+    <div class="col-md-12 col-sm-12 mb-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-body">
+                <h4>Authenticator App Setup</h4>
+                <p>Enhance your account security by enabling two-factor authentication using an authenticator app.</p>
+                <form action="{{ url_for('app_user.security_manager') }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-primary mt-2">Enable Authenticator App</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
