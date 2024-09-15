@@ -1,9 +1,11 @@
 from flask import Blueprint, render_template,jsonify, request, flash
 from flask_wtf.csrf import generate_csrf
 from flask import render_template
-from .models import CategoryNames
+from .models import CategoryNames,User,UserData
 from . import db
 from flask_cors import CORS
+from flask_login import current_user, AnonymousUserMixin
+
 #----------------------------------------------------------------
 # Blueprint configuration
 main_bp = Blueprint(
@@ -27,7 +29,20 @@ CORS(main_bp)
 # Define a route for the index page of the main blueprint
 @main_bp.route('/')
 def index():
-    # Initialize an empty list to hold the formatted category names
+    # Check if the current user is authenticated (not anonymous)
+    if current_user.is_authenticated:
+        
+        # Fetch the user data object
+        user_data = db.session.query(UserData).filter_by(id=current_user.id).first()
+        flash(f"UserData: {user_data}\n User id: {current_user.id}")
+
+        # Check if the user data exists and then access 'last_interaction'
+        if user_data:
+            last_interaction = user_data.last_interaction
+        else:
+            last_interaction = None  # Handle the case where user data is not found
+    else:
+        last_interaction = None  # Handle the case for anonymous users
     cat_dict = {}
     idx=-1
 
@@ -49,7 +64,7 @@ def index():
         # Add the formatted category name to the list
         cat_dict[cat_name]=[display_name,idx]
     # Render the 'index.html' template, passing the category dictionary to the template
-    return render_template('index.html', cat_dict=cat_dict)
+    return render_template('index.html', cat_dict=cat_dict,last_interaction=last_interaction)
 #!----------------------------------------------------------------
 # Place holder routes for maain page navigations :
 

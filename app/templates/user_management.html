@@ -6,8 +6,20 @@
 
     <!-- Basic Info and Profile Picture Section -->
     <div class="row mb-5">
+        <div class="col-md-4 col-sm-12">
+            <div class="card shadow-lg h-100 p-3 pastel-light-green">
+                <div class="card-body text-center">
+                    <img src="{{ url_for('static', filename='assets/dummy_profile_pic.png') }}" class="img-thumbnail mb-3 shadow-lg" style="border-radius:18px;" alt="Profile Picture">
+                    <form action="{{ url_for('app_user.profile_manager') }}" method="post" enctype="multipart/form-data">
+                        <input type="file" name="profile_pic" class="form-control mt-2">
+                        <button type="submit" class="btn btn-primary btn-sm mt-2">Upload Profile Picture</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    
         <div class="col-md-8 col-sm-12">
-            <div class="card shadow-sm h-100 p-3 pastel-light-green">
+            <div class="card shadow-lg h-100 p-3 pastel-light-green">
                 <div class="card-body">
                     <h4>Basic Information</h4>
                     <form action="{{ url_for('app_user.profile_manager') }}" method="post">
@@ -26,23 +38,13 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4 col-sm-12">
-            <div class="card shadow-sm h-100 p-3 pastel-light-green">
-                <div class="card-body text-center">
-                    <img src="{{ url_for('static', filename='assets/dummy_profile_pic.png') }}" class="img-thumbnail mb-3" alt="Profile Picture">
-                    <form action="{{ url_for('app_user.profile_manager') }}" method="post" enctype="multipart/form-data">
-                        <input type="file" name="profile_pic" class="form-control mt-2">
-                        <button type="submit" class="btn btn-primary btn-sm mt-2">Upload Profile Picture</button>
-                    </form>
-                </div>
-            </div>
-        </div>
     </div>
+
 
     <!-- Subscription Status Section -->
     <div class="row mb-5">
         <div class="col-12">
-            <div class="card shadow-sm h-100 p-3" id="subscription-status">
+            <div class="card shadow-lg h-100 p-3" id="subscription-status">
                 <div class="card-body">
                     <h4>Subscription Status</h4>
                     <p>Status: <span id="subscription-status-text" class="fw-bold">{{ 'Paid' if current_user.is_paid else 'Free' }}</span></p>
@@ -55,7 +57,7 @@
     <!-- Secure Your Account Section -->
     <div class="row mb-5">
         <div class="col-12">
-            <div class="card shadow-sm h-100 p-4 pastel-light-blue">
+            <div class="card shadow-lg h-100 p-4 pastel-light-blue">
                 <div class="card-body">
                     <h4>Secure Your Account</h4>
 
@@ -99,7 +101,7 @@
     <!-- Customize Home Page Section (Full Width) -->
     <div class="row mb-5">
         <div class="col-12">
-            <div class="card shadow-sm h-100 p-3 pastel-light-peach">
+            <div class="card shadow-lg h-100 p-3 pastel-light-peach">
                 <div class="card-body">
                     <h4>Customize Home Page</h4>
                     <form action="{{ url_for('app_user.profile_manager') }}" method="post">
@@ -129,7 +131,7 @@
     <!-- Customized Report Templates Section -->
     <div class="row mb-5">
         <div class="col-12">
-            <div class="card shadow-sm h-100 p-3 pastel-grey">
+            <div class="card shadow-lg h-100 p-3 pastel-grey">
                 <div class="card-body">
                     <h4>Customized Report Templates</h4>
                     <form action="{{ url_for('app_user.profile_manager') }}" method="post" enctype="multipart/form-data">
