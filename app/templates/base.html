@@ -31,7 +31,18 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-light w-100">
         <div class="container-fluid">
             <i class="bi bi-shield-fill-check p-lg-4 p-md-4 p-sm-3 py-3" style="color:green; font-size: 1.7em;"></i>
-            <a class="navbar-brand p-md-3 p-sm-3" href="{{ url_for('main_routes.index') }}">My Workstation Companion</a>
+            <div>
+                <div class="row gap-2">
+                    <a class="navbar-brand p-md-3 p-sm-3 col-12" href="{{ url_for('main_routes.index') }}">My Workstation Companion</a>
+                </div>
+                <div class="navbar-nav ml-auto col-12">
+                    <div class="nav-item">
+                        <span class="navbar-text greeting-text text-success fw-bold animate-pulse" style="display:none" user_name={{current_user.username}}>
+                            Hello, {{ current_user.username }} !
+                        </span>
+                    </div>
+                </div>
+            </div>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -289,6 +300,21 @@
             resetTimers();
         });
     </script>
+<!-- Corrected JavaScript code -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Select the greeting element
+        let greeting = document.querySelector('.greeting-text');
+        
+        // Access the 'user_name' attribute
+        let user_name = greeting.getAttribute('user_name');
+        
+        // Check if 'user_name' exists and show the greeting
+        if (user_name) {
+            greeting.style.display = "block";
+        }
+    });
+</script>
     {% endblock %}
 </body>
 </html>

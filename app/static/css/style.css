@@ -450,3 +450,15 @@ hr{
         width:40vw !important;
     }
 }
+
+
+    .greeting-text {
+        font-family: 'Brush Script MT', cursive; /* Cursive handwriting effect */
+        font-size: 1.2rem; /* Slightly larger font size */
+        @keyframes animtext { 
+            from {
+                width: 0;
+            transition: all 2s ease-in-out;
+            } 
+        
+    }
