@@ -165,7 +165,7 @@ class Reference(Base):
     __tablename__ = 'references'
 
     id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
-    content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id'), nullable=False)
+    content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id',ondelete='CASCADE', onupdate='CASCADE'),nullable=False)
     title: so.Mapped[str] = sa.Column(sa.String(255), nullable=False)
     category: so.Mapped[str] = sa.Column(sa.Enum(CategoryNames, name='category_name'), index=True, nullable=False)  # Admin must select from the categories.
     module: so.Mapped[str] = sa.Column(sa.Enum(ModuleNames, name="module_name"), index=True, nullable=False)  # Admin must select from the modules.
@@ -219,8 +219,8 @@ class UserData(Base):
     __tablename__ = 'user_data'
 
     id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
-    user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
-    content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id', ondelete='CASCADE'), nullable=False)
+    user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
+    content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
     interaction_type: so.Mapped[str] = sa.Column(sa.Enum('viewed', 'bookmarked', 'recommended','registered','logged_in', name='interaction_types'), nullable=False, default='viewed')
     interaction_date: so.Mapped[datetime] = sa.Column(sa.DateTime, nullable=False, default=datetime.now(timezone.utc))
     feedback: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
@@ -240,8 +240,8 @@ class UserContentState(Base):
     __tablename__ = 'user_content_states'
 
     id = sa.Column(sa.Integer, primary_key=True)
-    user_id = sa.Column(sa.Integer, sa.ForeignKey('users.id'))
-    content_id = sa.Column(sa.Integer, sa.ForeignKey('contents.id'))
+    user_id = sa.Column(sa.Integer, sa.ForeignKey('users.id',ondelete='CASCADE', onupdate='CASCADE'))
+    content_id = sa.Column(sa.Integer, sa.ForeignKey('contents.id',ondelete='CASCADE', onupdate='CASCADE'))
     modified_file_path = sa.Column(sa.String(255), nullable=True)
     annotations = sa.Column(sa.Text, nullable=True)  # JSON or text format of annotations
     created_at = sa.Column(sa.DateTime, default=datetime.now(timezone.utc))
@@ -263,7 +263,7 @@ class UserReportTemplate(Base):
     is_public: so.Mapped[bool] = sa.Column(sa.Boolean, default=False, nullable=False, index=True)
 
     # Foreign keys and relationships
-    user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id'), nullable=False, index=True)
+    user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id',ondelete='CASCADE', onupdate='CASCADE'), nullable=False, index=True)
     user: so.Mapped['User'] = so.relationship('User', backref='report_templates')
 
     # Enum references to match category and module columns in Content model
@@ -287,7 +287,7 @@ class UserProfile(Base):
     __tablename__ = 'user_profiles'
 
     id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
-    user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id'), nullable=False, unique=True, index=True)
+    user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id',ondelete='CASCADE', onupdate='CASCADE'), nullable=False, unique=True, index=True)
     profile_pic: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)  # Path to profile picture
     profile_pic_path: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)  # Path to profile picture for management
     preferred_categories: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)  # Comma-separated or JSON format
@@ -308,8 +308,8 @@ class UserFeedback(Base):
     __tablename__ = 'user_feedbacks'
 
     id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
-    user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id'), nullable=False)  # References the 'users' table
-    content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id'), nullable=False)  # References the 'contents' table
+    user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id',ondelete='CASCADE', onupdate='CASCADE'), nullable=False)  # References the 'users' table
+    content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id',ondelete='CASCADE', onupdate='CASCADE'), nullable=False)  # References the 'contents' table
     feedback: so.Mapped[str] = sa.Column(sa.Text, nullable=False)
     is_public: so.Mapped[bool] = sa.Column(sa.Boolean, default=False, nullable=False)
     user_display_name: so.Mapped[Optional[str]] = sa.Column(sa.String(100), nullable=True)
