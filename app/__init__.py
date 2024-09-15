@@ -56,7 +56,7 @@ def create_app():
     # Import models and add to Flask-Admin here to avoid circular import
     with app.app_context():
         from .models import User, Content, UserData, Reference, UserFeedback, UserContentState, UserProfile, UserReportTemplate, AdminReportTemplate
-        from .admin_views import MyModelView, UserModelView  # Import both MyModelView and UserModelView
+        from .admin_views import MyModelView # Import both MyModelView 
 
     # Register Models in Flask-Admin
     # Register admin-related models with MyModelView
@@ -64,13 +64,13 @@ def create_app():
     flask_admin.add_view(MyModelView(Reference, db.session, endpoint='references'))
     flask_admin.add_view(MyModelView(AdminReportTemplate, db.session, endpoint='admin_report_templates'))
 
-    # Register user-related models with UserModelView
+    # Register user-related models with ModelView
     flask_admin.add_view(ModelView(User, db.session, endpoint='users'))
     flask_admin.add_view(ModelView(UserData, db.session, endpoint='user_data'))
     flask_admin.add_view(ModelView(UserFeedback, db.session, endpoint='user_feedbacks'))
     flask_admin.add_view(ModelView(UserContentState, db.session, endpoint='user_content_states'))
-    flask_admin.add_view(UserModelView(UserProfile, db.session, endpoint='user_profiles'))
-    flask_admin.add_view(UserModelView(UserReportTemplate, db.session, endpoint='user_report_templates'))
+    flask_admin.add_view(ModelView(UserProfile, db.session, endpoint='user_profiles'))
+    flask_admin.add_view(ModelView(UserReportTemplate, db.session, endpoint='user_report_templates'))
 
     # Register Blueprints
     # App admin routes

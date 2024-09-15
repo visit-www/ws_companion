@@ -166,6 +166,7 @@ def register():
             session.clear()  # Clears the existing session data to avoid conflicts
             login_user(new_user)  # Logs in the newly created user, ensuring the session reflects the correct user
             flash('Registration successful! Profile and related data initialized. Please log in.', 'success')
+            return redirect(url_for('main_routes.index'))
         else:
             flash('All fields are required.', 'danger')
 

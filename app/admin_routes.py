@@ -95,29 +95,28 @@ def reset_db():
         flash('Access restricted to administrators only.', 'warning')
         return redirect(url_for('app_user.login'))
     
-    # Safely retrieve form data with error handling
     action = request.form.get('action', '')
     button_id = request.form.get('button_id', '')
-    
-    # Fetch all model names (table names) from SQLAlchemy's metadata
-    model_names = Base.metadata.tables.keys()
-    print(model_names)
-    
+
     if action == "reset_users" and button_id == "users":
-        print(f"action is {action}")
-        for table_name in model_names:
-            if table_name == 'users':
-                # Ensure to fetch users table and preserve admins
-                user_table = Table(table_name, MetaData(), autoload_with=db.engine)
-                query = db.session.query(user_table).filter(user_table.c.is_admin == False)
-                # Delete non-admin users
-                query.delete(synchronize_session=False)
-                db.session.commit()
-        flash("All users except admins deleted.", 'warning')
+        # Retrieve all users except admins
+        users_to_delete = db.session.query(User).filter(User.is_admin == False).all()
+
+        # Delete non-admin users
+        for user in users_to_delete:
+            db.session.delete(user)
+
+        # Commit the session to trigger cascading
+        try:
+            db.session.commit()
+            flash("All users except admins deleted.", 'warning')
+        except Exception as e:
+            db.session.rollback()
+            flash(f"An error occurred while deleting users: {e}", 'danger')
+
         return redirect('/flask_admin/users')
-    
+
     elif action == 'reset_db' and button_id == 'db':
         flash("The resetting of the database is not enabled. Please contact the owner of the App if you want to perform this action.", 'warning')
-        # Corrected line: added parentheses around url_for
         return redirect(url_for('app_admin.view_models'))
 #!----------------------------------------------------------------
