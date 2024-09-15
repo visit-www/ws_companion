@@ -162,9 +162,10 @@ def register():
 
             # Commit all changes to the database
             db.session.commit()
-
+            # Clear the session and login the new user
+            session.clear()  # Clears the existing session data to avoid conflicts
+            login_user(new_user)  # Logs in the newly created user, ensuring the session reflects the correct user
             flash('Registration successful! Profile and related data initialized. Please log in.', 'success')
-            return redirect(url_for('app_user.login'))
         else:
             flash('All fields are required.', 'danger')
 
