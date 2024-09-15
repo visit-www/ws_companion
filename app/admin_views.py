@@ -177,9 +177,9 @@ class UserModelView(ModelView):
         if current_user.is_authenticated:
             base_path = 'user_data'
             if folder_type == 'profile_pic':
-                return os.path.join(base_path, f'user_{current_user.id}_profile_pic')
+                return os.path.join(base_path, f'{current_user.username}_{current_user.id}_profile_pic')
             elif folder_type == 'report_templates':
-                return os.path.join(base_path, f'user_{current_user.id}_report_templates')
+                return os.path.join(base_path, f'{current_user.username}_{current_user.id}_report_templates')
         else:
             raise Exception("User must be logged in to manage files.")
 
@@ -209,11 +209,8 @@ class UserModelView(ModelView):
         file_fields = ['file_path', 'profile_pic_path']
         for field in file_fields:
             if getattr(model, field) and os.path.exists(getattr(model, field)):
-                try:
-                    shutil.move(getattr(model, field), current_date_folder)
-                    setattr(model, field, None)
-                except OSError as e:
-                    flash(f'Error deleting file: {str(e)}', 'danger')
+                shutil.move(getattr(model, field), current_date_folder)
+                setattr(model, field, None)
 
     def on_model_change(self, form, model, is_created):
         upload_file = bool(form.file.data) if 'file' in form else False
@@ -264,9 +261,6 @@ class UserModelView(ModelView):
             flash(f"An error occurred during the update: {e}", 'danger')
 
     def on_model_delete(self, model):
-        self.custom_delete_file(model)
-        db.session.delete(model)
-        db.session.commit()
         self.custom_delete_file(model)
         db.session.delete(model)
         db.session.commit()
