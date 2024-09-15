@@ -31,6 +31,7 @@ def login():
         username = form.username.data.strip()
         password = form.password.data.strip()
         remember = 'remember' in request.form  # Check if "Remember Me" was selected
+        
         # Query the user using SQLAlchemy's session
         user = db.session.query(User).filter_by(username=username).first()
         if user and user.check_password(password):
@@ -39,21 +40,53 @@ def login():
             login_user(user, remember=remember)
             session['user_id'] = user.id  # Manually setting session data
             session.modified = True       # Ensure that session modifications are recognized
-            flash(f'Log in succeful! Welcome back {user.username}!<hr style="color:yellow;">', 'success')
+            user.status='active' 
+            # Update UserData fields
+            user_data = db.session.query(UserData).filter_by(user_id=user.id).first()
+            if user_data:
+                user_data.last_interaction = datetime.now(timezone.utc)
+                user_data.interaction_date = datetime.now(timezone.utc)
+                user_data.interaction_type = "logged_in"  # Ensure this value aligns with your enum or model definition
+                db.session.commit()  # Save changes to the database
+            
+            flash(f'Log in successful! Welcome back {user.username}!<hr style="color:yellow;">', 'success')
             return redirect(url_for('main_routes.index'))
         else:
             login_failed = True
             flash('Login failed.<br>Please check your username and password and try again.', 'danger')
 
-    return render_template('login.html',form=form, login_failed=login_failed)
-
+    return render_template('login.html', form=form, login_failed=login_failed)
 # Logout route
 @app_user_bp.route('/logout')
+@login_required
 def logout():
+    # Ensure the user is authenticated
     if not current_user.is_authenticated:
         flash("You must be logged in to log out!", "info")
         return redirect(url_for('app_user.login'))
-    
+
+    # Update user data before logging out
+    user_id = current_user.id
+    user = db.session.query(User).filter_by(id=user_id).first()
+    user_data = db.session.query(UserData).filter_by(user_id=user_id).first()
+
+    if user and user_data:
+        # Convert last_interaction to timezone-aware if it is naive
+        if user_data.last_interaction.tzinfo is None:
+            # Assuming stored as UTC if naive, otherwise adjust accordingly
+            user_data.last_interaction = user_data.last_interaction.replace(tzinfo=timezone.utc)
+
+        # Calculate the time spent since the last interaction
+        time_spent = (datetime.now(timezone.utc) - user_data.last_interaction).total_seconds()
+        user_data.time_spent += int(time_spent)  # Convert to integer seconds and add to existing time spent
+        user_data.last_interaction = datetime.now(timezone.utc)
+        user_data.interaction_type = "viewed"  # Set to a relevant interaction type
+        user.status = "inactive"  # Set user status to inactive
+
+        # Commit the changes to the database
+        db.session.commit()
+
+    # Log the user out
     logout_user()
     flash('You have been successfully logged out.', 'info')
     return redirect(url_for('app_user.login'))
