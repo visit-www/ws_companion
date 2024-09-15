@@ -221,7 +221,7 @@ class UserData(Base):
     id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
     content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id', ondelete='CASCADE'), nullable=False)
-    interaction_type: so.Mapped[str] = sa.Column(sa.Enum('viewed', 'bookmarked', 'recommended', name='interaction_types'), nullable=False, default='viewed')
+    interaction_type: so.Mapped[str] = sa.Column(sa.Enum('viewed', 'bookmarked', 'recommended','registered','logged_in', name='interaction_types'), nullable=False, default='viewed')
     interaction_date: so.Mapped[datetime] = sa.Column(sa.DateTime, nullable=False, default=datetime.now(timezone.utc))
     feedback: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
     content_rating: so.Mapped[Optional[int]] = sa.Column(sa.Integer, nullable=True)
