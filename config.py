@@ -1,6 +1,8 @@
 import os
 from datetime import timedelta
 basedir=os.path.abspath(os.path.dirname(__file__))
+# Set user_dir to the path of the user_data directory one level up from the current file
+userdir = os.path.join(basedir, 'user_data')
 class Config:
     SECRET_KEY=os.getenv('SECRET_KEY') or '7ebfffbf75e406f1b63739a0c5e487496be74113d2fd3a672fc45b4a120f571b'
     WTF_CSRF_ENABLED = True

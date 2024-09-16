@@ -11,6 +11,10 @@ from flask_mail import Message
 from . import mail  # Import the mail instance from your app initialization
 from .util import generate_password_reset_token,verify_password_reset_token
 from datetime import datetime, timezone
+import os
+import shutil
+from config import basedir,userdir
+from werkzeug.utils import secure_filename
 # * Blueprint setup
 app_user_bp = Blueprint(
     'app_user', __name__,
@@ -45,8 +49,9 @@ def login():
             user_data = db.session.query(UserData).filter_by(user_id=user.id).first()
             if user_data:
                 user_data.last_interaction = datetime.now(timezone.utc)
-                user_data.interaction_date = datetime.now(timezone.utc)
+                user_data.last_login = datetime.now(timezone.utc)
                 user_data.interaction_type = "logged_in"  # Ensure this value aligns with your enum or model definition
+                user.status = "active"
                 db.session.commit()  # Save changes to the database
             
             flash(f'Log in successful! Welcome back {user.username}!<hr style="color:yellow;">', 'success')
@@ -71,21 +76,19 @@ def logout():
     user_data = db.session.query(UserData).filter_by(user_id=user_id).first()
 
     if user and user_data:
-        # Convert last_interaction to timezone-aware if it is naive
-        if user_data.last_interaction.tzinfo is None:
+        # Convert last_login to timezone-aware if it is naive
+        if user_data.last_login.tzinfo is None:
             # Assuming stored as UTC if naive, otherwise adjust accordingly
-            user_data.last_interaction = user_data.last_interaction.replace(tzinfo=timezone.utc)
-
-        # Calculate the time spent since the last interaction
-        time_spent = (datetime.now(timezone.utc) - user_data.last_interaction).total_seconds()
-        user_data.time_spent += int(time_spent)  # Convert to integer seconds and add to existing time spent
-        user_data.last_interaction = datetime.now(timezone.utc)
-        user_data.interaction_type = "viewed"  # Set to a relevant interaction type
-        user.status = "inactive"  # Set user status to inactive
-
-        # Commit the changes to the database
-        db.session.commit()
-
+            user_data.last_login = user_data.last_login.replace(tzinfo=timezone.utc)
+    
+            # Calculate the time spent since the last interaction
+            time_spent = (datetime.now(timezone.utc) - user_data.last_login).total_seconds()
+            user_data.time_spent += int(time_spent)  # Convert to integer seconds and add to existing time spent
+            user_data.last_interaction = datetime.now(timezone.utc)
+            user_data.interaction_type = "loged_out"  # Set to a relevant interaction type
+            user.status = "inactive"  # Set user status to inactive
+            # Commit the changes to the database
+            db.session.commit()
     # Log the user out
     logout_user()
     flash('You have been successfully logged out.', 'info')
@@ -117,61 +120,86 @@ def register():
             return redirect(url_for('app_user.register'))
 
         if username and password and email:
-            # Create and add the new user
-            hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-            new_user = User(username=username, password=hashed_password, email=email)
-            db.session.add(new_user)
-            db.session.commit()
+            try:
+                # Create and add the new user
+                hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
+                new_user = User(username=username, password=hashed_password, email=email)
+                db.session.add(new_user)
+                db.session.commit()
 
-            # Initialize UserProfile with default values, using lists instead of JSON
-            profile = UserProfile(
-                user_id=new_user.id,
-                profile_pic='dummy_profile_pic.png',
-                profile_pic_path='static/assets/images/dummy_profile_pic.png',
-                preferred_categories=','.join([category.value for category in CategoryNames]),  # Store as comma-separated string
-                preferred_modules=','.join([module.value for module in ModuleNames]),  # Store as comma-separated string
-                report_templates=None,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc)
-            )
-            db.session.add(profile)
+                # Define the paths for the dummy profile picture and the target location
+                dummy_profile_pic_path = os.path.join(basedir, 'static', 'assets', 'dummy_profile_pic.png')
+                profile_pic_folder = os.path.join(userdir, f"{username}_{new_user.id}",'profile_pic')
+                profile_pic_path = os.path.join(profile_pic_folder, 'dummy_profile_pic.png')
 
-            # Initialize UserData with baseline information
-            user_data = UserData(
-                user_id=new_user.id,
-                content_id=1,  # Assuming some content_id as a placeholder
-                interaction_type='registered',
-                interaction_date=datetime.now(timezone.utc),
-                feedback=None,
-                content_rating=None,
-                time_spent=0,
-                last_interaction=datetime.now(timezone.utc)
-            )
-            db.session.add(user_data)
+                # Create the target directory if it doesn't exist
+                os.makedirs(profile_pic_folder, exist_ok=True)
 
-            # Initialize UserContentState with baseline information
-            user_content_state = UserContentState(
-                user_id=new_user.id,
-                content_id=1,  # Assuming some content_id as a placeholder
-                modified_file_path=None,
-                annotations=None,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc)
-            )
-            db.session.add(user_content_state)
+                try:
+                    # Copy the dummy profile picture to the target directory
+                    shutil.copy(dummy_profile_pic_path, profile_pic_path)
+                except Exception as e:
+                    flash(f'Error copying the dummy profile picture: {str(e)}', 'danger')
+                    print(f'Error copying the dummy profile picture: {str(e)}')
 
-            # Commit all changes to the database
-            db.session.commit()
-            # Clear the session and login the new user
-            session.clear()  # Clears the existing session data to avoid conflicts
-            login_user(new_user)  # Logs in the newly created user, ensuring the session reflects the correct user
-            flash('Registration successful! Profile and related data initialized. Please log in.', 'success')
-            return redirect(url_for('main_routes.index'))
+                # Initialize UserProfile with default values, using lists instead of JSON
+                profile = UserProfile(
+                    user_id=new_user.id,
+                    profile_pic='dummy_profile_pic.png',  # This should just be the file name
+                    profile_pic_path=profile_pic_path,  # This is the full path to where the file is stored
+                    preferred_categories=','.join([category.value for category in CategoryNames]),  # Store as comma-separated string
+                    preferred_modules=','.join([module.value for module in ModuleNames]),  # Store as comma-separated string
+                    report_templates=None,
+                    created_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(timezone.utc)
+                )
+                db.session.add(profile)
+
+                # Initialize UserData with baseline information
+                user_data = UserData(
+                    user_id=new_user.id,
+                    content_id=1,  # Assuming some content_id as a placeholder
+                    interaction_type='registered',
+                    feedback=None,
+                    content_rating=None,
+                    time_spent=0,
+                    last_interaction=datetime.now(timezone.utc),
+                    last_login=datetime.now(timezone.utc)  # Assume the user has just logged in
+                )
+                db.session.add(user_data)
+
+                # Initialize UserContentState with baseline information
+                user_content_state = UserContentState(
+                    user_id=new_user.id,
+                    content_id=1,  # Assuming some content_id as a placeholder
+                    modified_file_path=None,
+                    annotations=None,
+                    created_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(timezone.utc)
+                )
+                db.session.add(user_content_state)
+
+                # Commit all changes to the database
+                db.session.commit()
+
+                # Clear the session and login the new user
+                session.clear()  # Clears the existing session data to avoid conflicts
+                login_user(new_user)  # Logs in the newly created user, ensuring the session reflects the correct user
+                flash('Registration successful! Profile and related data initialized. Please log in.', 'success')
+                return redirect(url_for('main_routes.index'))
+
+            except Exception as e:
+                # Rollback any changes if an error occurs
+                db.session.rollback()
+                flash(f'Registration failed due to an error: {str(e)}', 'danger')
+                print(f'Registration failed due to an error: {str(e)}')
+                return redirect(url_for('app_user.register'))  # Corrected to redirect to the registration page
+
         else:
             flash('All fields are required.', 'danger')
 
     return render_template('register.html')
-#* ----------------------------------------------------------------
+# *----------------------------------------------------------------
 # Forget username / reset passwrod route:
 @app_user_bp.route('/credential_management', methods=['GET', 'POST'])
 def credential_manager():
@@ -267,20 +295,93 @@ def change_password(token):
 @app_user_bp.route('/account', methods=['GET'])
 @login_required
 def user_management():
-    categories = CategoryNames  # Use Enum to populate the categories select box
-    modules = ModuleNames  # Use Enum to populate the modules select box
-    return render_template('user_management.html', categories=categories, modules=modules)
-# ===============================
+    categories = CategoryNames  # Enum to populate the categories select box
+    modules = ModuleNames  # Enum to populate the modules select box
+    # Fetch the current user's profile
+    user_profile = db.session.query(UserProfile).filter_by(user_id=current_user.id).first()
+    # Construct the relative path for the profile picture
+    profile_pic_rel_path = f"{current_user.username}_{current_user.id}/profile_pic/{user_profile.profile_pic}"
+    # Generate URL to serve the profile picture using the `serve_user_data` route
+    profile_pic_path = url_for('serve_user_data', filename=profile_pic_rel_path)
+    print(f"Profile picture path: {profile_pic_path}")
+    return render_template('user_management.html', categories=categories, modules=modules,profile_pic_path=profile_pic_path)
+# .###############################
 # PROFILE MANAGEMENT ROUTES
 # ===============================
 
 @app_user_bp.route('/profile_manager', methods=['GET', 'POST'])
 @login_required
 def profile_manager():
-    # Placeholder for profile management actions (upload picture, update profile, contact info)
     if request.method == 'POST':
-        # Handle profile management logic here
-        flash('Profile management functionality will be implemented here.', 'info')
+        action = request.form.get('action')
+
+        if action == 'update_profile_pic':
+            username = current_user.username
+            user_id = current_user.id
+
+            # Handle profile picture upload logic here
+            pic = request.files.get('profile_pic')  # Correctly get the file from the request
+            if pic:
+                filename = secure_filename(pic.filename)
+                target_folder = os.path.join(basedir, userdir, f"{username}_{user_id}",'profile_pic')
+                os.makedirs(target_folder, exist_ok=True)  # Create the directory if it doesn't exist
+                profile_pic_path = os.path.join(target_folder, filename)
+
+                try:
+                    # Save the uploaded picture
+                    pic.save(profile_pic_path)
+
+                    # Update the user profile in the database
+                    user = db.session.query(UserProfile).filter_by(user_id=current_user.id).first()
+                    old_pic = user.profile_pic
+                    old_pic_path = user.profile_pic_path
+                    archived_folder = os.path.join(basedir, 'archived', f"{username}_{user_id}",'profile_pic')
+                    os.makedirs(archived_folder, exist_ok=True)
+                    if "dummy" in old_pic:
+                        try:
+                            os.remove(old_pic_path)
+                        except FileNotFoundError:
+                            pass  # Ignore the error if the file doesn't exist (e.g., it was already deleted)
+
+                    elif old_pic and "dummy" not in old_pic:
+                        shutil.move(old_pic_path, archived_folder)  # Archive the old profile picture
+
+                    # Update the profile picture path in the user's profile
+                    user.profile_pic = filename
+                    user.profile_pic_path = profile_pic_path
+                    user.updated_at = datetime.now(timezone.utc)
+
+                    # Update the user data
+                    user_data = db.session.query(UserData).filter_by(user_id=current_user.id).first()
+                    if user_data:
+                        user_data.interaction_type = "updated_profile"
+                        user_data.last_interaction = datetime.now(timezone.utc)
+
+                    db.session.commit()  # Commit the changes to the database
+                    flash('Profile picture uploaded successfully!', 'info')
+                except Exception as e:
+                    db.session.rollback()  # Rollback the session on error
+                    flash(f'An error occurred while uploading the profile picture: {e}', 'danger')
+                    return redirect(url_for('app_user.profile_manager'))
+
+                # Pass target_folder and filename to the redirected route for rendering
+                return redirect(url_for('app_user.user_management'))
+            
+            else:
+                flash('No profile picture uploaded.', 'warning')
+                return redirect(url_for('app_user.profile_manager'))
+
+        elif action == 'update_profile':
+            # Handle profile update logic here
+            flash('Profile updated successfully!', 'info')
+
+        elif action == 'contact_info':
+            # Handle contact information update logic here
+            flash('Contact information updated successfully!', 'info')
+
+        else:
+            flash('Unknown profile management action.', 'warning')
+
     categories = CategoryNames
     modules = ModuleNames
     return render_template('user_management.html', categories=categories, modules=modules)
