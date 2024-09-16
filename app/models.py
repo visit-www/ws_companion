@@ -216,7 +216,7 @@ class UserData(Base):
     id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
     content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
-    interaction_type: so.Mapped[str] = sa.Column(sa.Enum('viewed', 'bookmarked', 'recommended','registered','logged_in','loged_out','updated_profile', name='interaction_types'), nullable=False, default='viewed')
+    interaction_type: so.Mapped[str] = sa.Column(sa.Enum('viewed', 'bookmarked', 'recommended','registered','logged_in','loged_out','updated_profile_pic',"updated_username",'updated_email','updated_report_templates','updated_category_module_preferences','updated_contents','added_feedback', name='interaction_types'), nullable=False, default='viewed')
     last_interaction: so.Mapped[datetime] = sa.Column(sa.DateTime, nullable=False, default=datetime.now(timezone.utc))
     feedback: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
     content_rating: so.Mapped[Optional[int]] = sa.Column(sa.Integer, nullable=True)
