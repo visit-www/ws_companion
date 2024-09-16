@@ -9,15 +9,20 @@
         <div class="col-md-4 col-sm-12">
             <div class="card shadow-lg h-100 p-3 pastel-light-green">
                 <div class="card-body text-center">
-                    <img src="{{ url_for('static', filename='assets/dummy_profile_pic.png') }}" class="img-thumbnail mb-3 shadow-lg" style="border-radius:18px;" alt="Profile Picture">
+                    <!-- Dynamically setting src using target_folder and filename -->
+                    <img src="{{ profile_pic_path }}" 
+                        class="img-thumbnail mb-3 shadow-lg" 
+                        style="border-radius:18px;" 
+                        alt="Profile Picture">
                     <form action="{{ url_for('app_user.profile_manager') }}" method="post" enctype="multipart/form-data">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="file" name="profile_pic" class="form-control mt-2">
-                        <button type="submit" class="btn btn-primary btn-sm mt-2">Upload Profile Picture</button>
+                        <button type="submit" name='action' value='update_profile_pic' class="btn btn-primary btn-sm mt-2">Upload Profile Picture</button>
                     </form>
                 </div>
             </div>
         </div>
-    
+
         <div class="col-md-8 col-sm-12">
             <div class="card shadow-lg h-100 p-3 pastel-light-green">
                 <div class="card-body">
@@ -39,7 +44,6 @@
             </div>
         </div>
     </div>
-
 
     <!-- Subscription Status Section -->
     <div class="row mb-5">
@@ -105,6 +109,7 @@
                 <div class="card-body">
                     <h4>Customize Home Page</h4>
                     <form action="{{ url_for('app_user.profile_manager') }}" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="form-group mb-3">
                             <label for="categories">Preferred Categories:</label>
                             <select id="categories" name="categories[]" class="form-control select2" multiple>

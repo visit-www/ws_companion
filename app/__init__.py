@@ -1,11 +1,11 @@
-from flask import Flask, request, redirect, url_for, flash,session
+from flask import Flask, request, redirect, url_for, flash,session,send_from_directory
 from flask_login import current_user
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
-from config import Config
+from config import Config,userdir
 from flask_login import LoginManager
 import sqlalchemy.orm as so
 from typing import Type
@@ -71,8 +71,14 @@ def create_app():
     flask_admin.add_view(ModelView(UserContentState, db.session, endpoint='user_content_states'))
     flask_admin.add_view(ModelView(UserProfile, db.session, endpoint='user_profiles'))
     flask_admin.add_view(ModelView(UserReportTemplate, db.session, endpoint='user_report_templates'))
+    # ! Other app configurations, like database setup, blueprints, etc.
 
-    # Register Blueprints
+    # * Route to serve user data files
+    @app.route('/user_data/<path:filename>')
+    def serve_user_data(filename):
+        return send_from_directory(userdir, filename)
+    
+    # * other Blueprints to be registered
     # App admin routes
     from .admin_routes import app_admin_bp
     app.register_blueprint(app_admin_bp, url_prefix='/app_admin')
