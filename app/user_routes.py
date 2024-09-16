@@ -354,8 +354,8 @@ def profile_manager():
                     # Update the user data
                     user_data = db.session.query(UserData).filter_by(user_id=current_user.id).first()
                     if user_data:
-                        user_data.interaction_type = "updated_profile"
-                        user_data.last_interaction = datetime.now(timezone.utc)
+                        user_data.interaction_type = "updated_profile_pic"
+                        user_data.last_interaction = datetime.now(timezone.utc).isoformat()
 
                     db.session.commit()  # Commit the changes to the database
                     flash('Profile picture uploaded successfully!', 'info')
@@ -371,15 +371,37 @@ def profile_manager():
                 flash('No profile picture uploaded.', 'warning')
                 return redirect(url_for('app_user.profile_manager'))
 
-        elif action == 'update_profile':
-            # Handle profile update logic here
-            flash('Profile updated successfully!', 'info')
-
-        elif action == 'contact_info':
+    elif action == 'update_username':
+        requested_username = request.form.get('username')
+        if requested_username:
+            if requested_username == current_user.username:
+                flash('Did you enter your existing username by mistake? Please choose a different username.', 'warning')
+            else:
+                # Check if the requested username is already taken
+                existing_user = db.session.query(User).filter_by(username=requested_username).first()
+                if existing_user:
+                    flash('Username already taken. Please choose a different username.', 'warning')
+                else:
+                    try:
+                        current_user.username = requested_username
+                        user_data = db.session.query(UserData).filter_by(user_id=current_user.id).first()
+                        user_data.last_interaction = datetime.now(timezone.utc).isoformat()
+                        user_data.interaction_type = "updated_username"
+                        db.session.commit()  # Commit the changes to the database
+                        flash('Username updated successfully!', 'info')
+                        return redirect(url_for('app_user.user_management'))
+                    except Exception as e:
+                        db.session.rollback()  # Rollback the session on error
+                        flash(f'An error occurred while updating the username: {e}', 'danger')
+        else:
+            flash('No username entered. Please enter a username.', 'warning')
+        return redirect(url_for('app_user.profile_manager'))
+    
+    elif action == 'contact_info':
             # Handle contact information update logic here
             flash('Contact information updated successfully!', 'info')
 
-        else:
+    else:
             flash('Unknown profile management action.', 'warning')
 
     categories = CategoryNames
