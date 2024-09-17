@@ -127,3 +127,72 @@ class MyModelView(ModelView):
         db.session.commit()
 
 # ---------------------------------------------------------------
+from .models import User
+from config import userdir, basedir
+import json
+from sqlalchemy.inspection import inspect 
+class UserModelView(ModelView):
+    def is_accessible(self):
+        return current_user.is_authenticated and current_user.is_admin
+
+    def inaccessible_callback(self, name, **kwargs):
+        flash('Admin access required.', 'warning')
+        return redirect(url_for('app_user.login'))
+
+    def serialize_model(self, instance):
+        """Serializes a SQLAlchemy model instance to a dictionary."""
+        return {c.key: getattr(instance, c.key) for c in inspect(instance).mapper.column_attrs}
+
+    def custom_user_delete(self, model):
+        try:
+            # Ensure the model is of type User
+            if isinstance(model, User):
+                user_id = model.id
+                username = model.username
+                
+                # Archive user profile picture if it exists and is not a dummy
+                profile_pic_path = model.profile.profile_pic_path if model.profile else None
+                print(f"{profile_pic_path}")
+                if profile_pic_path and os.path.exists(profile_pic_path):
+                    archived_pic_folder = os.path.join('archived', f"{user_id}", 'profile_pic')
+                    os.makedirs(archived_pic_folder, exist_ok=True)
+                    if "dummy" not in profile_pic_path:
+                        shutil.move(profile_pic_path, archived_pic_folder)  # Move the profile picture to the archive
+                else:
+                    print("User dir was not found. Proceeding to save metadata")
+
+                # Collect and archive user metadata
+                user_metadata = {
+                    "user": self.serialize_model(model),
+                    "profile": self.serialize_model(model.profile) if model.profile else None,
+                    "user_data": [self.serialize_model(data) for data in model.user_data.all()],  # Fetching related data using .all() due to lazy='dynamic'
+                    "user_content_states": [self.serialize_model(state) for state in model.user_content_states.all()],  # Fetching with .all()
+                    "report_templates": [self.serialize_model(template) for template in model.report_templates],  # Assuming direct relationship
+                    "feedbacks": [self.serialize_model(feedback) for feedback in model.feedbacks]  # Accessing feedbacks directly
+                }
+
+                archived_metadata_folder = os.path.join('archived', f"{user_id}", 'meta_data')
+                os.makedirs(archived_metadata_folder, exist_ok=True)
+                metadata_file_path = os.path.join(archived_metadata_folder, f"user_{user_id}_metadata.json")
+                
+                # Save metadata as a JSON file
+                with open(metadata_file_path, 'w') as metadata_file:
+                    json.dump(user_metadata, metadata_file, indent=4, default=str)
+
+                # Remove the user's directory from user_data
+                old_user_dir = os.path.join(userdir, f"{user_id}")
+                if os.path.exists(old_user_dir):
+                    shutil.rmtree(old_user_dir)  # Delete the directory and all its contents
+                else:
+                    print(f"User directory was not found for user ID: {user_id}")
+
+        except OSError as e:
+            flash(f'Error during user deletion: {str(e)}', 'danger')
+            print(f'Error during user deletion: {str(e)}')
+
+    def on_model_delete(self, model):
+        self.custom_user_delete(model)  # Archive and clean up before deletion
+        db.session.delete(model)
+        db.session.commit()
+
+    
