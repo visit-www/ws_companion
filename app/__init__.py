@@ -56,7 +56,7 @@ def create_app():
     # Import models and add to Flask-Admin here to avoid circular import
     with app.app_context():
         from .models import User, Content, UserData, Reference, UserFeedback, UserContentState, UserProfile, UserReportTemplate, AdminReportTemplate
-        from .admin_views import MyModelView # Import both MyModelView 
+        from .admin_views import MyModelView,UserModelView # Import both MyModelView  and UserModelView
 
     # Register Models in Flask-Admin
     # Register admin-related models with MyModelView
@@ -65,7 +65,7 @@ def create_app():
     flask_admin.add_view(MyModelView(AdminReportTemplate, db.session, endpoint='admin_report_templates'))
 
     # Register user-related models with ModelView
-    flask_admin.add_view(ModelView(User, db.session, endpoint='users'))
+    flask_admin.add_view(UserModelView(User, db.session, endpoint='users'))
     flask_admin.add_view(ModelView(UserData, db.session, endpoint='user_data'))
     flask_admin.add_view(ModelView(UserFeedback, db.session, endpoint='user_feedbacks'))
     flask_admin.add_view(ModelView(UserContentState, db.session, endpoint='user_content_states'))

@@ -1,0 +1,39 @@
+{
+    "user": {
+        "id": 2,
+        "username": "user2",
+        "password": "pbkdf2:sha256:600000$ZG9Xew5X50wFIdVI$8a76cb53ded052f7afd630a45b2c1dfc00b0195199d583541883077f690d73c6",
+        "email": "user2@gmail.com",
+        "is_paid": false,
+        "is_admin": false,
+        "status": "inactive",
+        "created_at": "2024-09-16 23:18:41.457828"
+    },
+    "profile": null,
+    "user_data": [
+        {
+            "id": 2,
+            "user_id": 2,
+            "content_id": 1,
+            "interaction_type": "loged_out",
+            "last_interaction": "2024-09-16 23:19:36.750149",
+            "feedback": null,
+            "content_rating": null,
+            "time_spent": 55,
+            "last_login": "2024-09-16 23:18:41.460135"
+        }
+    ],
+    "user_content_states": [
+        {
+            "id": 2,
+            "user_id": 2,
+            "content_id": 1,
+            "modified_file_path": null,
+            "annotations": null,
+            "created_at": "2024-09-16 23:18:41.460159",
+            "updated_at": "2024-09-16 23:18:41.460159"
+        }
+    ],
+    "report_templates": [],
+    "feedbacks": []
+}

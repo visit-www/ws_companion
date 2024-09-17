@@ -128,8 +128,8 @@ def register():
                 db.session.commit()
 
                 # Define the paths for the dummy profile picture and the target location
-                dummy_profile_pic_path = os.path.join(basedir, 'static', 'assets', 'dummy_profile_pic.png')
-                profile_pic_folder = os.path.join(userdir, f"{username}_{new_user.id}",'profile_pic')
+                dummy_profile_pic_path = os.path.join(basedir,'app','static', 'assets','images','dummy_profile_pic.png')
+                profile_pic_folder = os.path.join(userdir, f"{new_user.id}",'profile_pic')
                 profile_pic_path = os.path.join(profile_pic_folder, 'dummy_profile_pic.png')
 
                 # Create the target directory if it doesn't exist
@@ -186,7 +186,7 @@ def register():
                 session.clear()  # Clears the existing session data to avoid conflicts
                 login_user(new_user)  # Logs in the newly created user, ensuring the session reflects the correct user
                 flash('Registration successful! Profile and related data initialized. Please log in.', 'success')
-                return redirect(url_for('main_routes.index'))
+                return redirect(url_for('app_user.user_management'))
 
             except Exception as e:
                 # Rollback any changes if an error occurs
@@ -300,7 +300,7 @@ def user_management():
     # Fetch the current user's profile
     user_profile = db.session.query(UserProfile).filter_by(user_id=current_user.id).first()
     # Construct the relative path for the profile picture
-    profile_pic_rel_path = f"{current_user.username}_{current_user.id}/profile_pic/{user_profile.profile_pic}"
+    profile_pic_rel_path = f"{current_user.id}/profile_pic/{user_profile.profile_pic}"
     # Generate URL to serve the profile picture using the `serve_user_data` route
     profile_pic_path = url_for('serve_user_data', filename=profile_pic_rel_path)
     print(f"Profile picture path: {profile_pic_path}")
@@ -323,7 +323,7 @@ def profile_manager():
             pic = request.files.get('profile_pic')  # Correctly get the file from the request
             if pic:
                 filename = secure_filename(pic.filename)
-                target_folder = os.path.join(basedir, userdir, f"{username}_{user_id}",'profile_pic')
+                target_folder = os.path.join(basedir, userdir, f"{user_id}",'profile_pic')
                 os.makedirs(target_folder, exist_ok=True)  # Create the directory if it doesn't exist
                 profile_pic_path = os.path.join(target_folder, filename)
 
@@ -335,7 +335,7 @@ def profile_manager():
                     user = db.session.query(UserProfile).filter_by(user_id=current_user.id).first()
                     old_pic = user.profile_pic
                     old_pic_path = user.profile_pic_path
-                    archived_folder = os.path.join(basedir, 'archived', f"{username}_{user_id}",'profile_pic')
+                    archived_folder = os.path.join(basedir, 'archived', f"{user_id}",'profile_pic')
                     os.makedirs(archived_folder, exist_ok=True)
                     if "dummy" in old_pic:
                         try:
@@ -355,7 +355,7 @@ def profile_manager():
                     user_data = db.session.query(UserData).filter_by(user_id=current_user.id).first()
                     if user_data:
                         user_data.interaction_type = "updated_profile_pic"
-                        user_data.last_interaction = datetime.now(timezone.utc).isoformat()
+                        user_data.last_interaction = datetime.now(timezone.utc)
 
                     db.session.commit()  # Commit the changes to the database
                     flash('Profile picture uploaded successfully!', 'info')
@@ -371,42 +371,49 @@ def profile_manager():
                 flash('No profile picture uploaded.', 'warning')
                 return redirect(url_for('app_user.profile_manager'))
 
-    elif action == 'update_username':
-        requested_username = request.form.get('username')
-        if requested_username:
-            if requested_username == current_user.username:
-                flash('Did you enter your existing username by mistake? Please choose a different username.', 'warning')
-            else:
-                # Check if the requested username is already taken
-                existing_user = db.session.query(User).filter_by(username=requested_username).first()
-                if existing_user:
-                    flash('Username already taken. Please choose a different username.', 'warning')
+        elif action == 'update_username':
+            requested_username = request.form.get('username')
+            if requested_username:
+                if requested_username == current_user.username:
+                    flash('Did you enter your existing username by mistake? Please choose a different username.', 'warning')
                 else:
-                    try:
-                        current_user.username = requested_username
-                        user_data = db.session.query(UserData).filter_by(user_id=current_user.id).first()
-                        user_data.last_interaction = datetime.now(timezone.utc).isoformat()
-                        user_data.interaction_type = "updated_username"
-                        db.session.commit()  # Commit the changes to the database
-                        flash('Username updated successfully!', 'info')
-                        return redirect(url_for('app_user.user_management'))
-                    except Exception as e:
-                        db.session.rollback()  # Rollback the session on error
-                        flash(f'An error occurred while updating the username: {e}', 'danger')
-        else:
-            flash('No username entered. Please enter a username.', 'warning')
-        return redirect(url_for('app_user.profile_manager'))
+                    # Check if the requested username is already taken
+                    existing_user = db.session.query(User).filter_by(username=requested_username).first()
+                    if existing_user:
+                        flash('Username already taken. Please choose a different username.', 'warning')
+                    else:
+                        try:
+                            current_user.username = requested_username
+                            user_data = db.session.query(UserData).filter_by(user_id=current_user.id).first()
+                            user_data.last_interaction = datetime.now(timezone.utc)
+                            user_data.interaction_type = "updated_username"
+                            db.session.commit()  # Commit the changes to the database
+                            flash('Username updated successfully!', 'info')
+                            return redirect(url_for('app_user.user_management'))
+                        except Exception as e:
+                            db.session.rollback()  # Rollback the session on error
+                            flash(f'An error occurred while updating the username: {e}', 'danger')
+            else:
+                flash('No username entered. Please enter a username.', 'warning')
+            return redirect(url_for('app_user.profile_manager'))
     
-    elif action == 'contact_info':
+        elif action == 'contact_info':
             # Handle contact information update logic here
             flash('Contact information updated successfully!', 'info')
 
-    else:
+        else:
             flash('Unknown profile management action.', 'warning')
 
     categories = CategoryNames
     modules = ModuleNames
     return render_template('user_management.html', categories=categories, modules=modules)
+
+@app_user_bp.route('/delete_account')
+def delete_account():
+    flash('this will delete your account permanently')
+    return ("This route of handle account deletion initiated by user")
+
+
 
 # ===============================
 # FINANCE MANAGEMENT ROUTES

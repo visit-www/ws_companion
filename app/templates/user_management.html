@@ -46,17 +46,28 @@
     </div>
 
     <!-- Subscription Status Section -->
-    <div class="row mb-5">
-        <div class="col-12">
-            <div class="card shadow-lg h-100 p-3" id="subscription-status">
-                <div class="card-body">
-                    <h4>Subscription Status</h4>
-                    <p>Status: <span id="subscription-status-text" class="fw-bold">{{ 'Paid' if current_user.is_paid else 'Free' }}</span></p>
-                    <a href="{{ url_for('app_user.finance_manager') }}" class="btn btn-primary">Check Subscriptions</a>
-                </div>
+<div class="row mb-5">
+    <div class="col-md-6 col-sm-12">
+        <div class="card shadow-lg h-100 p-3" id="subscription-status">
+            <div class="card-body">
+                <h4>Subscription Status</h4>
+                <p>Status: <span id="subscription-status-text" class="fw-bold">{{ 'Paid' if current_user.is_paid else 'Free' }}</span></p>
+                <a href="{{ url_for('app_user.finance_manager') }}" class="btn btn-primary">Check Subscriptions</a>
             </div>
         </div>
     </div>
+    <div class="col-md-6 col-sm-12">
+        <div class="card shadow-lg h-100 p-3 bg-danger " id="delete_my_account">
+            <div class="card-body">
+                <h4 class="text-white">DELETE MY ACCOUNT</h4>
+                <p class="fw-bold bg-danger">Request Account Purge</p>
+                <p>Your account won't be deleted immediately. We will send you an email link to confirm your request.</p>
+                <a href="{{ url_for('app_user.delete_account') }}" class="btn btn-secondary">Request Deletion of Your Account</a>
+            </div>
+        </div>
+    </div>
+</div>
+
 
     <!-- Secure Your Account Section -->
     <div class="row mb-5">
