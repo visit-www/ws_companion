@@ -6,7 +6,7 @@ userdir = os.path.join(basedir, 'user_data')
 class Config:
     SECRET_KEY=os.getenv('SECRET_KEY') or '7ebfffbf75e406f1b63739a0c5e487496be74113d2fd3a672fc45b4a120f571b'
     WTF_CSRF_ENABLED = True
-    SQLALCHEMY_DATABASE_URI=os.getenv('DATABASE_URL') or 'sqlite:///' + os.path.join(basedir, 'radiology.db')
+    SQLALCHEMY_DATABASE_URI=os.getenv('DATABASE_URL') or 'postgresql://admin:811976@localhost:5432/wscdb'
     SQLALCHEMY_TRACK_MODIFICATIONS=False
     UPLOAD_FOLDER=os.path.join(basedir, 'files')
 

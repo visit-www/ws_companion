@@ -87,7 +87,7 @@ class ModalityEnum(PyEnum):
 class User(UserMixin, Base):
     __tablename__ = "users"
 
-    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True)
+    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True,nullable=False)
     username: so.Mapped[str] = sa.Column(sa.String(150), unique=True, nullable=False, index=True)
     password: so.Mapped[str] = sa.Column(sa.String(150), nullable=False)
     email: so.Mapped[str] = sa.Column(sa.String(150), unique=True, nullable=False, index=True)
@@ -113,7 +113,7 @@ class User(UserMixin, Base):
 class Content(Base):
     __tablename__ = "contents"
 
-    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, index=True)
+    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, index=True,nullable=False)
     title: so.Mapped[str] = sa.Column(sa.String(565), index=True, nullable=False)
     category: so.Mapped[str] = sa.Column(sa.Enum(CategoryNames, name='category_name'), index=True, nullable=False)  # Admin must select from the categories.
     module: so.Mapped[str] = sa.Column(sa.Enum(ModuleNames, name="module_name"), index=True, nullable=False)  # Admin must select from the modules.
@@ -213,7 +213,7 @@ class AdminReportTemplate(Base):
 class UserData(Base):
     __tablename__ = 'user_data'
 
-    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
+    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True, nullable=False)
     user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
     content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
     interaction_type: so.Mapped[str] = sa.Column(sa.Enum('viewed', 'bookmarked', 'recommended','registered','logged_in','loged_out','updated_profile_pic',"updated_username",'updated_email','updated_report_templates','updated_category_module_preferences','updated_contents','added_feedback', name='interaction_types'), nullable=False, default='viewed')
@@ -234,8 +234,8 @@ class UserData(Base):
 class UserContentState(Base):
     __tablename__ = 'user_content_states'
 
-    id = sa.Column(sa.Integer, primary_key=True)
-    user_id = sa.Column(sa.Integer, sa.ForeignKey('users.id',ondelete='CASCADE', onupdate='CASCADE'))
+    id = sa.Column(sa.Integer, primary_key=True, nullable=False)
+    user_id = sa.Column(sa.Integer, sa.ForeignKey('users.id',ondelete='CASCADE', onupdate='CASCADE'),nullable=False)
     content_id = sa.Column(sa.Integer, sa.ForeignKey('contents.id',ondelete='CASCADE', onupdate='CASCADE'))
     modified_file_path = sa.Column(sa.String(255), nullable=True)
     annotations = sa.Column(sa.Text, nullable=True)  # JSON or text format of annotations
@@ -250,7 +250,7 @@ class UserContentState(Base):
 class UserReportTemplate(Base):
     __tablename__ = 'user_report_templates'
 
-    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
+    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True,nullable=False)
     body_part: so.Mapped[BodyPartEnum] = sa.Column(sa.Enum(BodyPartEnum, name='body_part_enum'), nullable=False, index=True)
     modality: so.Mapped[ModalityEnum] = sa.Column(sa.Enum(ModalityEnum, name='modality_enum'), nullable=False, index=True)
     template_name: so.Mapped[str] = sa.Column(sa.String(255), nullable=False, unique=True, index=True)
@@ -281,7 +281,7 @@ class UserReportTemplate(Base):
 class UserProfile(Base):
     __tablename__ = 'user_profiles'
 
-    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
+    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True,nullable=False)
     user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id',ondelete='CASCADE', onupdate='CASCADE'), nullable=False, unique=True, index=True)
     profile_pic: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)  # Path to profile picture
     profile_pic_path: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)  # Path to profile picture for management
@@ -302,7 +302,7 @@ class UserProfile(Base):
 class UserFeedback(Base):
     __tablename__ = 'user_feedbacks'
 
-    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
+    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True,nullable=False)
     user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id',ondelete='CASCADE', onupdate='CASCADE'), nullable=False)  # References the 'users' table
     content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id',ondelete='CASCADE', onupdate='CASCADE'), nullable=False)  # References the 'contents' table
     feedback: so.Mapped[str] = sa.Column(sa.Text, nullable=False)
