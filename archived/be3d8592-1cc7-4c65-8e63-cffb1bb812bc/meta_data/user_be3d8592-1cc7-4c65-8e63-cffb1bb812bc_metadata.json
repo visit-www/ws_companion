@@ -1,0 +1,17 @@
+{
+    "user": {
+        "id": "be3d8592-1cc7-4c65-8e63-cffb1bb812bc",
+        "username": "admin",
+        "password": "scrypt:32768:8:1$PKxd7ML8UIeRQdNk$85e2f47ab5b0717c3d865e770a2136ede983130cba1223729649e7073e1ffac5ce4a7a8165f9eeab7591c16f56eb4d56ed18ba8ee8d5a9079b7cb5f307083f03",
+        "email": "lotusheart2016@gmail.com",
+        "is_paid": true,
+        "is_admin": true,
+        "status": "active",
+        "created_at": "2024-09-20 04:13:56.545329"
+    },
+    "profile": null,
+    "user_data": [],
+    "user_content_states": [],
+    "report_templates": [],
+    "feedbacks": []
+}
