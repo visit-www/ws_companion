@@ -1,0 +1,39 @@
+{
+    "user": {
+        "id": "5853c6b6-0ebe-4967-88e4-5d1953bedaf2",
+        "username": "admin",
+        "password": "scrypt:32768:8:1$1HmRMhVE2gmTUAMv$4508df944b4694e8871ff0ce5d56ac695ad68f814127cebe9ef218772ee6b45e58345c2fbb2b89fab4ef8d6ac16a4a8886f518fe11ed92caa07a71a7489acf3a",
+        "email": "lotusheart2016@gmail.com",
+        "is_paid": true,
+        "is_admin": true,
+        "status": "active",
+        "created_at": "2024-09-20 01:06:03.634776"
+    },
+    "profile": null,
+    "user_data": [
+        {
+            "id": "ce121f39-a67b-41a5-ae9b-dd0fabdf246b",
+            "user_id": "5853c6b6-0ebe-4967-88e4-5d1953bedaf2",
+            "content_id": null,
+            "interaction_type": "logged_in",
+            "last_interaction": "2024-09-20 01:06:21.112981",
+            "feedback": null,
+            "content_rating": null,
+            "time_spent": 0,
+            "last_login": "2024-09-20 01:06:21.112994"
+        }
+    ],
+    "user_content_states": [
+        {
+            "id": "61958762-443a-4601-be51-d05ba101352d",
+            "content_id": null,
+            "user_id": "5853c6b6-0ebe-4967-88e4-5d1953bedaf2",
+            "modified_file_path": null,
+            "annotations": null,
+            "created_at": "2024-09-20 01:06:03.638425",
+            "updated_at": "2024-09-20 01:06:03.638426"
+        }
+    ],
+    "report_templates": [],
+    "feedbacks": []
+}

@@ -2,24 +2,21 @@ from flask import Flask, request, redirect, url_for, flash,session,send_from_dir
 from flask_login import current_user
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
-from flask_sqlalchemy import SQLAlchemy
+
 from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
-from config import Config,userdir
+from config import Config,userdir,basedir
 from flask_login import LoginManager
-import sqlalchemy.orm as so
-from typing import Type
+from .models import Base ,db
 import logging
 import os
 from datetime import datetime,timedelta,timezone
 from flask_mail import Mail
-
-# Initialize the registry and Base class using SQLAlchemy ORM
-app_registry: so.registry = so.registry()
-Base: Type[so.DeclarativeMeta] = app_registry.generate_base()
+from uuid import UUID
+from .util import load_default_data,add_default_admin,add_default_contents
 
 # Initialize Flask extensions (SQLAlchemy, Flask-Migrate, LoginManager, Flask-Admin, CSRFProtect)
-db = SQLAlchemy()  # Needed for Flask-SQLAlchemy integration
+got_first_request=True
 login_manager = LoginManager()
 migrate = Migrate()
 csrf = CSRFProtect()
@@ -51,11 +48,11 @@ def create_app():
     from .models import User
     @login_manager.user_loader
     def load_user(user_id):
-        return db.session.query(User).get(int(user_id))  # Use db.session.query instead of User.query
+        return db.session.query(User).get(UUID(user_id)) # Use db.session.query instead of User.query
     
     # Import models and add to Flask-Admin here to avoid circular import
     with app.app_context():
-        from .models import User, Content, UserData, Reference, UserFeedback, UserContentState, UserProfile, UserReportTemplate, AdminReportTemplate
+        from .models import User, Content, UserData, Reference, UserFeedback, UserContentState, UserProfile, UserReportTemplate, AdminReportTemplate,CategoryNames, ModuleNames
         from .admin_views import MyModelView,UserModelView # Import both MyModelView  and UserModelView
 
     # Register Models in Flask-Admin
@@ -135,7 +132,23 @@ def create_app():
     @app.before_request
     def make_session_non_permanent():
         session.permanent = False  # Ensures sessions are non-permanent
-        
+    # Function to create admin at application start if not there :
+    @app.before_request
+    def setup_defaults():
+        #load default data:
+        default_data=load_default_data()
+        # Add default admin
+        add_default_admin(default_data['admin'])
+        print("Default admin loaded successfully")
+        global got_first_request
+        print("default setter function")
+        if got_first_request:
+            print(" will set defaults ")
+            add_default_contents(default_data['contents'])
+            print("Default contents loaded successfully")  # Add default data for contents and admin
+            print("default setting set")
+            got_first_request = False  # Ensure this function is only called once
+
     #Logging
     # Set up basic logging to a file
     log_dir = 'app/logs'

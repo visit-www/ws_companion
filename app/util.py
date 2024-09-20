@@ -15,3 +15,103 @@ def verify_password_reset_token(token, expiration=600):
         return data
     except (BadSignature, SignatureExpired):
         return None
+    
+    # Default app initialization
+import json
+from datetime import datetime, timezone
+from .models import db,Content, User, UserData, UserContentState, AdminReportTemplate
+from config import basedir
+import os
+
+
+def add_default_admin(admin_data):
+    """Add admin user if not already present."""
+    admin_user = db.session.query(User).filter_by(email=admin_data['email']).first()
+    if not admin_user:
+        new_admin = User(
+            username=admin_data['username'],
+            email=admin_data['email'],
+            is_paid=admin_data['is_paid'],
+            is_admin=admin_data['is_admin']
+        )
+        new_admin.set_password(admin_data['password'])
+        db.session.add(new_admin)
+        db.session.commit()
+
+        print(f"Admin user created: {new_admin.username}, {new_admin.email}")
+
+        # Initialize UserData for the admin
+        user_data = UserData(
+            user_id=new_admin.id,
+            interaction_type='registered',
+            time_spent=0,
+            last_interaction=datetime.now(timezone.utc),
+            last_login=datetime.now(timezone.utc)
+        )
+        db.session.add(user_data)
+
+        # Initialize UserContentState for the admin
+        user_content_state = UserContentState(
+            user_id=new_admin.id,
+            modified_filepath=None,
+            annotations=None,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
+        )
+        db.session.add(user_content_state)
+        # Initialize AdminReportTemplate with
+        admin_report_template = AdminReportTemplate(
+            template_name=None,
+                body_part= None,
+                modality=None,
+                file=None,
+                filepath=None,
+                tags=None,
+                category=None,
+                module=None,
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc)
+                )
+        db.session.add(admin_report_template)
+        db.session.commit()
+        print(f"Admin data initialized.")
+    else:
+        print(f"Admin already exists: {admin_user.username}")
+
+def add_default_contents(contents_data):
+    """Add default contents if not already present."""
+    for content_data in contents_data:
+        existing_content = db.session.query(Content).filter_by(title=content_data['title']).first()
+        if not existing_content:
+            new_content = Content(
+                title=content_data['title'],
+                category=content_data['category'],
+                module=content_data['module'],
+                status=content_data['status'],
+                embed_code=content_data['embed_code'],
+                description=content_data['description'],
+                created_by=content_data['created_by'],
+                language=content_data['language'],
+                created_at=datetime.now(timezone.utc),
+                updated_at=datetime.now(timezone.utc)
+            )
+            db.session.add(new_content)
+            print(f"Content added: {new_content.title}")
+        else:
+            print(f"Content already exists: {existing_content.title}")
+    
+
+    db.session.commit()
+    print("Default contents loaded successfully.")
+
+def load_default_data():
+    """Load default admin and content data from JSON."""
+    json_filepath= os.path.join(basedir,'app','default_data.json')
+    try:
+        with open(json_filepath) as f:
+            default_data = json.load(f)
+            print("json file loaded")
+            return default_data
+    except FileNotFoundError:
+        print("default_data.json not found")
+        return None

@@ -2,7 +2,7 @@
 from flask import Blueprint, request, render_template, redirect, url_for, flash, session, jsonify
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash,check_password_hash
-from .models import User, UserContentState, CategoryNames, ModuleNames,UserData,UserProfile
+from .models import User, UserContentState, CategoryNames, ModuleNames,UserData,UserProfile,UserFeedback,UserReportTemplate
 from . import db
 from .forms import LoginForm  # Import the form class
 from config import Config
@@ -149,7 +149,6 @@ def register():
                     profile_pic_path=profile_pic_path,  # This is the full path to where the file is stored
                     preferred_categories=','.join([category.value for category in CategoryNames]),  # Store as comma-separated string
                     preferred_modules=','.join([module.value for module in ModuleNames]),  # Store as comma-separated string
-                    report_templates=None,
                     created_at=datetime.now(timezone.utc),
                     updated_at=datetime.now(timezone.utc)
                 )
@@ -158,7 +157,6 @@ def register():
                 # Initialize UserData with baseline information
                 user_data = UserData(
                     user_id=new_user.id,
-                    content_id=1,  # Assuming some content_id as a placeholder
                     interaction_type='registered',
                     feedback=None,
                     content_rating=None,
@@ -171,13 +169,39 @@ def register():
                 # Initialize UserContentState with baseline information
                 user_content_state = UserContentState(
                     user_id=new_user.id,
-                    content_id=1,  # Assuming some content_id as a placeholder
-                    modified_file_path=None,
+                    modified_filepath=None,
                     annotations=None,
                     created_at=datetime.now(timezone.utc),
                     updated_at=datetime.now(timezone.utc)
                 )
                 db.session.add(user_content_state)
+                # Initialize UserFeedback with baseline information
+                user_feedback = UserFeedback(
+                    user_id=new_user.id, 
+                    feedback=None,
+                    is_public=None,
+                    user_display_name=None,
+                    created_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(timezone.utc)
+                )
+                db.session.add(user_feedback)
+                # Initialize AdminReportTemplate with
+                user_report_template = UserReportTemplate(
+                    user_id=new_user.id,
+                    template_name=None,
+                    body_part= None,
+                    modality=None,
+                    file=None,
+                    filepath=None,
+                    tags=None,
+                    category=None,
+                    module=None,
+                    template_text=None,
+                    is_public=None,
+                    created_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(timezone.utc)
+                    )
+                db.session.add(user_report_template)
 
                 # Commit all changes to the database
                 db.session.commit()

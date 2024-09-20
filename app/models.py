@@ -3,10 +3,17 @@ import sqlalchemy.orm as so
 from flask_login import UserMixin
 from typing import Optional
 from werkzeug.security import check_password_hash, generate_password_hash
-from . import Base  # Import the Base from __init__.py
+from flask_sqlalchemy import SQLAlchemy
 from enum import Enum as PyEnum
 from datetime import datetime, timezone
 import json
+import uuid  # Import the UUID library
+import sqlalchemy.orm as so
+from typing import Type
+db = SQLAlchemy()  # Needed for Flask-SQLAlchemy integration
+# Initialize the registry and Base class using SQLAlchemy ORM
+app_registry: so.registry = so.registry()
+Base: Type[so.DeclarativeMeta] = app_registry.generate_base()
 
 # ********************************
 # * Reusable Enums:
@@ -87,9 +94,9 @@ class ModalityEnum(PyEnum):
 class User(UserMixin, Base):
     __tablename__ = "users"
 
-    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True,nullable=False)
+    id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
     username: so.Mapped[str] = sa.Column(sa.String(150), unique=True, nullable=False, index=True)
-    password: so.Mapped[str] = sa.Column(sa.String(150), nullable=False)
+    password: so.Mapped[str] = sa.Column(sa.String(250), nullable=False)
     email: so.Mapped[str] = sa.Column(sa.String(150), unique=True, nullable=False, index=True)
     is_paid: so.Mapped[Optional[bool]] = sa.Column(sa.Boolean, default=False, nullable=True)
     is_admin: so.Mapped[Optional[bool]] = sa.Column(sa.Boolean, default=False, nullable=True)
@@ -114,8 +121,8 @@ class Content(Base):
     __tablename__ = "contents"
 
     id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, index=True,nullable=False)
-    title: so.Mapped[str] = sa.Column(sa.String(565), index=True, nullable=False)
-    category: so.Mapped[str] = sa.Column(sa.Enum(CategoryNames, name='category_name'), index=True, nullable=False)  # Admin must select from the categories.
+    title: so.Mapped[str] = sa.Column(sa.String(565), index=True, nullable=False,default='Imagine')
+    category: so.Mapped[str] = sa.Column(sa.Enum(CategoryNames, name='category_name'), index=True, nullable=False, default="music")  # Admin must select from the categories.
     module: so.Mapped[str] = sa.Column(sa.Enum(ModuleNames, name="module_name"), index=True, nullable=False)  # Admin must select from the modules.
     status: so.Mapped[str] = sa.Column(sa.Enum('DRAFT', 'PUBLISHED', 'ARCHIVED', name='status'), default='DRAFT')
     file: so.Mapped[str] = sa.Column(sa.String(255), index=True, nullable=True)
@@ -131,7 +138,7 @@ class Content(Base):
     api_endpoint: so.Mapped[Optional[str]] = sa.Column(sa.String(2083), nullable=True)
 
     # Columns managed by event listeners
-    description: so.Mapped[str] = sa.Column(sa.Text, nullable=True)
+    description: so.Mapped[str] = sa.Column(sa.Text, nullable=True,default="Welcome to my world of Love and Truth")
     version: so.Mapped[float] = sa.Column(sa.Float, default=1.0)
     created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc))  # Set only once on insert
     updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))  # Updated on each modification
@@ -144,7 +151,6 @@ class Content(Base):
 
     # Columns to be handled by add_content route (yet to be implemented)
     created_by: so.Mapped[str] = sa.Column(sa.String(80), default='Admin')  # To be set in the add_content route in routes.py
-    file_path: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)
     file_size: so.Mapped[int] = sa.Column(sa.Integer, default=0)  # To be handled in add_content route
     estimated_reading_time: so.Mapped[int] = sa.Column(sa.Integer, nullable=True)  # In minutes, to be handled later
     bookmark_count: so.Mapped[int] = sa.Column(sa.Integer, default=0)  # To be handled in add_content route or related route
@@ -159,13 +165,13 @@ class Content(Base):
 class Reference(Base):
     __tablename__ = 'references'
 
-    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
-    content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id',ondelete='CASCADE', onupdate='CASCADE'),nullable=False)
+    id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
+    content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=True)
     title: so.Mapped[str] = sa.Column(sa.String(255), nullable=False)
     category: so.Mapped[str] = sa.Column(sa.Enum(CategoryNames, name='category_name'), index=True, nullable=False)  # Admin must select from the categories.
     module: so.Mapped[str] = sa.Column(sa.Enum(ModuleNames, name="module_name"), index=True, nullable=False)  # Admin must select from the modules.
     file: so.Mapped[str] = sa.Column(sa.String(255), index=True, nullable=True)
-    file_path: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)
+    filepath: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)
     url: so.Mapped[Optional[str]] = sa.Column(sa.String(2083), nullable=True)
     embed_code: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
     description: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
@@ -183,17 +189,16 @@ class AdminReportTemplate(Base):
     __tablename__ = 'admin_report_templates'
 
     id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
-    template_name: so.Mapped[str] = sa.Column(sa.String(255), nullable=False, unique=True, index=True)
-    body_part: so.Mapped[BodyPartEnum] = sa.Column(sa.Enum(BodyPartEnum, name='body_part_enum'), nullable=False, index=True)
-    modality: so.Mapped[ModalityEnum] = sa.Column(sa.Enum(ModalityEnum, name='modality_enum'), nullable=False, index=True)
+    template_name: so.Mapped[str] = sa.Column(sa.String(255), nullable=True, unique=True, index=True)
+    body_part: so.Mapped[BodyPartEnum] = sa.Column(sa.Enum(BodyPartEnum, name='body_part_enum'), nullable=True, index=True)
+    modality: so.Mapped[ModalityEnum] = sa.Column(sa.Enum(ModalityEnum, name='modality_enum'), nullable=True, index=True)
     file: so.Mapped[str] = sa.Column(sa.String(255), nullable=True)  # Path to the uploaded file
-    file_path: so.Mapped[str] = sa.Column(sa.String(255), nullable=True)  # Physical location on disk
+    filepath: so.Mapped[str] = sa.Column(sa.String(255), nullable=True)  # Physical location on disk
     tags: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)  # Comma-separated or JSON format
     category: so.Mapped[str] = sa.Column(
         sa.String, 
-        nullable=False, 
+        nullable=True, 
         index=True, 
-        default=CategoryNames.REPORT_TEMPLATE  # Default category
     )
     module: so.Mapped[Optional[ModuleNames]] = sa.Column(
         sa.Enum(ModuleNames, name='module_name'), 
@@ -213,9 +218,9 @@ class AdminReportTemplate(Base):
 class UserData(Base):
     __tablename__ = 'user_data'
 
-    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True, nullable=False)
-    user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
-    content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
+    id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
+    user_id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=True)
+    content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=True)
     interaction_type: so.Mapped[str] = sa.Column(sa.Enum('viewed', 'bookmarked', 'recommended','registered','logged_in','loged_out','updated_profile_pic',"updated_username",'updated_email','updated_report_templates','updated_category_module_preferences','updated_contents','added_feedback', name='interaction_types'), nullable=False, default='viewed')
     last_interaction: so.Mapped[datetime] = sa.Column(sa.DateTime, nullable=False, default=datetime.now(timezone.utc))
     feedback: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
@@ -234,10 +239,11 @@ class UserData(Base):
 class UserContentState(Base):
     __tablename__ = 'user_content_states'
 
-    id = sa.Column(sa.Integer, primary_key=True, nullable=False)
-    user_id = sa.Column(sa.Integer, sa.ForeignKey('users.id',ondelete='CASCADE', onupdate='CASCADE'),nullable=False)
-    content_id = sa.Column(sa.Integer, sa.ForeignKey('contents.id',ondelete='CASCADE', onupdate='CASCADE'))
-    modified_file_path = sa.Column(sa.String(255), nullable=True)
+    id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
+    content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=True)
+    user_id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
+
+    modified_filepath = sa.Column(sa.String(255), nullable=True)
     annotations = sa.Column(sa.Text, nullable=True)  # JSON or text format of annotations
     created_at = sa.Column(sa.DateTime, default=datetime.now(timezone.utc))
     updated_at = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
@@ -251,14 +257,18 @@ class UserReportTemplate(Base):
     __tablename__ = 'user_report_templates'
 
     id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True,nullable=False)
-    body_part: so.Mapped[BodyPartEnum] = sa.Column(sa.Enum(BodyPartEnum, name='body_part_enum'), nullable=False, index=True)
-    modality: so.Mapped[ModalityEnum] = sa.Column(sa.Enum(ModalityEnum, name='modality_enum'), nullable=False, index=True)
-    template_name: so.Mapped[str] = sa.Column(sa.String(255), nullable=False, unique=True, index=True)
+    
+    body_part: so.Mapped[BodyPartEnum] = sa.Column(sa.Enum(BodyPartEnum, name='body_part_enum'), nullable=True, index=True)
+    modality: so.Mapped[ModalityEnum] = sa.Column(sa.Enum(ModalityEnum, name='modality_enum'), nullable=True, index=True)
+    template_name: so.Mapped[str] = sa.Column(sa.String(255), nullable=True, unique=True, index=True)
     tags: so.Mapped[str] = sa.Column(sa.Text, nullable=True)  # Store tags as comma-separated or JSON format
-    is_public: so.Mapped[bool] = sa.Column(sa.Boolean, default=False, nullable=False, index=True)
+    is_public: so.Mapped[bool] = sa.Column(sa.Boolean, default=False, nullable=True, index=True)
+    created_at = sa.Column(sa.DateTime, default=datetime.now(timezone.utc))
+    updated_at = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
 
     # Foreign keys and relationships
-    user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id',ondelete='CASCADE', onupdate='CASCADE'), nullable=False, index=True)
+    user_id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False, index=True)
+
     user: so.Mapped['User'] = so.relationship('User', backref='report_templates')
 
     # Enum references to match category and module columns in Content model
@@ -268,7 +278,7 @@ class UserReportTemplate(Base):
     # Template content and file upload
     template_text: so.Mapped[str] = sa.Column(sa.Text, nullable=True)  # For storing copy-paste text of the template
     file: so.Mapped[str] = sa.Column(sa.String(255), nullable=True)  # Path to the uploaded file (docx, txt only)
-    file_path: so.Mapped[str] = sa.Column(sa.String(255), nullable=True)  # Path where the file is stored on disk
+    filepath: so.Mapped[str] = sa.Column(sa.String(255), nullable=True)  # Path where the file is stored on disk
 
     # Timestamp columns
     created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), nullable=False)
@@ -281,15 +291,15 @@ class UserReportTemplate(Base):
 class UserProfile(Base):
     __tablename__ = 'user_profiles'
 
-    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True,nullable=False)
-    user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id',ondelete='CASCADE', onupdate='CASCADE'), nullable=False, unique=True, index=True)
+    id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
+    user_id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
+
     profile_pic: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)  # Path to profile picture
     profile_pic_path: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)  # Path to profile picture for management
     preferred_categories: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)  # Comma-separated or JSON format
     preferred_modules: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)  # Comma-separated or JSON format
-    report_templates: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)  # JSON list of template references
-    created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.utcnow, nullable=False)
-    updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), nullable=False)
+    updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc), nullable=False)
 
     # Relationship to User
     user: so.Mapped['User'] = so.relationship('User', backref=so.backref('profile', uselist=False, cascade="all, delete-orphan"))
@@ -301,13 +311,15 @@ class UserProfile(Base):
 # ----------------------------------------------
 class UserFeedback(Base):
     __tablename__ = 'user_feedbacks'
+    id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
+    user_id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
 
-    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True,nullable=False)
-    user_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('users.id',ondelete='CASCADE', onupdate='CASCADE'), nullable=False)  # References the 'users' table
-    content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id',ondelete='CASCADE', onupdate='CASCADE'), nullable=False)  # References the 'contents' table
-    feedback: so.Mapped[str] = sa.Column(sa.Text, nullable=False)
-    is_public: so.Mapped[bool] = sa.Column(sa.Boolean, default=False, nullable=False)
+    content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=True)  # References the 'users' table
+    feedback: so.Mapped[str] = sa.Column(sa.Text, nullable=True)
+    is_public: so.Mapped[bool] = sa.Column(sa.Boolean, default=False, nullable=True)
     user_display_name: so.Mapped[Optional[str]] = sa.Column(sa.String(100), nullable=True)
+    created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), nullable=False)
+    updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc),  onupdate=datetime.now(timezone.utc), nullable=False)
 
     # Relationships
     user = so.relationship('User', backref='feedbacks')  # The 'User' class will have an attribute 'feedbacks' for accessing related UserFeedback records

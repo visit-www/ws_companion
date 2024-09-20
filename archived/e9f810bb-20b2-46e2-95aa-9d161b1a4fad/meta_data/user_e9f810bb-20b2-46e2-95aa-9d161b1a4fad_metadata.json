@@ -1,0 +1,17 @@
+{
+    "user": {
+        "id": "e9f810bb-20b2-46e2-95aa-9d161b1a4fad",
+        "username": "user1",
+        "password": "pbkdf2:sha256:600000$GR3dvWWtFrnEWNeG$bfeb5622c2a710114ab9e67488a061d9dc49147d45d9d1e2c8c9fbd7107c0ffd",
+        "email": "user1@gmail.com",
+        "is_paid": false,
+        "is_admin": false,
+        "status": "active",
+        "created_at": "2024-09-20 04:20:20.614825"
+    },
+    "profile": null,
+    "user_data": [],
+    "user_content_states": [],
+    "report_templates": [],
+    "feedbacks": []
+}
