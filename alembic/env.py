@@ -1,5 +1,4 @@
 from app.models import Base  # Import the Base object from your models.py
-from config import DATABASE_URL
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
