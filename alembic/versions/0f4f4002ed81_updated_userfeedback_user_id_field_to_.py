@@ -10,6 +10,8 @@ from typing import Sequence, Union
 from alembic import op
 import sqlalchemy as sa
 from datetime import datetime, timezone
+from datetime import datetime
+from sqlalchemy import text
 
 
 # revision identifiers, used by Alembic.
@@ -49,7 +51,7 @@ def upgrade() -> None:
         'is_paid': False,
         'is_admin': False,
         'status': 'active',
-        'created_at': datetime.now(timezone.utc)
+        'created_at': datetime.utcnow()
     }
 )
 
