@@ -32,7 +32,7 @@ def login():
     form = LoginForm()  # Instantiate the form
     login_failed = False  # Default value for login_failed
     if form.validate_on_submit():  # Checks if the form is submitted and valid
-        username = form.username.data.strip()
+        username = form.username.data.strip().lower()
         password = form.password.data.strip()
         remember = 'remember' in request.form  # Check if "Remember Me" was selected
         
@@ -135,7 +135,7 @@ def register():
             try:
                 # Create and add the new user
                 hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-                new_user = User(username=username, password=hashed_password, email=email.lower())
+                new_user = User(username=username.lower(), password=hashed_password, email=email.lower())
                 db.session.add(new_user)
                 db.session.commit()
 
@@ -419,7 +419,7 @@ def profile_manager():
                         flash('Username already taken. Please choose a different username.', 'warning')
                     else:
                         try:
-                            current_user.username = requested_username
+                            current_user.username = requested_username.lower()
                             user_data = db.session.query(UserData).filter_by(user_id=current_user.id).first()
                             user_data.last_interaction = datetime.now(timezone.utc)
                             user_data.interaction_type = "updated_username"
