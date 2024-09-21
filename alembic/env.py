@@ -18,14 +18,13 @@ if config.config_file_name is not None:
 # Here’s the key change:
 # Check if we are running on Heroku (using DATABASE_URL)
 #If DATABASE_URL is found, override the sqlalchemy.url in alembic.ini
+# Fetch DATABASE_URL and replace postgres:// with postgresql://
 database_url = os.getenv("DATABASE_URL")
-if database_url:
-    config.set_main_option("sqlalchemy.url", database_url)
 
+if database_url and database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
 
-database_url = os.getenv("DATABASE_URL")
-if database_url:
-    config.set_main_option("sqlalchemy.url", database_url)
+config.set_main_option("sqlalchemy.url", database_url)
 
 # add your model's MetaData object here
 # for 'autogenerate' support
