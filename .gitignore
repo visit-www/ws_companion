@@ -1,3 +1,4 @@
 .flaskenv
 .wscdb_backup.sql
 .structure.txt
+.app/alembic/__pycache__
