@@ -9,6 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 import sqlalchemy as sa
+from datetime import datetime, timezone
 
 
 # revision identifiers, used by Alembic.
@@ -36,19 +37,22 @@ def upgrade() -> None:
     if not result:
         # Insert the anonymous user if not present
         connection.execute(
-            sa.text("""
-                INSERT INTO users (id, username, password, email, is_paid, is_admin, status, created_at)
-                VALUES (:id, :username, :password, :email, :is_paid, :is_admin, :status, :created_at)
-            """),
-            id=str(ANONYMOUS_USER_ID),
-            username='anonymous',
-            password='',  # Ensure this cannot be used to log in
-            email='anonymous@example.com',
-            is_paid=False,
-            is_admin=False,
-            status='active',
-            created_at=datetime.utcnow()
-        )
+    sa.text("""
+        INSERT INTO users (id, username, password, email, is_paid, is_admin, status, created_at)
+        VALUES (:id, :username, :password, :email, :is_paid, :is_admin, :status, :created_at)
+    """),
+    {
+        'id': str(ANONYMOUS_USER_ID),
+        'username': 'anonymous',
+        'password': '',  # Ensure this cannot be used to log in
+        'email': 'anonymous@example.com',
+        'is_paid': False,
+        'is_admin': False,
+        'status': 'active',
+        'created_at': datetime.now(timezone.utc)
+    }
+)
+
 
     # Set the default value for user_id column to anonymous user's ID
     op.alter_column(
