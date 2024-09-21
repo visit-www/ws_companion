@@ -1,0 +1,48 @@
+{
+    "user": {
+        "id": "d1b90715-49f1-415e-8e8e-1f7851fa16fc",
+        "username": "user3",
+        "password": "pbkdf2:sha256:600000$SspNp3Rp6st7jejP$60c8ab20bad1803aff8e8840bc7c4c2dd81bd96ee2688bb99d22ecbfe26b2f00",
+        "email": "user3@gmail.com",
+        "is_paid": false,
+        "is_admin": false,
+        "status": "inactive",
+        "created_at": "2024-09-20 23:31:24.202201"
+    },
+    "profile": {
+        "id": "43517296-8fbb-4114-b0a5-d9b765a008fb",
+        "user_id": "d1b90715-49f1-415e-8e8e-1f7851fa16fc",
+        "profile_pic": "dummy_profile_pic.png",
+        "profile_pic_path": "/Users/zen/data-science/projects/ws_companion/user_data/d1b90715-49f1-415e-8e8e-1f7851fa16fc/profile_pic/dummy_profile_pic.png",
+        "preferred_categories": "guidelines,classifications,differential_diagnosis,vetting_tools,anatomy,curated_contents,report_checker,rad_calculators,tnm_staging,image_search,physics,governance_audits,courses,research_tools,music,report_template",
+        "preferred_modules": "head_and_neck,neuroradiology,chest,cardiovascular,breast,gastrointestinal,abdominal,genitourinary,musculoskeletal,vascular,pediatric,oncologic,emergency,interventional,nuclear_medicine,radiographers,others",
+        "created_at": "2024-09-20 23:31:24.205204",
+        "updated_at": "2024-09-20 23:31:24.205205"
+    },
+    "user_data": [
+        {
+            "id": "188c2a84-f03f-4c10-895c-df42912de606",
+            "user_id": "d1b90715-49f1-415e-8e8e-1f7851fa16fc",
+            "content_id": null,
+            "interaction_type": "logged_out",
+            "last_interaction": "2024-09-20 23:31:36.364226",
+            "feedback": null,
+            "content_rating": null,
+            "time_spent": -3587,
+            "last_login": "2024-09-21 00:31:24.205244"
+        }
+    ],
+    "user_content_states": [
+        {
+            "id": "2f75aca8-1c51-444c-84c4-59bb4677bda8",
+            "content_id": null,
+            "user_id": "d1b90715-49f1-415e-8e8e-1f7851fa16fc",
+            "modified_filepath": null,
+            "annotations": null,
+            "created_at": "2024-09-20 23:31:24.205269",
+            "updated_at": "2024-09-20 23:31:24.205269"
+        }
+    ],
+    "report_templates": [],
+    "feedbacks": []
+}

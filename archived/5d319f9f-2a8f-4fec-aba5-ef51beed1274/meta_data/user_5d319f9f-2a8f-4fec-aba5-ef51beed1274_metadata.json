@@ -1,0 +1,76 @@
+{
+    "user": {
+        "id": "5d319f9f-2a8f-4fec-aba5-ef51beed1274",
+        "username": "anonymous_user",
+        "password": "pbkdf2:sha256:600000$6i9aT691nlvPa96A$2e8c3d68aeacfcedd0d7668797c85f6f0a6028ec1529f5cd3998e390b2ba461b",
+        "email": "gaurav.gupta@nhs.scot",
+        "is_paid": false,
+        "is_admin": false,
+        "status": "inactive",
+        "created_at": "2024-09-20 16:55:19.224057"
+    },
+    "profile": {
+        "id": "adf2a5b9-ceeb-42a0-b2ea-24bf21df035b",
+        "user_id": "5d319f9f-2a8f-4fec-aba5-ef51beed1274",
+        "profile_pic": "dummy_profile_pic.png",
+        "profile_pic_path": "/Users/zen/data-science/projects/ws_companion/user_data/5d319f9f-2a8f-4fec-aba5-ef51beed1274/profile_pic/dummy_profile_pic.png",
+        "preferred_categories": "guidelines,classifications,differential_diagnosis,vetting_tools,anatomy,curated_contents,report_checker,rad_calculators,tnm_staging,image_search,physics,governance_audits,courses,research_tools,music,report_template",
+        "preferred_modules": "head_and_neck,neuroradiology,chest,cardiovascular,breast,gastrointestinal,abdominal,genitourinary,musculoskeletal,vascular,pediatric,oncologic,emergency,interventional,nuclear_medicine,radiographers,others",
+        "created_at": "2024-09-20 16:55:19.227871",
+        "updated_at": "2024-09-20 16:55:19.227872"
+    },
+    "user_data": [
+        {
+            "id": "36d0da6d-7b73-4490-86e3-4947ee26a25b",
+            "user_id": "5d319f9f-2a8f-4fec-aba5-ef51beed1274",
+            "content_id": null,
+            "interaction_type": "loged_out",
+            "last_interaction": "2024-09-20 16:55:25.870048",
+            "feedback": null,
+            "content_rating": null,
+            "time_spent": -3593,
+            "last_login": "2024-09-20 17:55:19.227906"
+        }
+    ],
+    "user_content_states": [
+        {
+            "id": "2371e22c-c167-4197-ae65-7b891aa8f2a8",
+            "content_id": null,
+            "user_id": "5d319f9f-2a8f-4fec-aba5-ef51beed1274",
+            "modified_filepath": null,
+            "annotations": null,
+            "created_at": "2024-09-20 16:55:19.227926",
+            "updated_at": "2024-09-20 16:55:19.227926"
+        }
+    ],
+    "report_templates": [
+        {
+            "id": 5,
+            "body_part": null,
+            "modality": null,
+            "template_name": null,
+            "tags": null,
+            "is_public": false,
+            "user_id": "5d319f9f-2a8f-4fec-aba5-ef51beed1274",
+            "category": null,
+            "module": null,
+            "template_text": null,
+            "file": null,
+            "filepath": null,
+            "created_at": "2024-09-20 16:55:19.227965",
+            "updated_at": "2024-09-20 16:55:19.227965"
+        }
+    ],
+    "feedbacks": [
+        {
+            "id": "ab7aa2dc-7b97-4852-934a-b8364a923461",
+            "user_id": "5d319f9f-2a8f-4fec-aba5-ef51beed1274",
+            "content_id": null,
+            "feedback": null,
+            "is_public": false,
+            "user_display_name": null,
+            "created_at": "2024-09-20 16:55:19.227941",
+            "updated_at": "2024-09-20 16:55:19.227942"
+        }
+    ]
+}

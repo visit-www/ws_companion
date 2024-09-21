@@ -1,0 +1,76 @@
+{
+    "user": {
+        "id": "d3cde90a-dca3-49ff-9277-5b104c352d24",
+        "username": "user",
+        "password": "pbkdf2:sha256:600000$P0kRqwnItfZZDmzk$e8ea538dad99c7aa56307771f13f2446e50ac5da402d27a0ebc591618d7779a9",
+        "email": "user1@gmail.com",
+        "is_paid": false,
+        "is_admin": false,
+        "status": "inactive",
+        "created_at": "2024-09-20 18:23:09.809605"
+    },
+    "profile": {
+        "id": "1f30463e-7d33-437b-a304-afc1a9b4296f",
+        "user_id": "d3cde90a-dca3-49ff-9277-5b104c352d24",
+        "profile_pic": "dummy_profile_pic.png",
+        "profile_pic_path": "/Users/zen/data-science/projects/ws_companion/user_data/d3cde90a-dca3-49ff-9277-5b104c352d24/profile_pic/dummy_profile_pic.png",
+        "preferred_categories": "guidelines,classifications,differential_diagnosis,vetting_tools,anatomy,curated_contents,report_checker,rad_calculators,tnm_staging,image_search,physics,governance_audits,courses,research_tools,music,report_template",
+        "preferred_modules": "head_and_neck,neuroradiology,chest,cardiovascular,breast,gastrointestinal,abdominal,genitourinary,musculoskeletal,vascular,pediatric,oncologic,emergency,interventional,nuclear_medicine,radiographers,others",
+        "created_at": "2024-09-20 18:23:09.817175",
+        "updated_at": "2024-09-20 18:23:09.817177"
+    },
+    "user_data": [
+        {
+            "id": "f44d168a-7f45-4ca0-9d32-f870fed61a62",
+            "user_id": "d3cde90a-dca3-49ff-9277-5b104c352d24",
+            "content_id": null,
+            "interaction_type": "loged_out",
+            "last_interaction": "2024-09-20 18:29:30.752950",
+            "feedback": null,
+            "content_rating": null,
+            "time_spent": -3219,
+            "last_login": "2024-09-20 19:23:09.817228"
+        }
+    ],
+    "user_content_states": [
+        {
+            "id": "6c5890eb-ce90-436d-bb50-e55d84d0cb56",
+            "content_id": null,
+            "user_id": "d3cde90a-dca3-49ff-9277-5b104c352d24",
+            "modified_filepath": null,
+            "annotations": null,
+            "created_at": "2024-09-20 18:23:09.817253",
+            "updated_at": "2024-09-20 18:23:09.817253"
+        }
+    ],
+    "report_templates": [
+        {
+            "id": 8,
+            "body_part": null,
+            "modality": null,
+            "template_name": null,
+            "tags": null,
+            "is_public": false,
+            "user_id": "d3cde90a-dca3-49ff-9277-5b104c352d24",
+            "category": null,
+            "module": null,
+            "template_text": null,
+            "file": null,
+            "filepath": null,
+            "created_at": "2024-09-20 18:23:09.817293",
+            "updated_at": "2024-09-20 18:23:09.817293"
+        }
+    ],
+    "feedbacks": [
+        {
+            "id": "28288a4e-5e08-47b8-a4ea-63ae84408bb4",
+            "user_id": "d3cde90a-dca3-49ff-9277-5b104c352d24",
+            "content_id": null,
+            "feedback": null,
+            "is_public": false,
+            "user_display_name": null,
+            "created_at": "2024-09-20 18:23:09.817273",
+            "updated_at": "2024-09-20 18:23:09.817273"
+        }
+    ]
+}

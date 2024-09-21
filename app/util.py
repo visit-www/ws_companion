@@ -77,6 +77,30 @@ def add_default_admin(admin_data):
         print(f"Admin data initialized.")
     else:
         print(f"Admin already exists: {admin_user.username}")
+# Crreate Anonymous user to relate to orphaned data after users or content is delated (referecnes, userfeedback)
+from config import ANONYMOUS_USER_ID
+def add_anonymous_user():
+    anonymous_user = db.session.query(User).filter_by(username='anonymous').first()
+    try:
+        if not anonymous_user:
+            # Create anonymous user
+            anonymous_user = User(
+                id=ANONYMOUS_USER_ID,
+                username='anonymous',
+                email='lotusheart2016s@gmail.com',
+                is_paid=False,
+                is_admin=False,
+                status='active',
+            )
+            anonymous_user.set_password('EraRam@2024')
+            db.session.add(anonymous_user)
+            db.session.commit()
+            print(f"Anonymous user created: {anonymous_user}, {anonymous_user.email}")
+        else:
+            print(f"Anonymous user already exists: {anonymous_user.username}")
+    except Exception as e:
+        print(f"Error adding anonymous user: {e}")
+
 
 def add_default_contents(contents_data):
     """Add default contents if not already present."""
@@ -115,3 +139,4 @@ def load_default_data():
     except FileNotFoundError:
         print("default_data.json not found")
         return None
+

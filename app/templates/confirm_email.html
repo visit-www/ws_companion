@@ -18,19 +18,30 @@
             padding: 20px;
             border: 1px solid #ddd;
             border-radius: 8px;
-            box-shadow: 3px 10px 10px 3px ;
-            background-color: #f1f5cd;
+            background-color: #e7d7e4;
+            box-shadow: 8px 10px 10px 8px ;
         }
         .header {
             font-size: 24px;
             font-weight: bold;
             text-align: center;
-            color: #daa411; /* Mussel yellow */
+            color: #0c8819; /* Pastel blue */
         }
         .body {
             margin-top: 20px;
             font-size: 16px;
             color: #555;
+        }
+        .button {
+            display: block;
+            width: fit-content;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #7bc96f; /* Pastel green */
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
         }
         .footer {
             margin-top: 20px;
@@ -44,14 +55,15 @@
 </head>
 <body>
     <div class="email-container">
-        <div class="header">Lost Your Username? No Biggie!</div>
+        <div class="header">Confirm Your Email!</div>
         <div class="body">
-            <p>We’ve all been there! Here’s a little reminder of your username:</p>
-            <p><strong>{{ user.username }}</strong></p>
-            <p>If you didn’t request this, feel free to ignore it. No need to panic, your account is still secure! 👍</p>
+            <p>Did you try to update your account with this wonderful email address?</p>
+            <P>If you try to update your account on WSCompanion app with this email addres,just click the button below to confirm owndership of this email address and update your account with this shiny new emai address.</p>
+            <a href="{{ confirm_link }}" class="button">Reset Password</a>
+            <p>If you didn’t request this, you can safely ignore this email. Your email address is safe and secure with you! 😉</p>
         </div>
         <div class="footer">
-            <p>Cheers,<br>The WS Companion Team</p>
+            <p>Cheers,<br>The WSCompanion Team</p>
         </div>
     </div>
 </body>

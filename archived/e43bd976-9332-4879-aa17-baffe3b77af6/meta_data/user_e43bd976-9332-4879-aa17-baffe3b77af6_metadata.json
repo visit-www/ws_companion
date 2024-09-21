@@ -1,0 +1,65 @@
+{
+    "user": {
+        "id": "e43bd976-9332-4879-aa17-baffe3b77af6",
+        "username": "user2",
+        "password": "pbkdf2:sha256:600000$LDsHX11dUxRpRdt1$9a5b9bee9d2903535ef96e54d94d1688fa12295220264e5ef3cfe5d11c3e12b4",
+        "email": "user2@gmail.com",
+        "is_paid": false,
+        "is_admin": false,
+        "status": "inactive",
+        "created_at": "2024-09-20 12:34:16.152689"
+    },
+    "profile": {
+        "id": "63fce23d-ebc6-4db5-9b6e-d17d4b831432",
+        "user_id": "e43bd976-9332-4879-aa17-baffe3b77af6",
+        "profile_pic": "dummy_profile_pic.png",
+        "profile_pic_path": "/Users/zen/data-science/projects/ws_companion/user_data/e43bd976-9332-4879-aa17-baffe3b77af6/profile_pic/dummy_profile_pic.png",
+        "preferred_categories": "guidelines,classifications,differential_diagnosis,vetting_tools,anatomy,curated_contents,report_checker,rad_calculators,tnm_staging,image_search,physics,governance_audits,courses,research_tools,music,report_template",
+        "preferred_modules": "head_and_neck,neuroradiology,chest,cardiovascular,breast,gastrointestinal,abdominal,genitourinary,musculoskeletal,vascular,pediatric,oncologic,emergency,interventional,nuclear_medicine,radiographers,others",
+        "created_at": "2024-09-20 12:34:16.156625",
+        "updated_at": "2024-09-20 12:34:16.156626"
+    },
+    "user_data": [
+        {
+            "id": "48b6f371-c50a-4b36-8419-e8f2d114ff50",
+            "user_id": "e43bd976-9332-4879-aa17-baffe3b77af6",
+            "content_id": null,
+            "interaction_type": "loged_out",
+            "last_interaction": "2024-09-20 12:34:30.206144",
+            "feedback": null,
+            "content_rating": null,
+            "time_spent": -3585,
+            "last_login": "2024-09-20 13:34:16.156667"
+        }
+    ],
+    "user_content_states": [
+        {
+            "id": "da8808e3-f151-4006-bfa7-6478f3ca54dc",
+            "content_id": null,
+            "user_id": "e43bd976-9332-4879-aa17-baffe3b77af6",
+            "modified_filepath": null,
+            "annotations": null,
+            "created_at": "2024-09-20 12:34:16.156690",
+            "updated_at": "2024-09-20 12:34:16.156691"
+        }
+    ],
+    "report_templates": [
+        {
+            "id": 2,
+            "body_part": null,
+            "modality": null,
+            "template_name": null,
+            "tags": null,
+            "is_public": false,
+            "user_id": "e43bd976-9332-4879-aa17-baffe3b77af6",
+            "category": null,
+            "module": null,
+            "template_text": null,
+            "file": null,
+            "filepath": null,
+            "created_at": "2024-09-20 12:34:16.156727",
+            "updated_at": "2024-09-20 12:34:16.156727"
+        }
+    ],
+    "feedbacks": []
+}
