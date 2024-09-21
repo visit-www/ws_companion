@@ -13,7 +13,7 @@ import os
 from datetime import datetime,timedelta,timezone
 from flask_mail import Mail
 from uuid import UUID
-from .util import load_default_data,add_default_admin,add_default_contents
+from .util import load_default_data,add_default_admin,add_default_contents,add_anonymous_user
 
 # Initialize Flask extensions (SQLAlchemy, Flask-Migrate, LoginManager, Flask-Admin, CSRFProtect)
 got_first_request=True
@@ -53,7 +53,7 @@ def create_app():
     # Import models and add to Flask-Admin here to avoid circular import
     with app.app_context():
         from .models import User, Content, UserData, Reference, UserFeedback, UserContentState, UserProfile, UserReportTemplate, AdminReportTemplate,CategoryNames, ModuleNames
-        from .admin_views import MyModelView,UserModelView # Import both MyModelView  and UserModelView
+        from .admin_views import MyModelView,UserModelView,ExtendModelView # Import both MyModelView  and UserModelView
 
     # Register Models in Flask-Admin
     # Register admin-related models with MyModelView
@@ -63,11 +63,11 @@ def create_app():
 
     # Register user-related models with ModelView
     flask_admin.add_view(UserModelView(User, db.session, endpoint='users'))
-    flask_admin.add_view(ModelView(UserData, db.session, endpoint='user_data'))
-    flask_admin.add_view(ModelView(UserFeedback, db.session, endpoint='user_feedbacks'))
-    flask_admin.add_view(ModelView(UserContentState, db.session, endpoint='user_content_states'))
-    flask_admin.add_view(ModelView(UserProfile, db.session, endpoint='user_profiles'))
-    flask_admin.add_view(ModelView(UserReportTemplate, db.session, endpoint='user_report_templates'))
+    flask_admin.add_view(ExtendModelView(UserData, db.session, endpoint='user_data'))
+    flask_admin.add_view(ExtendModelView(UserFeedback, db.session, endpoint='user_feedbacks'))
+    flask_admin.add_view(ExtendModelView(UserContentState, db.session, endpoint='user_content_states'))
+    flask_admin.add_view(ExtendModelView(UserProfile, db.session, endpoint='user_profiles'))
+    flask_admin.add_view(ExtendModelView(UserReportTemplate, db.session, endpoint='user_report_templates'))
     # ! Other app configurations, like database setup, blueprints, etc.
 
     # * Route to serve user data files
@@ -138,15 +138,21 @@ def create_app():
         #load default data:
         default_data=load_default_data()
         # Add default admin
-        add_default_admin(default_data['admin'])
-        print("Default admin loaded successfully")
+        try:
+            add_default_admin(default_data['admin'])
+            print("Default admin loaded successfully")
+        except Exception as e:
+            print(f"Error while adding default admin: {e}")
+            pass
         global got_first_request
-        print("default setter function")
+        print("default contents and anonymous user will be set.")
         if got_first_request:
             print(" will set defaults ")
             add_default_contents(default_data['contents'])
             print("Default contents loaded successfully")  # Add default data for contents and admin
-            print("default setting set")
+            print("Will look for anaonymous user and create one if not existing")
+            add_anonymous_user()
+            print("Default anonymous user loaded successfully")  # Add default data for anonymous user
             got_first_request = False  # Ensure this function is only called once
 
     #Logging

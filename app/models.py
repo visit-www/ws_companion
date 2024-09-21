@@ -219,9 +219,9 @@ class UserData(Base):
     __tablename__ = 'user_data'
 
     id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
-    user_id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=True)
+    user_id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
     content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=True)
-    interaction_type: so.Mapped[str] = sa.Column(sa.Enum('viewed', 'bookmarked', 'recommended','registered','logged_in','loged_out','updated_profile_pic',"updated_username",'updated_email','updated_report_templates','updated_category_module_preferences','updated_contents','added_feedback', name='interaction_types'), nullable=False, default='viewed')
+    interaction_type: so.Mapped[str] = sa.Column(sa.Enum('viewed', 'bookmarked', 'recommended','registered','logged_in','logged_out','updated_profile_pic',"updated_username",'updated_email','updated_report_templates','updated_category_module_preferences','updated_contents','added_feedback', name='interaction_types'), nullable=False, default='viewed')
     last_interaction: so.Mapped[datetime] = sa.Column(sa.DateTime, nullable=False, default=datetime.now(timezone.utc))
     feedback: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
     content_rating: so.Mapped[Optional[int]] = sa.Column(sa.Integer, nullable=True)
@@ -229,8 +229,8 @@ class UserData(Base):
     last_login: so.Mapped[Optional[datetime]] = sa.Column(sa.DateTime, nullable=True)
 
     # Relationships
-    user = so.relationship('User', backref=so.backref('user_data', lazy='dynamic', cascade="all, delete-orphan"))
-    content = so.relationship('Content', backref=so.backref('user_data', lazy='dynamic', cascade="all, delete-orphan"))
+    user = so.relationship('User', backref=so.backref('user_data', lazy='dynamic', cascade="all, delete-orphan"), passive_deletes=True)
+    content = so.relationship('Content', backref=so.backref('user_data'))
 
     def __repr__(self) -> str:
         return f"<UserData(id={self.id}, user_id={self.user_id}, content_id={self.content_id})>"
@@ -249,8 +249,8 @@ class UserContentState(Base):
     updated_at = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
 
     # Relationships
-    user = so.relationship('User', backref=so.backref('user_content_states', lazy='dynamic', cascade="all, delete-orphan"))
-    content = so.relationship('Content', backref=so.backref('user_content_states', lazy='dynamic', cascade="all, delete-orphan"))
+    user = so.relationship('User', backref=so.backref('user_content_states', lazy='dynamic', cascade="all, delete-orphan"), passive_deletes=True)
+    content = so.relationship('Content', backref=so.backref('user_content_states'))
 
 # 7. UserReportTemplate Model
 class UserReportTemplate(Base):
@@ -269,7 +269,7 @@ class UserReportTemplate(Base):
     # Foreign keys and relationships
     user_id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False, index=True)
 
-    user: so.Mapped['User'] = so.relationship('User', backref='report_templates')
+    user: so.Mapped['User'] = so.relationship('User', backref=so.backref('report_templates',lazy='dynamic', cascade="all, delete-orphan"), passive_deletes=True)
 
     # Enum references to match category and module columns in Content model
     category: so.Mapped[CategoryNames] = sa.Column(sa.Enum(CategoryNames, name='category_name'), nullable=True, index=True)
@@ -302,19 +302,22 @@ class UserProfile(Base):
     updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc), nullable=False)
 
     # Relationship to User
-    user: so.Mapped['User'] = so.relationship('User', backref=so.backref('profile', uselist=False, cascade="all, delete-orphan"))
+    user: so.Mapped['User'] = so.relationship('User', backref=so.backref('profile', uselist=False, cascade="all, delete-orphan"), passive_deletes=True)
 
     def __repr__(self):
         return f"<UserProfile(id={self.id}, user_id={self.user_id})>"
 
 # 9. UserFeedback Model: stores user feedbacks
 # ----------------------------------------------
+from config import ANONYMOUS_USER_ID
 class UserFeedback(Base):
     __tablename__ = 'user_feedbacks'
     id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
-    user_id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
+    user_id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True),sa.ForeignKey('users.id', ondelete='SET DEFAULT', onupdate='CASCADE'),nullable=False,
+    server_default=str(ANONYMOUS_USER_ID)
+    )
 
-    content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=True)  # References the 'users' table
+    content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id', onupdate='CASCADE'), nullable=True)  # References the 'users' table
     feedback: so.Mapped[str] = sa.Column(sa.Text, nullable=True)
     is_public: so.Mapped[bool] = sa.Column(sa.Boolean, default=False, nullable=True)
     user_display_name: so.Mapped[Optional[str]] = sa.Column(sa.String(100), nullable=True)
@@ -322,8 +325,15 @@ class UserFeedback(Base):
     updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc),  onupdate=datetime.now(timezone.utc), nullable=False)
 
     # Relationships
-    user = so.relationship('User', backref='feedbacks')  # The 'User' class will have an attribute 'feedbacks' for accessing related UserFeedback records
-    content = so.relationship('Content', backref='feedbacks')  # The 'Content' class will have an attribute 'feedbacks' for accessing related UserFeedback records
+    user = so.relationship(
+        'User',
+        backref=so.backref('feedbacks', passive_deletes='all'),
+        passive_deletes='all'
+    ) # The 'User' class will have an attribute 'feedbacks' for accessing related UserFeedback records
+    content = so.relationship(
+        'Content', 
+        backref=so.backref('feedbacks', passive_deletes='all'),
+        passive_deletes='all')  # The 'Content' class will have an attribute 'feedbacks' for accessing related UserFeedback records
 
     def __repr__(self) -> str:
         return f"<UserFeedback(id={self.id}, user_display_name='{self.user_display_name}', feedback='{self.feedback[:20]}...')>"

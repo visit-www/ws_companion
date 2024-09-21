@@ -1,0 +1,12 @@
+Confirm Your Email!
+
+Did you try to update your account with this wonderful email address?
+
+If you try to update your account on WSCompanion app with this email addres,just click the button below to confirm owndership of this email address and update your account with this shiny new emai address.
+
+{{ confirm_link }}
+
+If you didn’t request this, you can safely ignore this email. Your email address is safe and secure with you! 😉
+
+Cheers,
+The WSCompanion Team

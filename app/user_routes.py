@@ -76,23 +76,35 @@ def logout():
     user_data = db.session.query(UserData).filter_by(user_id=user_id).first()
 
     if user and user_data:
-        # Convert last_login to timezone-aware if it is naive
-        if user_data.last_login.tzinfo is None:
-            # Assuming stored as UTC if naive, otherwise adjust accordingly
-            user_data.last_login = user_data.last_login.replace(tzinfo=timezone.utc)
-    
-            # Calculate the time spent since the last interaction
+        # Ensure last_login is not None
+        if user_data.last_login is not None:
+            # Ensure last_login is timezone-aware
+            if user_data.last_login.tzinfo is None:
+                user_data.last_login = user_data.last_login.replace(tzinfo=timezone.utc)
+            # Calculate the time spent since last login
             time_spent = (datetime.now(timezone.utc) - user_data.last_login).total_seconds()
-            user_data.time_spent += int(time_spent)  # Convert to integer seconds and add to existing time spent
-            user_data.last_interaction = datetime.now(timezone.utc)
-            user_data.interaction_type = "loged_out"  # Set to a relevant interaction type
-            user.status = "inactive"  # Set user status to inactive
-            # Commit the changes to the database
-            db.session.commit()
+            # Prevent negative time_spent
+            if time_spent < 0:
+                time_spent = 0
+            user_data.time_spent += int(time_spent)
+        else:
+            # If last_login is None, we can't calculate time_spent
+            # Optionally, you can set time_spent to zero or handle it as needed
+            user_data.time_spent += 0
+
+        # Update user data
+        user_data.last_interaction = datetime.now(timezone.utc)
+        user_data.interaction_type = "logged_out"  # Corrected typo from 'loged_out' to 'logged_out'
+        user.status = "inactive"  # Set user status to inactive
+
+        # Commit the changes to the database
+        db.session.commit()
+
     # Log the user out
     logout_user()
     flash('You have been successfully logged out.', 'info')
     return redirect(url_for('app_user.login'))
+
 
 # *----------------------------------------------------------------
 # User Registration Route
@@ -123,7 +135,7 @@ def register():
             try:
                 # Create and add the new user
                 hashed_password = generate_password_hash(password, method='pbkdf2:sha256')
-                new_user = User(username=username, password=hashed_password, email=email)
+                new_user = User(username=username, password=hashed_password, email=email.lower())
                 db.session.add(new_user)
                 db.session.commit()
 
@@ -175,33 +187,6 @@ def register():
                     updated_at=datetime.now(timezone.utc)
                 )
                 db.session.add(user_content_state)
-                # Initialize UserFeedback with baseline information
-                user_feedback = UserFeedback(
-                    user_id=new_user.id, 
-                    feedback=None,
-                    is_public=None,
-                    user_display_name=None,
-                    created_at=datetime.now(timezone.utc),
-                    updated_at=datetime.now(timezone.utc)
-                )
-                db.session.add(user_feedback)
-                # Initialize AdminReportTemplate with
-                user_report_template = UserReportTemplate(
-                    user_id=new_user.id,
-                    template_name=None,
-                    body_part= None,
-                    modality=None,
-                    file=None,
-                    filepath=None,
-                    tags=None,
-                    category=None,
-                    module=None,
-                    template_text=None,
-                    is_public=None,
-                    created_at=datetime.now(timezone.utc),
-                    updated_at=datetime.now(timezone.utc)
-                    )
-                db.session.add(user_report_template)
 
                 # Commit all changes to the database
                 db.session.commit()
@@ -234,6 +219,7 @@ def credential_manager():
     else:
         action=request.form.get('action')
         input_email=request.form.get('email')
+        input_email=input_email.lower()
         user=db.session.query(User).filter_by(email=input_email).first()
         if user:
             user_email=user.email
@@ -311,6 +297,30 @@ def change_password(token):
     
     # Render the change password form
     return render_template('change_password.html', token=token)
+# ********************************
+# Chanage email route:
+@app_user_bp.route('/confirm_email')
+@login_required
+def confirm_email():
+    token = request.args.get('token')
+    if not token:
+        flash('Invalid or missing token.', 'danger')
+        return redirect(url_for('app_user.user_management'))
+    token_data = verify_password_reset_token(token)
+    if token_data and 'email' in token_data:
+        new_email = token_data['email']
+        # Update the user's email
+        try:
+            current_user.email = new_email
+            db.session.commit()
+            flash('Your email has been updated successfully!', 'success')
+        except Exception as e:
+            db.session.rollback()
+            flash('An error occurred while updating your email. Please try again.', 'danger')
+        return redirect(url_for('app_user.user_management'))
+    else:
+        flash('The confirmation link is invalid or has expired.', 'danger')
+        return redirect(url_for('app_user.user_management'))
 
 # *----------------------------------------------------------------
 # User Profile/Account Page and Related Routes
@@ -318,7 +328,7 @@ def change_password(token):
 # Route to serve the user_management page
 @app_user_bp.route('/account', methods=['GET'])
 @login_required
-def user_management():
+def user_management(): 
     categories = CategoryNames  # Enum to populate the categories select box
     modules = ModuleNames  # Enum to populate the modules select box
     # Fetch the current user's profile
@@ -328,6 +338,8 @@ def user_management():
     # Generate URL to serve the profile picture using the `serve_user_data` route
     profile_pic_path = url_for('serve_user_data', filename=profile_pic_rel_path)
     print(f"Profile picture path: {profile_pic_path}")
+    #embed email verfication status. 
+    
     return render_template('user_management.html', categories=categories, modules=modules,profile_pic_path=profile_pic_path)
 # .###############################
 # PROFILE MANAGEMENT ROUTES
@@ -338,11 +350,11 @@ def user_management():
 def profile_manager():
     if request.method == 'POST':
         action = request.form.get('action')
+        username = current_user.username
+        user_id = current_user.id
 
         if action == 'update_profile_pic':
-            username = current_user.username
-            user_id = current_user.id
-
+            
             # Handle profile picture upload logic here
             pic = request.files.get('profile_pic')  # Correctly get the file from the request
             if pic:
@@ -421,16 +433,36 @@ def profile_manager():
                 flash('No username entered. Please enter a username.', 'warning')
             return redirect(url_for('app_user.profile_manager'))
     
-        elif action == 'contact_info':
-            # Handle contact information update logic here
-            flash('Contact information updated successfully!', 'info')
-
+        elif action == 'update_email':
+            requested_email = request.form.get('email')
+            # Check if the email is different
+            if requested_email == current_user.email:
+                flash('You have entered your current email. Please enter a new email.', 'warning')
+            else:
+                # Check if the email is already in use
+                existing_user = db.session.query(User).filter_by(email=requested_email).first()
+                if existing_user:
+                    flash('This email is already in use. Please choose a different email.', 'warning')
+                else:
+                    # Generate token with the new email
+                    token = generate_password_reset_token({'email': requested_email})
+                    # Create the confirmation link
+                    confirm_link = url_for('app_user.confirm_email', token=token, _external=True)
+                    # Send confirmation email
+                    print(f"message will be sent to {requested_email}")
+                    msg = Message('Confirm Your Email Change', recipients=[requested_email])
+                    msg.html = render_template('confirm_email.html', confirm_link=confirm_link)
+                    msg.body = render_template('confirm_email.txt', confirm_link=confirm_link)
+                    mail.send(msg)
+                    flash('A confirmation email has been sent to your new email address. Please check your email. Please note that this link is valid only for 10 minutes.', 'info')
+                    return redirect(url_for('app_user.user_management'))
+                        
         else:
             flash('Unknown profile management action.', 'warning')
 
     categories = CategoryNames
     modules = ModuleNames
-    return render_template('user_management.html', categories=categories, modules=modules)
+    return render_template('user_management.html')
 
 @app_user_bp.route('/delete_account')
 def delete_account():
