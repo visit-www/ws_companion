@@ -10,6 +10,10 @@ class Config:
     SECRET_KEY=os.getenv('SECRET_KEY') or '7ebfffbf75e406f1b63739a0c5e487496be74113d2fd3a672fc45b4a120f571b'
     WTF_CSRF_ENABLED = True
     SQLALCHEMY_DATABASE_URI=os.getenv('DATABASE_URL') or 'postgresql://admin:811976@localhost:5432/wscdb'
+    # Convert Heroku's default postgres:// to postgresql:// if needed
+    if SQLALCHEMY_DATABASE_URI and SQLALCHEMY_DATABASE_URI.startswith("postgres://"):
+        SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace("postgres://", "postgresql://", 1)
+
     SQLALCHEMY_TRACK_MODIFICATIONS=False
     UPLOAD_FOLDER=os.path.join(basedir, 'files')
 
