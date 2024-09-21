@@ -1,1 +1,3 @@
 .flaskenv
+.wscdb_backup.sql
+.structure.txt
