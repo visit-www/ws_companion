@@ -1,4 +1,6 @@
 from app.models import Base  # Import the Base object from your models.py
+from app.models import User, Content, Reference, AdminReportTemplate, UserData, UserContentState, UserReportTemplate, UserProfile, UserFeedback
+
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -25,12 +27,15 @@ if database_url and database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
 
 config.set_main_option("sqlalchemy.url", database_url)
+print("Database URL:", database_url)
+
 
 # add your model's MetaData object here
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 target_metadata = Base.metadata
+
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -77,14 +82,18 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection,
+            target_metadata=target_metadata,
+            version_table_schema="public"  # Set the default schema to public
         )
 
         with context.begin_transaction():
             context.run_migrations()
 
 
+
 if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
+
