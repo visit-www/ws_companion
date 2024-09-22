@@ -135,25 +135,35 @@ def create_app():
     # Function to create admin at application start if not there :
     @app.before_request
     def setup_defaults():
-        #load default data:
-        default_data=load_default_data()
-        # Add default admin
-        try:
-            add_default_admin(default_data['admin'])
-            print("Default admin loaded successfully")
-        except Exception as e:
-            print(f"Error while adding default admin: {e}")
-            pass
         global got_first_request
-        print("default contents and anonymous user will be set.")
+        
         if got_first_request:
-            print(" will set defaults ")
-            add_default_contents(default_data['contents'])
-            print("Default contents loaded successfully")  # Add default data for contents and admin
-            print("Will look for anaonymous user and create one if not existing")
-            add_anonymous_user()
-            print("Default anonymous user loaded successfully")  # Add default data for anonymous user
-            got_first_request = False  # Ensure this function is only called once
+            print("App initialisation: default contents, admin and anonymous user will be set.")
+            #load default data:
+            default_data=load_default_data()
+            # Add default admin
+            print('I will set admin if does not already exist')
+            try:
+                add_default_admin(default_data['admin'])
+                print("Default admin loaded successfully")
+            except Exception as e:
+                print(f"Error while adding default admin: {e}")
+                pass
+            print(" I will set defaults contents and create contents if these do not already exist")
+            try:
+                add_default_contents(default_data['contents'])
+                print("Default contents loaded successfully")  # Add default data for contents and admin
+            except Exception as e:
+                print(f"Error while adding default contents: {e}")
+                pass
+            print("I Will look for anaonymous user and create one if not existing")
+            try:
+                add_anonymous_user()
+                print("Default anonymous user loaded successfully")  # Add default data for anonymous user
+            except Exception as e:
+                print(f"Error while adding default anonymous user: {e}")
+                pass
+        got_first_request = False  # Ensure this function is only called once
 
     #Logging
     # Set up basic logging to a file
