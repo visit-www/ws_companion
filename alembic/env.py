@@ -19,7 +19,7 @@ if config.config_file_name is not None:
 # Check if we are running on Heroku (using DATABASE_URL)
 #If DATABASE_URL is found, override the sqlalchemy.url in alembic.ini
 # Fetch DATABASE_URL and replace postgres:// with postgresql://
-database_url = os.getenv("DATABASE_URL")
+database_url = os.getenv("DATABASE_URL", "postgresql://admin:811976@localhost:5432/wscdb")
 
 if database_url and database_url.startswith("postgres://"):
     database_url = database_url.replace("postgres://", "postgresql://", 1)
