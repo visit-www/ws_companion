@@ -34,7 +34,7 @@ def index():
         
         # Fetch the user data object
         user_data = db.session.query(UserData).filter_by(user_id=current_user.id).first()
-        flash(f"UserData: {user_data}\n User id: {current_user.id}")
+        print(f"UserData: {user_data}\n User id: {current_user.id}")
 
         # Check if the user data exists and then access 'last_interaction'
         if user_data:
