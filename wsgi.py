@@ -6,16 +6,17 @@ app = create_app()
 import threading
 import webbrowser
 import socket
+import os
 
 # Function to open the default web browser
 def open_browser():
     # Find the free port on localhost to open in the web browser
-    port = 5001  # Make sure this matches the port in app.run()
+    port=5001
     url = f"http://127.0.0.1:{port}"
     webbrowser.open_new(url)
 
 # Start the application
 if __name__ == "__main__":
     # Retrieve the port from environment variables for Heroku compatibility
-    port = int(os.environ.get("PORT", 5001))  # Default to 5001 for local development
+    port =int(os.environ.get("PORT",5001))
     app.run(host='0.0.0.0', port=port, debug=True, use_reloader=True)

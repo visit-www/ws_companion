@@ -227,6 +227,7 @@ class UserData(Base):
     content_rating: so.Mapped[Optional[int]] = sa.Column(sa.Integer, nullable=True)
     time_spent: so.Mapped[int] = sa.Column(sa.Integer, nullable=False)
     last_login: so.Mapped[Optional[datetime]] = sa.Column(sa.DateTime, nullable=True)
+    current_login: so.Mapped[Optional[datetime]] = sa.Column(sa.DateTime, nullable=True)
 
     # Relationships
     user = so.relationship('User', backref=so.backref('user_data', lazy='dynamic', cascade="all, delete-orphan"), passive_deletes=True)
