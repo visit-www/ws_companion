@@ -1,3 +1,6 @@
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 import os
 from logging.config import fileConfig
 
@@ -64,7 +67,7 @@ def run_migrations_online() -> None:
         context.configure(
             connection=connection,
             target_metadata=target_metadata,
-            version_table_schema="public"  # Set the default schema to public
+            #version_table_schema="public"  # Set the default schema to public
         )
 
         with context.begin_transaction():
