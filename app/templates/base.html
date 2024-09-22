@@ -38,7 +38,7 @@
                 <div class="navbar-nav ml-auto col-12">
                     <div class="nav-item">
                         <span class="navbar-text greeting-text text-success fw-bold animate-pulse" style="display:none" user_name={{current_user.username}}>
-                            Hello, {{ current_user.username }} ! Your last login was on :{{last_interaction}}
+                            Hello, {{ current_user.username }} ! Your last login was on :{{last_login}}
                         </span>
                     </div>
                 </div>
@@ -93,10 +93,10 @@
                     {% for category, message in messages %}
                         <div class="toast align-items-center custom-toast" role="alert" aria-live="assertive" aria-atomic="true">
                             <div class="d-flex justify-content-center">
-                                <div class="toast-body text-warning">
+                                <div class="toast-body text-white">
                                     {{ message|safe|upper }}
                                 </div>
-                                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
                             </div>
                         </div>
                     {% endfor %}

@@ -34,15 +34,15 @@ def index():
         
         # Fetch the user data object
         user_data = db.session.query(UserData).filter_by(user_id=current_user.id).first()
-        flash(f"UserData: {user_data}\n User id: {current_user.id}")
+        print(f"UserData: {user_data}\n User id: {current_user.id}")
 
         # Check if the user data exists and then access 'last_interaction'
         if user_data:
-            last_interaction = user_data.last_interaction
+            last_login = user_data.last_login
         else:
-            last_interaction = None  # Handle the case where user data is not found
+            last_login = "Not available"  # Handle the case where user data is not found
     else:
-        last_interaction = None  # Handle the case for anonymous users
+        last_login = "Not available"  # Handle the case for anonymous users
     cat_dict = {}
     idx=-1
 
@@ -64,7 +64,7 @@ def index():
         # Add the formatted category name to the list
         cat_dict[cat_name]=[display_name,idx]
     # Render the 'index.html' template, passing the category dictionary to the template
-    return render_template('index.html', cat_dict=cat_dict,last_interaction=last_interaction)
+    return render_template('index.html', cat_dict=cat_dict,last_login=last_login)
 #!----------------------------------------------------------------
 # Place holder routes for maain page navigations :
 

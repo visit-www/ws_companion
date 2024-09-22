@@ -49,12 +49,20 @@ def login():
             user_data = db.session.query(UserData).filter_by(user_id=user.id).first()
             if user_data:
                 user_data.last_interaction = datetime.now(timezone.utc)
-                user_data.last_login = datetime.now(timezone.utc)
+                # Copy current login to last login
+                if user_data.current_login:
+                    user_data.last_login = user_data.current_login
+                # Update current login to the new login time
+                user_data.current_login = datetime.now(timezone.utc)
+                if user_data.login_count is None:
+                    user_data.login_count = 0
+                user_data.login_count += 1
                 user_data.interaction_type = "logged_in"  # Ensure this value aligns with your enum or model definition
+                user_data.last_interaction=datetime.now(timezone.utc)
                 user.status = "active"
                 db.session.commit()  # Save changes to the database
             
-            flash(f'Log in successful! Welcome back {user.username}!<hr style="color:yellow;">', 'success')
+            print(f'Log in successful! Welcome back {user.username}!<hr style="color:yellow;">', 'success')
             return redirect(url_for('main_routes.index'))
         else:
             login_failed = True
@@ -77,18 +85,22 @@ def logout():
 
     if user and user_data:
         # Ensure last_login is not None
-        if user_data.last_login is not None:
+        if user_data.last_login and user_data.session_start_time is not None:
             # Ensure last_login is timezone-aware
             if user_data.last_login.tzinfo is None:
                 user_data.last_login = user_data.last_login.replace(tzinfo=timezone.utc)
+            elif user_data.current_login is None:
+                user_data.current_login=user_data.current_login.replace(tzinfo=timezone.utc)
             # Calculate the time spent since last login
-            time_spent = (datetime.now(timezone.utc) - user_data.last_login).total_seconds()
+            time_spent = datetime.now(timezone.utco) - user_data.current_login
+            time_spent_in_minutes = time_spent.total_seconds()/60
             # Prevent negative time_spent
-            if time_spent < 0:
-                time_spent = 0
-            user_data.time_spent += int(time_spent)
+            if time_spent_in_minutes < 0:
+                user_data.time_spent = 0
+            else:
+                user_data.time_spent += time_spent_in_minutes
         else:
-            # If last_login is None, we can't calculate time_spent
+            # If session_start_time is None, we can't calculate time_spent
             # Optionally, you can set time_spent to zero or handle it as needed
             user_data.time_spent += 0
 
@@ -174,7 +186,10 @@ def register():
                     content_rating=None,
                     time_spent=0,
                     last_interaction=datetime.now(timezone.utc),
-                    last_login=datetime.now(timezone.utc)  # Assume the user has just logged in
+                    current_login=datetime.now(timezone.utc),  # Assume the user has just logged in
+                    last_login=None,
+                    session_start_time=None,
+                    login_count=0
                 )
                 db.session.add(user_data)
 
