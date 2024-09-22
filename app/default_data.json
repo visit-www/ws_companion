@@ -1,15 +1,11 @@
 {
     "admin": {
       "username": "admin",
-      "email": "support@wscompanion.com",
-      "password": "ErahRam@2024",
       "is_paid": true,
       "is_admin": true
     },
     "anonymous_user":{
       "username": "anonymous",
-      "email": "lotusheart2016@gmail.com",
-      "password": "EraRam@2024",
       "is_paid": false,
       "is_admin": false
     },
