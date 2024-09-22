@@ -54,7 +54,7 @@ def login():
                 user.status = "active"
                 db.session.commit()  # Save changes to the database
             
-            flash(f'Log in successful! Welcome back {user.username}!<hr style="color:yellow;">', 'success')
+            print(f'Log in successful! Welcome back {user.username}!<hr style="color:yellow;">', 'success')
             return redirect(url_for('main_routes.index'))
         else:
             login_failed = True
