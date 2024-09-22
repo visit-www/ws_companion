@@ -22,61 +22,66 @@ from datetime import datetime, timezone
 from .models import db,Content, User, UserData, UserContentState, AdminReportTemplate
 from config import basedir
 import os
-
+from config import ADMIN_EMAIL, ADMIN_PASSWORD,ANONYMOUS_EMAIL,ANONYMOUS_PASSWORD,ANONYMOUS_USER_ID
 
 def add_default_admin(admin_data):
     """Add admin user if not already present."""
-    admin_user = db.session.query(User).filter_by(email=admin_data['email']).first()
-    if not admin_user:
-        new_admin = User(
-            username=admin_data['username'],
-            email=admin_data['email'],
-            is_paid=admin_data['is_paid'],
-            is_admin=admin_data['is_admin']
-        )
-        new_admin.set_password(admin_data['password'])
-        db.session.add(new_admin)
-        db.session.commit()
-
-        print(f"Admin user created: {new_admin.username}, {new_admin.email}")
-
-        # Initialize UserData for the admin
-        user_data = UserData(
-            user_id=new_admin.id,
-            interaction_type='registered',
-            time_spent=0,
-            last_interaction=datetime.now(timezone.utc),
-            last_login=datetime.now(timezone.utc)
-        )
-        db.session.add(user_data)
-
-        # Initialize UserContentState for the admin
-        user_content_state = UserContentState(
-            user_id=new_admin.id,
-            modified_filepath=None,
-            annotations=None,
-            created_at=datetime.now(timezone.utc),
-            updated_at=datetime.now(timezone.utc)
-        )
-        db.session.add(user_content_state)
-        # Initialize AdminReportTemplate with
-        admin_report_template = AdminReportTemplate(
-            template_name=None,
-                body_part= None,
-                modality=None,
-                file=None,
-                filepath=None,
-                tags=None,
-                category=None,
-                module=None,
+    admin_user = db.session.query(User).filter_by(email=ADMIN_EMAIL).first()
+    try:
+        if not admin_user:
+            new_admin = User(
+                username=admin_data['username'],
+                email=ADMIN_EMAIL,
+                is_paid=admin_data['is_paid'],
+                is_admin=admin_data['is_admin']
+            )
+            new_admin.set_password(ADMIN_PASSWORD)
+            db.session.add(new_admin)
+            db.session.commit()
+    
+            print(f"Admin user created: {new_admin.username}, {new_admin.email}")
+    
+            # Initialize UserData for the admin
+            user_data = UserData(
+                user_id=new_admin.id,
+                interaction_type='registered',
+                time_spent=0,
+                last_interaction=datetime.now(timezone.utc),
+                last_login=datetime.now(timezone.utc)
+            )
+            db.session.add(user_data)
+    
+            # Initialize UserContentState for the admin
+            user_content_state = UserContentState(
+                user_id=new_admin.id,
+                modified_filepath=None,
+                annotations=None,
                 created_at=datetime.now(timezone.utc),
                 updated_at=datetime.now(timezone.utc)
-                )
-        db.session.add(admin_report_template)
-        db.session.commit()
-        print(f"Admin data initialized.")
-    else:
-        print(f"Admin already exists: {admin_user.username}")
+            )
+            db.session.add(user_content_state)
+            # Initialize AdminReportTemplate with
+            admin_report_template = AdminReportTemplate(
+                template_name=None,
+                    body_part= None,
+                    modality=None,
+                    file=None,
+                    filepath=None,
+                    tags=None,
+                    category=None,
+                    module=None,
+                    created_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(timezone.utc)
+                    )
+            db.session.add(admin_report_template)
+            db.session.commit()
+            print(f"Admin data initialized.")
+        else:
+            print(f"Admin already exists: {admin_user.username}")
+    except Exception as e:
+        print(f"Error adding default admin: {e}")
+        db.session.rollback()
+        pass
 # Crreate Anonymous user to relate to orphaned data after users or content is delated (referecnes, userfeedback)
 from config import ANONYMOUS_USER_ID
 def add_anonymous_user():
@@ -87,12 +92,12 @@ def add_anonymous_user():
             anonymous_user = User(
                 id=ANONYMOUS_USER_ID,
                 username='anonymous',
-                email='lotusheart2016s@gmail.com',
+                email=ANONYMOUS_EMAIL,
                 is_paid=False,
                 is_admin=False,
                 status='active',
             )
-            anonymous_user.set_password('EraRam@2024')
+            anonymous_user.set_password(ANONYMOUS_PASSWORD)
             db.session.add(anonymous_user)
             db.session.commit()
             print(f"Anonymous user created: {anonymous_user}, {anonymous_user.email}")
@@ -100,7 +105,8 @@ def add_anonymous_user():
             print(f"Anonymous user already exists: {anonymous_user.username}")
     except Exception as e:
         print(f"Error adding anonymous user: {e}")
-
+        db.session.rollback()
+        pass
 
 def add_default_contents(contents_data):
     """Add default contents if not already present."""

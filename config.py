@@ -1,15 +1,25 @@
 import os
 from datetime import timedelta
 import uuid
+import dotenv
+
+# Load environment variables from.env file if present
+dotenv.load_dotenv()
+
 
 basedir=os.path.abspath(os.path.dirname(__file__))
 # Set user_dir to the path of the user_data directory one level up from the current file
 userdir = os.path.join(basedir, 'user_data')
 ANONYMOUS_USER_ID = uuid.UUID('123e4567-e89b-12d3-a456-426614174000')
+ANONYMOUS_EMAIL = os.getenv('ANONYMOUS_EMAIL', "anonymous_user@example.com")
+ANONYMOUS_PASSWORD = os.getenv('ANONYMOUS_PASSWORD', "defaultanonymouspassword")  # Fixed typo
+ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', "admin@example.com")
+ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', "defaultadminpassword")
+
 class Config:
     SECRET_KEY=os.getenv('SECRET_KEY') or '7ebfffbf75e406f1b63739a0c5e487496be74113d2fd3a672fc45b4a120f571b'
     WTF_CSRF_ENABLED = True
-    SQLALCHEMY_DATABASE_URI=os.getenv('DATABASE_URL') or 'postgresql://admin:811976@localhost:5432/wscdb'
+    SQLALCHEMY_DATABASE_URI=os.getenv('DATABASE_URL') or 'postgresql://admin:811976@localhost:5432/wscdb?sslmode=require'
     # Convert Heroku's default postgres:// to postgresql:// if needed
     if SQLALCHEMY_DATABASE_URI and SQLALCHEMY_DATABASE_URI.startswith("postgres://"):
         SQLALCHEMY_DATABASE_URI = SQLALCHEMY_DATABASE_URI.replace("postgres://", "postgresql://", 1)
