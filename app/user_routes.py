@@ -348,14 +348,30 @@ def user_management():
     modules = ModuleNames  # Enum to populate the modules select box
     # Fetch the current user's profile
     user_profile = db.session.query(UserProfile).filter_by(user_id=current_user.id).first()
-    # Construct the relative path for the profile picture
-    profile_pic_rel_path = f"{current_user.id}/profile_pic/{user_profile.profile_pic}"
-    # Generate URL to serve the profile picture using the `serve_user_data` route
-    profile_pic_path = url_for('serve_user_data', filename=profile_pic_rel_path)
-    print(f"Profile picture path: {profile_pic_path}")
-    #embed email verfication status. 
+    try:
+        if user_profile:
+            if user_profile.profile_pic:
+                # Construct the relative path for the profile picture
+                profile_pic_rel_path = f"{current_user.id}/profile_pic/{user_profile.profile_pic}"
+
+                # Generate URL to serve the profile picture using the `serve_user_data` route
+                profile_pic_path = url_for('serve_user_data', filename=profile_pic_rel_path)
+            else:
+                # Use the default profile picture if `profile_pic` is missing
+                profile_pic_path = url_for('static', filename='assets/images/logo-white-bg.pngg')
+            
+            print(f"Profile picture path: {profile_pic_path}")
+            # Embed email verification status.
+            return render_template('user_management.html', categories=categories, modules=modules, profile_pic_path=profile_pic_path)
     
-    return render_template('user_management.html', categories=categories, modules=modules,profile_pic_path=profile_pic_path)
+        else:
+            # Fall-back to the default profile picture if no user profile exists
+            return render_template('user_management.html', categories=categories, modules=modules, profile_pic_path=url_for('static', filename='assets/images/logo-white-bg.png'))
+
+    except Exception as e:
+        # Handle any unexpected errors gracefully, log the error, and fall back to the default profile picture
+        print(f"An error occurred: {e}")
+        return render_template('user_management.html', categories=categories, modules=modules, profile_pic_path=url_for('static', filename='assets/images/logo-white-bg.png'))
 # .###############################
 # PROFILE MANAGEMENT ROUTES
 # ===============================

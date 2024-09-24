@@ -13,6 +13,7 @@ __pycache__/
 # Virtual environments
 venv/
 env/
+.pgsync.yml
 
 # Logs and temp files
 *.log
