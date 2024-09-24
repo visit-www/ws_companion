@@ -1,13 +1,8 @@
 from: postgres://admin:811976@localhost:5432/wscdb
 to: postgres://u97h703t4ikhdu:pd232fbc27d54c6216e5d6ac6e30f3649b650a2c1e3dddd16a07048f480188a97@c5flugvup2318r.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/dd7v39guujdsvf
 
-# Exclude migration table
 exclude:
   - alembic_version
 
-# truncate - Empties target table before syncing :Truncate target tables before syncing
 truncate: true
-# Mark remote destination as safe
 to_safe: true
-# Options (optional)
-# preserve - Keeps local changes
