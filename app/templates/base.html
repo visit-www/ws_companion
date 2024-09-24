@@ -33,7 +33,7 @@
             <i class="bi bi-shield-fill-check p-lg-4 p-md-4 p-sm-3 py-3" style="color:green; font-size: 1.7em;"></i>
             <div>
                 <div class="row gap-2">
-                    <a class="navbar-brand p-md-3 p-sm-3 col-12" href="{{ url_for('main_routes.index') }}">My Workstation Companion</a>
+                    <a class="navbar-brand p-md-3 p-sm-3 col-auto" href="{{ url_for('main_routes.index') }}">My Workstation Companion</a>                                      
                 </div>
                 <div class="navbar-nav ml-auto col-12">
                     <div class="nav-item">
@@ -70,16 +70,27 @@
     {% endblock %}
 
     {% block hero_container %}
-    <div class="hero-container text-center my-3 py-md-4 py-sm-4 bg-light rounded shadow-sm container-fluid">
-        <h1 class="display-5 fw-bolder mb-3" style="font-family: 'Inter', sans-serif; color: #343a40;">
-            <span class="text-success">WSC</span> - A Workstation Companion App
-        </h1>
-        <p class="lead" style="color: #6c757d;">
-            Simplify your radiology workflow with our intuitive and comprehensive tools. 
-            <span class="fst-italic text-success">Because every hero needs a trusty companion.</span>
-        </p>
+    <div class="container-fluid my-4">
+        <div class="hero-container d-flex align-items-center justify-content-center py-4 px-3 bg-light rounded shadow-sm">
+            <!-- Logo -->
+            <a class="navbar-brand me-0" href="{{ url_for('main_routes.index') }}">
+                <img src="{{ url_for('static', filename='assets/images/logo-transparent-bg.png') }}" alt="Logo" style="height:180px;">
+            </a>
+            
+            <!-- Text Container -->
+            <div class="text-container text-center">
+                <h1 class="display-5 fw-bolder mb-3" style="font-family: 'Inter', sans-serif; color: #343a40;">
+                    <span class="text-success">WSC</span> - A Workstation Companion App
+                </h1>
+                <p class="lead" style="color: #6c757d;">
+                    Simplify your radiology workflow with our intuitive and comprehensive tools. 
+                    <span class="fst-italic text-success">Because every hero needs a trusty companion.</span>
+                </p>
+            </div>
+        </div>
     </div>
     {% endblock %}
+    
 
 
 
