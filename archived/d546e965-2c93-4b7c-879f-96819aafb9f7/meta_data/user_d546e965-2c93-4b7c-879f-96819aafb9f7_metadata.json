@@ -1,0 +1,51 @@
+{
+    "user": {
+        "id": "d546e965-2c93-4b7c-879f-96819aafb9f7",
+        "username": "testuser2",
+        "password": "pbkdf2:sha256:600000$aiKkgAgPNfH1j2lq$9f513a651633966bf29979b5218252e9e084d2c08b7dbacd132ce928d0e60b9c",
+        "email": "testuser2@example.com",
+        "is_paid": false,
+        "is_admin": false,
+        "status": "inactive",
+        "created_at": "2024-09-24 03:28:19.691206"
+    },
+    "profile": {
+        "id": "bfc5ec48-93a9-44cc-b2a3-a2226cafc13a",
+        "user_id": "d546e965-2c93-4b7c-879f-96819aafb9f7",
+        "profile_pic": "dummy_profile_pic.png",
+        "profile_pic_path": "/Users/zen/data-science/projects/ws_companion/user_data/d546e965-2c93-4b7c-879f-96819aafb9f7/profile_pic/dummy_profile_pic.png",
+        "preferred_categories": "guidelines,classifications,differential_diagnosis,vetting_tools,anatomy,curated_contents,report_checker,rad_calculators,tnm_staging,image_search,physics,governance_audits,courses,research_tools,music,report_template",
+        "preferred_modules": "head_and_neck,neuroradiology,chest,cardiovascular,breast,gastrointestinal,abdominal,genitourinary,musculoskeletal,vascular,pediatric,oncologic,emergency,interventional,nuclear_medicine,radiographers,others",
+        "created_at": "2024-09-24 03:28:19.696088",
+        "updated_at": "2024-09-24 03:28:19.696089"
+    },
+    "user_data": [
+        {
+            "id": "86d52f24-f870-413c-a182-3d0690f9a890",
+            "user_id": "d546e965-2c93-4b7c-879f-96819aafb9f7",
+            "content_id": null,
+            "interaction_type": "logged_out",
+            "last_interaction": "2024-09-24 05:05:04.848462",
+            "feedback": null,
+            "content_rating": null,
+            "time_spent": 0,
+            "last_login": "2024-09-24 04:15:01.113935",
+            "current_login": "2024-09-24 05:05:01.734706",
+            "session_start_time": null,
+            "login_count": 2
+        }
+    ],
+    "user_content_states": [
+        {
+            "id": "daefbaa2-c119-4c08-a9ee-621608165fdd",
+            "content_id": null,
+            "user_id": "d546e965-2c93-4b7c-879f-96819aafb9f7",
+            "modified_filepath": null,
+            "annotations": null,
+            "created_at": "2024-09-24 03:28:19.696151",
+            "updated_at": "2024-09-24 03:28:19.696151"
+        }
+    ],
+    "report_templates": [],
+    "feedbacks": []
+}
