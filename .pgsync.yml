@@ -1,22 +1,12 @@
 from: postgres://admin:811976@localhost:5432/wscdb
 to: postgres://u97h703t4ikhdu:pd232fbc27d54c6216e5d6ac6e30f3649b650a2c1e3dddd16a07048f480188a97@c5flugvup2318r.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/dd7v39guujdsvf
 
-# Tables you want to sync
-tables:
-  - admin_report_templates
-  - contents
-  - references
-  - user_content_states
-  - user_data
-  - user_feedbacks
-  - user_profiles
-  - user_report_templates
-  - users    
-
-# List the tables you'd NOT like to sync
+# Exclude migration table
 exclude:
   - alembic_version
 
+# truncate - Empties target table before syncing :Truncate target tables before syncing
+truncate: true
+
 # Options (optional)
 # preserve - Keeps local changes
-# truncate - Empties target table before syncing
