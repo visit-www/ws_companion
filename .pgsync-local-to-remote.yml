@@ -1,8 +1,0 @@
-from: postgres://admin:811976@localhost:5432/wscdb
-to: postgres://u97h703t4ikhdu:pd232fbc27d54c6216e5d6ac6e30f3649b650a2c1e3dddd16a07048f480188a97@c5flugvup2318r.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/dd7v39guujdsvf
-
-exclude:
-  - alembic_version
-
-truncate: true
-to_safe: true
