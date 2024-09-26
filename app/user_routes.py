@@ -313,6 +313,38 @@ def change_password(token):
     # Render the change password form
     return render_template('change_password.html', token=token)
 # ********************************
+# Update password route:
+@app_user_bp.route('/update_password', methods=['GET', 'POST'])
+@login_required
+def update_password():
+    if request.method == 'POST':
+        # Get form data
+        new_password = request.form.get('new-password')
+        retyped_password = request.form.get('retyped-password')
+
+        # Validate new passwords match
+        if new_password != retyped_password:
+            flash('Passwords do not match. Please try again.', 'danger')
+            return render_template('user_management.html')
+
+        # Check if new password is different from current
+        if current_user.check_password(new_password):
+            flash('You are attempting to reuse your old password. Please enter a new password.', 'danger')
+            return render_template('user_management.html')
+
+        # Update the password securely
+        try:
+            current_user.set_password(new_password)  # Hashing the password
+            db.session.commit()
+            flash('Your password has been updated successfully!', 'success')
+            return redirect(url_for('app_user.user_management'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'An error occurred while updating your password: {str(e)}', 'danger')
+            return redirect(url_for('app_user.user_management'))
+
+    return render_template('user_management.html')
+
 # Chanage email route:
 @app_user_bp.route('/confirm_email')
 @login_required
