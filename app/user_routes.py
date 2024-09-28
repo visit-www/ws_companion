@@ -321,27 +321,30 @@ def update_password():
         # Get form data
         new_password = request.form.get('new-password')
         retyped_password = request.form.get('retyped-password')
-
-        # Validate new passwords match
-        if new_password != retyped_password:
-            flash('Passwords do not match. Please try again.', 'danger')
-            return render_template('user_management.html')
-
-        # Check if new password is different from current
-        if current_user.check_password(new_password):
-            flash('You are attempting to reuse your old password. Please enter a new password.', 'danger')
-            return render_template('user_management.html')
-
-        # Update the password securely
-        try:
-            current_user.set_password(new_password)  # Hashing the password
-            db.session.commit()
-            flash('Your password has been updated successfully!', 'success')
-            return redirect(url_for('app_user.user_management'))
-        except Exception as e:
-            db.session.rollback()
-            flash(f'An error occurred while updating your password: {str(e)}', 'danger')
-            return redirect(url_for('app_user.user_management'))
+        
+        if new_password:
+            # Validate new passwords match
+            if new_password != retyped_password:
+                flash('Passwords do not match. Please try again.', 'danger')
+                return render_template('user_management.html')
+    
+            # Check if new password is different from current
+            if current_user.check_password(new_password):
+                flash('You are attempting to reuse your old password. Please enter a new password.', 'danger')
+                return render_template('user_management.html')
+    
+            # Update the password securely
+            try:
+                current_user.set_password(new_password)  # Hashing the password
+                db.session.commit()
+                flash('Your password has been updated successfully!', 'success')
+                return redirect(url_for('app_user.user_management'))
+            except Exception as e:
+                db.session.rollback()
+                flash(f'An error occurred while updating your password: {str(e)}', 'danger')
+                return redirect(url_for('app_user.user_management'))
+        else:
+            flash('You did not enter any passwords.', 'danger')
 
     return render_template('user_management.html')
 
@@ -368,6 +371,48 @@ def confirm_email():
     else:
         flash('The confirmation link is invalid or has expired.', 'danger')
         return redirect(url_for('app_user.user_management'))
+
+# ! Account recovery opetions:
+@app_user_bp.route('/recover_account', methods=['GET', 'POST'])
+def recover_account():
+    if request.method == 'POST':
+        recovery_option = request.form.get('recovery_option')
+        if recovery_option == 'phone':
+            phone = request.form.get('phone')
+            user = db.session.query(User).filter_by(phone=phone).first()
+            if not user:
+                flash('No account associated with this phone number.', 'danger')
+                return redirect(url_for('app_user.recover_account'))
+            # Send a token via SMS using your SMS service (Twilio, etc.)
+            token = generate_password_reset_token(user.email)
+            send_sms(phone, f'Your account recovery token: {token}')
+            flash('A recovery token has been sent to your phone.', 'success')
+            return redirect(url_for('app_user.verify_recovery_token'))
+
+        elif recovery_option == 'recovery_email':
+            email = request.form.get('email')
+            user = db.session.query(User).filter_by(email=email).first()
+            if not user:
+                flash('No account associated with this recovery email.', 'danger')
+                return redirect(url_for('app_user.recover_account'))
+            # Send a token via email using your mail extension
+            token = generate_password_reset_token(user.email)
+            send_email(user.email, 'Account Recovery', f'Your account recovery token: {token}')
+            flash('A recovery token has been sent to your email.', 'success')
+            return redirect(url_for('app_user.verify_recovery_token'))
+
+        elif recovery_option == 'authenticator':
+            # Assuming you have 2FA set up already
+            if current_user.is_authenticated and current_user.two_factor_enabled:
+                flash('You can use your authenticator app to verify and recover your account.', 'success')
+                return redirect(url_for('app_user.verify_recovery_token'))
+            else:
+                flash('No authenticator app is set up for this account.', 'danger')
+                return redirect(url_for('app_user.recover_account'))
+    
+    # Render the recovery form if GET request
+    return render_template('recover_account.html')
+
 
 # *----------------------------------------------------------------
 # User Profile/Account Page and Related Routes

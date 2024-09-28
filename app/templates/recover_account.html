@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <h3 class="text-center mb-4">Recover Your Account</h3>
+    
+    <div class="row text-center">
+        <!-- Phone Recovery Card -->
+        <div class="col-md-4 mb-3">
+            <div class="card card-selection" id="phone-card">
+                <div class="card-body">
+                    <i class="fas fa-phone fa-3x mb-3"></i>
+                    <h5 class="card-title">Recover via Phone</h5>
+                    <p class="card-text">Use your registered phone number to recover your account.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Authenticator Recovery Card -->
+        <div class="col-md-4 mb-3">
+            <div class="card card-selection" id="authenticator-card">
+                <div class="card-body">
+                    <i class="fas fa-shield-alt fa-3x mb-3"></i>
+                    <h5 class="card-title">Use Authenticator App</h5>
+                    <p class="card-text">Recover using your 2FA authenticator app.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recovery Email Card -->
+        <div class="col-md-4 mb-3">
+            <div class="card card-selection" id="email-card">
+                <div class="card-body">
+                    <i class="fas fa-envelope fa-3x mb-3"></i>
+                    <h5 class="card-title">Recover via Email</h5>
+                    <p class="card-text">Send a recovery token to your recovery email address.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Input Forms -->
+    <form method="POST" action="{{ url_for('app_user.recover_account') }}">
+        <div class="form-group hidden" id="phone-input">
+            <label for="phone">Enter your registered phone number:</label>
+            <input type="text" class="form-control" name="phone" placeholder="Your Phone Number">
+        </div>
+
+        <div class="form-group hidden" id="email-input">
+            <label for="email">Enter your recovery email address:</label>
+            <input type="email" class="form-control" name="email" placeholder="Your Recovery Email">
+        </div>
+
+        <!-- Recovery Option Field (Hidden) -->
+        <input type="hidden" name="recovery_option" id="recovery_option">
+
+        <button type="submit" class="btn btn-primary btn-block submit-btn" id="submit-btn" style="display:none;">Recover Account</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block script %}
+{{ super() }}
+<script>
+    document.querySelectorAll('.card-selection').forEach(function (card) {
+        card.addEventListener('click', function () {
+            // Remove selected class from other cards
+            document.querySelectorAll('.card-selection').forEach(function (c) {
+                c.classList.remove('card-selected');
+            });
+
+            // Add selected class to clicked card
+            card.classList.add('card-selected');
+
+            // Show corresponding input field
+            let recoveryOption = '';
+            if (card.id === 'phone-card') {
+                document.getElementById('phone-input').classList.remove('hidden');
+                document.getElementById('email-input').classList.add('hidden');
+                recoveryOption = 'phone';
+            } else if (card.id === 'email-card') {
+                document.getElementById('email-input').classList.remove('hidden');
+                document.getElementById('phone-input').classList.add('hidden');
+                recoveryOption = 'recovery_email';
+            } else if (card.id === 'authenticator-card') {
+                document.getElementById('email-input').classList.add('hidden');
+                document.getElementById('phone-input').classList.add('hidden');
+                recoveryOption = 'authenticator';
+            }
+
+            // Set recovery option in hidden input field
+            document.getElementById('recovery_option').value = recoveryOption;
+
+            // Show submit button
+            document.getElementById('submit-btn').style.display = 'block';
+        });
+    });
+</script>
+{% endblock %}
