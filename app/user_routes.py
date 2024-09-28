@@ -565,8 +565,8 @@ def profile_manager():
                     flash('A confirmation email has been sent to your new email address. Please check your email. Please note that this link is valid only for 10 minutes.', 'info')
                     return redirect(url_for('app_user.user_management'))
                         
-        else:
-            flash('Unknown profile management action.', 'warning')
+        elif action=="add_recovery_phone":
+            flash('a recovery phone number will be added', 'warning')
 
     categories = CategoryNames
     modules = ModuleNames
