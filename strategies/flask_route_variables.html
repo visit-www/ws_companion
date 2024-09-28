@@ -1,0 +1,206 @@
+<p>Here’s a concise quick reference guide for accessing variables in
+Flask routes, utilizing a combination of diagrams and tables for a clear
+understanding:</p>
+<hr />
+<h2 id="flask-route-variable-access-quick-reference-guide">Flask Route
+Variable Access Quick Reference Guide</h2>
+<h3 id="url-query-parameters">1. <strong>URL Query
+Parameters</strong></h3>
+<ul>
+<li><p><strong>Description</strong>: Access parameters in the URL query
+string.</p></li>
+<li><p><strong>Syntax</strong>:
+<code>request.args.get('key', 'default')</code></p></li>
+<li><p><strong>Example</strong>:</p>
+<div class="sourceCode" id="cb1"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.route</span>(<span class="st">&#39;/search&#39;</span>)</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> search():</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>    query <span class="op">=</span> request.args.get(<span class="st">&#39;q&#39;</span>, <span class="st">&#39;none&#39;</span>)</span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="ss">f&#39;Searching for: </span><span class="sc">{</span>query<span class="sc">}</span><span class="ss">&#39;</span></span></code></pre></div></li>
+<li><p><strong>URL Example</strong>:
+<code>/search?q=flask</code></p></li>
+</ul>
+<hr />
+<h3 id="path-variables">2. <strong>Path Variables</strong></h3>
+<ul>
+<li><p><strong>Description</strong>: Directly include variables in the
+route path.</p></li>
+<li><p><strong>Syntax</strong>: Use <code>&lt;type:variable&gt;</code>
+in route.</p></li>
+<li><p><strong>Example</strong>:</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.route</span>(<span class="st">&#39;/user/&lt;int:user_id&gt;&#39;</span>)</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> user_profile(user_id):</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="ss">f&#39;User ID: </span><span class="sc">{</span>user_id<span class="sc">}</span><span class="ss">&#39;</span></span></code></pre></div></li>
+<li><p><strong>URL Example</strong>: <code>/user/42</code></p></li>
+</ul>
+<hr />
+<h3 id="form-data-post-requests">3. <strong>Form Data (POST
+Requests)</strong></h3>
+<ul>
+<li><p><strong>Description</strong>: Access form fields submitted via
+POST.</p></li>
+<li><p><strong>Syntax</strong>:
+<code>request.form['field_name']</code></p></li>
+<li><p><strong>Example</strong>:</p>
+<div class="sourceCode" id="cb3"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.route</span>(<span class="st">&#39;/login&#39;</span>, methods<span class="op">=</span>[<span class="st">&#39;POST&#39;</span>])</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> login():</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    username <span class="op">=</span> request.form[<span class="st">&#39;username&#39;</span>]</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="ss">f&#39;Hello, </span><span class="sc">{</span>username<span class="sc">}</span><span class="ss">&#39;</span></span></code></pre></div></li>
+<li><p><strong>Used For</strong>: Form submissions like login
+forms.</p></li>
+</ul>
+<hr />
+<h3 id="json-data-api-requests">4. <strong>JSON Data (API
+Requests)</strong></h3>
+<ul>
+<li><p><strong>Description</strong>: Access JSON payloads in API
+requests.</p></li>
+<li><p><strong>Syntax</strong>: <code>request.get_json()</code></p></li>
+<li><p><strong>Example</strong>:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.route</span>(<span class="st">&#39;/api/data&#39;</span>, methods<span class="op">=</span>[<span class="st">&#39;POST&#39;</span>])</span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_data():</span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    data <span class="op">=</span> request.get_json()</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>    value <span class="op">=</span> data.get(<span class="st">&#39;value&#39;</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="ss">f&#39;Value: </span><span class="sc">{</span>value<span class="sc">}</span><span class="ss">&#39;</span></span></code></pre></div></li>
+<li><p><strong>Used For</strong>: RESTful APIs with JSON data.</p></li>
+</ul>
+<hr />
+<h3 id="global-request-context-g-object">5. <strong>Global Request
+Context (<code>g</code> Object)</strong></h3>
+<ul>
+<li><p><strong>Description</strong>: Store global data for the
+request.</p></li>
+<li><p><strong>Syntax</strong>: <code>g.variable_name</code></p></li>
+<li><p><strong>Example</strong>:</p>
+<div class="sourceCode" id="cb5"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> flask <span class="im">import</span> g, before_request</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a><span class="at">@app.before_request</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> set_user():</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    g.user <span class="op">=</span> <span class="st">&#39;John Doe&#39;</span></span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a><span class="at">@app.route</span>(<span class="st">&#39;/profile&#39;</span>)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> profile():</span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="ss">f&#39;User: </span><span class="sc">{</span>g<span class="sc">.</span>user<span class="sc">}</span><span class="ss">&#39;</span></span></code></pre></div></li>
+<li><p><strong>Used For</strong>: Temporary data available throughout
+the request.</p></li>
+</ul>
+<hr />
+<h3 id="cookies">6. <strong>Cookies</strong></h3>
+<ul>
+<li><p><strong>Description</strong>: Read and write cookies from
+requests.</p></li>
+<li><p><strong>Syntax</strong>:
+<code>request.cookies.get('cookie_name')</code></p></li>
+<li><p><strong>Example</strong>:</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="at">@app.route</span>(<span class="st">&#39;/show-theme&#39;</span>)</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> show_theme():</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>    theme <span class="op">=</span> request.cookies.get(<span class="st">&#39;theme&#39;</span>, <span class="st">&#39;light&#39;</span>)</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="ss">f&#39;Current theme: </span><span class="sc">{</span>theme<span class="sc">}</span><span class="ss">&#39;</span></span></code></pre></div></li>
+<li><p><strong>Used For</strong>: Storing user preferences or
+state.</p></li>
+</ul>
+<hr />
+<h3 id="session-data">7. <strong>Session Data</strong></h3>
+<ul>
+<li><p><strong>Description</strong>: Store data across requests for a
+user session.</p></li>
+<li><p><strong>Syntax</strong>:
+<code>session['key'] = value</code></p></li>
+<li><p><strong>Example</strong>:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode python"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> flask <span class="im">import</span> session</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a><span class="at">@app.route</span>(<span class="st">&#39;/set-session&#39;</span>)</span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> set_session():</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    session[<span class="st">&#39;username&#39;</span>] <span class="op">=</span> <span class="st">&#39;JohnDoe&#39;</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="st">&#39;Session set!&#39;</span></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a><span class="at">@app.route</span>(<span class="st">&#39;/get-session&#39;</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a><span class="kw">def</span> get_session():</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a>    username <span class="op">=</span> session.get(<span class="st">&#39;username&#39;</span>, <span class="st">&#39;Guest&#39;</span>)</span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> <span class="ss">f&#39;Hello, </span><span class="sc">{</span>username<span class="sc">}</span><span class="ss">&#39;</span></span></code></pre></div></li>
+<li><p><strong>Used For</strong>: Persistent user data like login
+sessions.</p></li>
+</ul>
+<hr />
+<h3 id="variable-types-supported"><strong>Variable Types
+Supported</strong></h3>
+<ul>
+<li><strong>String</strong>: Can be used in all methods.</li>
+<li><strong>Integer</strong>: Commonly used in path variables.</li>
+<li><strong>Boolean</strong>: Typically passed as strings
+(‘true’/‘false’) and converted.</li>
+<li><strong>JSON Objects</strong>: Used in API calls with
+<code>request.get_json()</code>.</li>
+</ul>
+<hr />
+<h3 id="summary-table"><strong>Summary Table</strong></h3>
+<table>
+<colgroup>
+<col style="width: 21%" />
+<col style="width: 20%" />
+<col style="width: 32%" />
+<col style="width: 25%" />
+</colgroup>
+<thead>
+<tr>
+<th><strong>Method</strong></th>
+<th><strong>Access Type</strong></th>
+<th><strong>Syntax</strong></th>
+<th><strong>Example Usage</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>URL Query Parameters</td>
+<td><code>request.args</code></td>
+<td><code>request.args.get('q')</code></td>
+<td><code>/search?q=flask</code></td>
+</tr>
+<tr>
+<td>Path Variables</td>
+<td>URL Path</td>
+<td><code>/&lt;type:var&gt;</code></td>
+<td><code>/user/&lt;int:user_id&gt;</code></td>
+</tr>
+<tr>
+<td>Form Data (POST)</td>
+<td>Form Submission</td>
+<td><code>request.form['field']</code></td>
+<td>Login forms</td>
+</tr>
+<tr>
+<td>JSON Data</td>
+<td>API Requests</td>
+<td><code>request.get_json()</code></td>
+<td>RESTful APIs</td>
+</tr>
+<tr>
+<td>Global Request Context</td>
+<td><code>g</code> Object</td>
+<td><code>g.var_name</code></td>
+<td>Cross-route request data</td>
+</tr>
+<tr>
+<td>Cookies</td>
+<td>Browser Cookies</td>
+<td><code>request.cookies.get('cookie')</code></td>
+<td>User preferences</td>
+</tr>
+<tr>
+<td>Session Data</td>
+<td>User Session</td>
+<td><code>session['key'] = value</code></td>
+<td>User sessions</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p>This guide provides a quick reference to different ways of accessing
+variables in Flask routes. Adjust your use based on the data type and
+persistence requirements.</p>

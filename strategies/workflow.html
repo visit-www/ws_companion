@@ -1,0 +1,198 @@
+<p>Here’s an updated and more detailed workflow that covers various
+development scenarios, including model and schema changes, Flask app
+code updates, dependency installations, and database content changes. It
+also outlines the process for testing the app on Heroku’s front end.</p>
+<hr />
+<h3 id="comprehensive-development-workflow"><strong>Comprehensive
+Development Workflow:</strong></h3>
+<p>This guide explains how to handle different development tasks in a
+Flask app with PostgreSQL. We will cover these situations: 1.
+<strong>Developer updates models and schema</strong> 2.
+<strong>Developer updates only Flask app code</strong> 3.
+<strong>Developer installs new dependencies</strong> 4.
+<strong>Developer modifies local database contents (adds/deletes users,
+etc.)</strong> 5. <strong>Testing front-end code on Heroku</strong></p>
+<p>Each scenario involves development locally on the
+<code>development</code> branch and deployment to Heroku via the
+<code>stable-versions</code> branch.</p>
+<hr />
+<h3 id="developer-updates-models-and-schema"><strong>1. Developer
+Updates Models and Schema</strong></h3>
+<p>When you modify the database schema (e.g., add new fields, models, or
+relationships):</p>
+<h4 id="step-1-modify-models-locally"><strong>Step 1: Modify Models
+Locally</strong></h4>
+<ul>
+<li>Update your models in the Flask app to reflect the new schema.</li>
+</ul>
+<h4 id="step-2-create-and-apply-migration-locally"><strong>Step 2:
+Create and Apply Migration Locally</strong></h4>
+<ul>
+<li>Generate and apply Alembic migration:
+<code>bash  alembic revision --autogenerate -m "Update schema"  alembic upgrade head</code></li>
+<li>This updates your local PostgreSQL database schema.</li>
+</ul>
+<h4 id="step-3-commit-and-push-to-development-branch"><strong>Step 3:
+Commit and Push to <code>development</code> Branch</strong></h4>
+<ul>
+<li>Commit your changes (including migration files) and push to the
+<code>development</code> branch:
+<code>bash  git add .  git commit -m "Update models and apply migrations"  git push origin development</code></li>
+</ul>
+<h4 id="step-4-merge-development-into-stable-versions"><strong>Step 4:
+Merge <code>development</code> into
+<code>stable-versions</code></strong></h4>
+<ul>
+<li>Merge <code>development</code> into <code>stable-versions</code>:
+<code>bash  git checkout stable-versions  git merge development  git push origin stable-versions</code></li>
+</ul>
+<h4 id="step-5-apply-migrations-on-heroku"><strong>Step 5: Apply
+Migrations on Heroku</strong></h4>
+<ul>
+<li>Apply the migrations on Heroku:
+<code>bash  heroku run alembic upgrade head --app ws-companion</code></li>
+</ul>
+<h4 id="step-6-sync-local-database-to-heroku-optional"><strong>Step 6:
+Sync Local Database to Heroku (Optional)</strong></h4>
+<ul>
+<li>If you want to ensure that your local data matches Heroku, you can
+run the database sync with <code>truncate</code>:
+<code>bash  pgsync</code></li>
+</ul>
+<hr />
+<h3 id="developer-updates-only-flask-app-code"><strong>2. Developer
+Updates Only Flask App Code</strong></h3>
+<p>When you modify the Flask app code (but not the database schema):</p>
+<h4 id="step-1-make-code-changes-locally"><strong>Step 1: Make Code
+Changes Locally</strong></h4>
+<ul>
+<li>Make the necessary updates to your Flask app (e.g., route changes,
+adding new features).</li>
+</ul>
+<h4 id="step-2-commit-and-push-to-development-branch"><strong>Step 2:
+Commit and Push to <code>development</code> Branch</strong></h4>
+<ul>
+<li>Commit your changes to the <code>development</code> branch:
+<code>bash  git add .  git commit -m "Update Flask app code"  git push origin development</code></li>
+</ul>
+<h4 id="step-3-merge-development-into-stable-versions"><strong>Step 3:
+Merge <code>development</code> into
+<code>stable-versions</code></strong></h4>
+<ul>
+<li>Merge <code>development</code> into <code>stable-versions</code>:
+<code>bash  git checkout stable-versions  git merge development  git push origin stable-versions</code></li>
+</ul>
+<h4 id="step-4-heroku-deployment"><strong>Step 4: Heroku
+Deployment</strong></h4>
+<ul>
+<li>Heroku will automatically deploy the changes from the
+<code>stable-versions</code> branch.</li>
+</ul>
+<hr />
+<h3 id="developer-installs-new-dependencies"><strong>3. Developer
+Installs New Dependencies</strong></h3>
+<p>When new dependencies (e.g., Flask extensions, Python libraries) are
+added to the project:</p>
+<h4 id="step-1-install-new-dependencies-locally"><strong>Step 1: Install
+New Dependencies Locally</strong></h4>
+<ul>
+<li>Install the new dependencies using <code>pip</code>:
+<code>bash  pip install &lt;new_dependency&gt;</code></li>
+</ul>
+<h4 id="step-2-update-requirements.txt"><strong>Step 2: Update
+<code>requirements.txt</code></strong></h4>
+<ul>
+<li>Update the <code>requirements.txt</code> file with the new
+dependencies: <code>bash  pip freeze &gt; requirements.txt</code></li>
+</ul>
+<h4 id="step-3-commit-and-push-to-development-branch-1"><strong>Step 3:
+Commit and Push to <code>development</code> Branch</strong></h4>
+<ul>
+<li>Commit the updated <code>requirements.txt</code> to the
+<code>development</code> branch:
+<code>bash  git add requirements.txt  git commit -m "Add new dependencies"  git push origin development</code></li>
+</ul>
+<h4 id="step-4-merge-development-into-stable-versions-1"><strong>Step 4:
+Merge <code>development</code> into
+<code>stable-versions</code></strong></h4>
+<ul>
+<li>Merge <code>development</code> into <code>stable-versions</code>:
+<code>bash  git checkout stable-versions  git merge development  git push origin stable-versions</code></li>
+</ul>
+<h4 id="step-5-install-dependencies-on-heroku"><strong>Step 5: Install
+Dependencies on Heroku</strong></h4>
+<ul>
+<li>Heroku automatically installs new dependencies from the updated
+<code>requirements.txt</code> during the next deployment.</li>
+</ul>
+<hr />
+<h3
+id="developer-modifies-local-database-contents-addsdeletes-users-etc."><strong>4.
+Developer Modifies Local Database Contents (Adds/Deletes Users,
+etc.)</strong></h3>
+<p>When you add or delete users or modify database contents (without
+changing the schema):</p>
+<h4 id="step-1-modify-database-locally"><strong>Step 1: Modify Database
+Locally</strong></h4>
+<ul>
+<li>Modify the database by adding/deleting users or updating contents
+via the app, admin interface, or <code>psql</code>.</li>
+</ul>
+<h4
+id="step-2-sync-local-database-to-heroku-with-truncate-optional"><strong>Step
+2: Sync Local Database to Heroku with Truncate (Optional)</strong></h4>
+<ul>
+<li>Sync the local database to Heroku, ensuring the changes are
+reflected: <code>bash  pgsync</code></li>
+</ul>
+<p>This will truncate the Heroku database and replace it with the local
+data, ensuring both environments match.</p>
+<hr />
+<h3 id="testing-front-end-code-on-heroku"><strong>5. Testing Front-End
+Code on Heroku</strong></h3>
+<p>When the developer wants to test only front-end code changes on
+Heroku:</p>
+<h4 id="step-1-make-front-end-changes-locally"><strong>Step 1: Make
+Front-End Changes Locally</strong></h4>
+<ul>
+<li>Update the front-end code (HTML, CSS, JS) and test locally.</li>
+</ul>
+<h4 id="step-2-commit-and-push-to-development-branch-1"><strong>Step 2:
+Commit and Push to <code>development</code> Branch</strong></h4>
+<ul>
+<li>Commit the front-end code changes to the <code>development</code>
+branch:
+<code>bash  git add .  git commit -m "Update front-end code"  git push origin development</code></li>
+</ul>
+<h4 id="step-3-merge-development-into-stable-versions-1"><strong>Step 3:
+Merge <code>development</code> into
+<code>stable-versions</code></strong></h4>
+<ul>
+<li>Merge <code>development</code> into <code>stable-versions</code>:
+<code>bash  git checkout stable-versions  git merge development  git push origin stable-versions</code></li>
+</ul>
+<h4 id="step-4-test-on-heroku"><strong>Step 4: Test on
+Heroku</strong></h4>
+<ul>
+<li>Heroku will deploy the changes automatically. You can now test the
+front-end code on Heroku.</li>
+</ul>
+<hr />
+<h3 id="final-workflow-summary"><strong>Final Workflow
+Summary:</strong></h3>
+<ol type="1">
+<li><strong>Model/Schema Changes</strong>: Make changes locally, apply
+migrations, and push changes to Heroku.</li>
+<li><strong>Flask App Code Updates</strong>: Modify Flask code locally,
+commit, merge, and deploy to Heroku.</li>
+<li><strong>New Dependencies</strong>: Install locally, update
+<code>requirements.txt</code>, and Heroku will handle the installation
+on deployment.</li>
+<li><strong>Database Content Changes</strong>: Modify local database
+contents, then sync to Heroku with <code>truncate</code>.</li>
+<li><strong>Front-End Testing</strong>: Modify and test front-end code
+locally, then push to Heroku for deployment and testing.</li>
+</ol>
+<p>This workflow ensures a smooth development process while keeping
+local and Heroku environments in sync. Let me know if you need further
+customization or clarification!</p>
