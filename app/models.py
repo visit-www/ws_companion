@@ -106,9 +106,8 @@ class User(UserMixin, Base):
         default=lambda: datetime.now(timezone.utc),  # Correctly uses current UTC time at record creation
         nullable=False
     )
-    # Add recover_phone and recovery_email columns
-    recovery_phone: so.Mapped[str] = sa.Column(sa.String(20), unique=True, nullable=True)
-    recovery_email: so.Mapped[str] = sa.Column(sa.String(150), unique=True, nullable=True)
+    recovery_phone: so.Mapped[Optional[str]] = sa.Column(sa.String(20), unique=True, nullable=True)  # Updated to Optional
+    recovery_email: so.Mapped[Optional[str]] = sa.Column(sa.String(150), unique=True, nullable=True)  # Updated to Optional
 
     def set_password(self, password):
         self.password = generate_password_hash(password)

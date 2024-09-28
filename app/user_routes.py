@@ -570,7 +570,8 @@ def profile_manager():
             if recovery_phone:
                 try:
                     current_user.recovery_phone = recovery_phone
-                    db.session.add(recovery_phone)
+                    db.session.add(current_user)
+                    db.session.commit()
                     db.session.commit()
                     flash('Recovery phone number added successfully!', 'info')
                     user=db.session.query(User).filter_by(id=current_user.id).first()
