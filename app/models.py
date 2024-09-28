@@ -107,8 +107,8 @@ class User(UserMixin, Base):
         nullable=False
     )
     # Add recover_phone and recovery_email columns
-    recovery_phone = db.Column(db.String(20), unique=True, nullable=True)
-    recovery_email = db.Column(db.String(120), unique=True, nullable=True)
+    recovery_phone: so.Mapped[str] = sa.Column(sa.String(20), unique=True, nullable=True)
+    recovery_email: so.Mapped[str] = sa.Column(sa.String(150), unique=True, nullable=True)
 
     def set_password(self, password):
         self.password = generate_password_hash(password)
