@@ -109,18 +109,19 @@
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="form-group mb-3">
                             <label for="recovery_phone">Update Recovery Contact Number:</label>
-                            <input type="text" id="recovery_phone" name="recovery_phone" class="form-control">
-                            <button type="submit" class="btn btn-secondary mt-2">Update contact number</button>
+                            <input type="tel" id="recovery_phone" name="recovery_phone" class="form-control" placeholder="+1234567890" pattern="^\+[1-9]\d{1,14}$" required>
+                            <small class="form-text text-muted">Please include the country code, e.g., +1234567890.</small>
+                            <button type="submit" name="action" value="add_recovery_phone" class="btn btn-warning mt-2">Update Contact Number</button>
                         </div>
                         <div class="form-group mb-3">
                             <label for="recovery_email">Update Recovery Email:</label>
                             <input type="email" id="recovery_email" name="recovery_email" class="form-control">
-                            <button type="submit" class="btn btn-secondary mt-2">Update Contact Information</button>
+                            <button type="submit" name="action" value="add_recovery_email" class="btn btn-warning mt-2">Update Recovery Email</button>
                         </div>
                         
                     </form>
 
-                    <div class="card-body bg-warning shadow-lg">
+                    <div class="card-body pastel-light-blue shadow-lg">
                         <!-- Authenticator App Setup -->
                         <div class="card-title"> <h5 class="mt-4">Two-Factor Authentication</h5></div>
                         <div class="card-body"><a href="{{ url_for('app_user.security_manager') }}" class="btn btn-primary">Set Up Authenticator App</a></div>
