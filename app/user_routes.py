@@ -566,7 +566,23 @@ def profile_manager():
                     return redirect(url_for('app_user.user_management'))
                         
         elif action=="add_recovery_phone":
-            flash('a recovery phone number will be added', 'warning')
+            recovery_phone = request.form.get('recovery_phone')
+            if recovery_phone:
+                try:
+                    current_user.recovery_phone = recovery_phone
+                    db.session.add(recovery_phone)
+                    db.session.commit()
+                    flash('Recovery phone number added successfully!', 'info')
+                    user=db.session.query(User).filter_by(id=current_user.id).first()
+                    print(f"debugging : the recovery phone number is {user.recovery_phone}")
+                except Exception as e:
+                    db.session.rollback()  # Rollback the session on error
+                    flash(f'An error occurred while updating the recovery phone number: {e}', 'danger')
+                    user=db.session.query(User).filter_by(id=current_user.id).first()
+                    print(f"debugging : the recovery phone number is {user.recovery_phone}")
+            else:
+                flash('Please enter a valid recovery phone number')
+            pass
 
     categories = CategoryNames
     modules = ModuleNames

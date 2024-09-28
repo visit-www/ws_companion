@@ -61,38 +61,51 @@
 {% block script %}
 {{ super() }}
 <script>
-    document.querySelectorAll('.card-selection').forEach(function (card) {
-        card.addEventListener('click', function () {
-            // Remove selected class from other cards
-            document.querySelectorAll('.card-selection').forEach(function (c) {
-                c.classList.remove('card-selected');
+    document.addEventListener('DOMContentLoaded', function () {
+        var cards = document.querySelectorAll('.card-selection');
+        var phoneInput = document.getElementById('phone-input');
+        var emailInput = document.getElementById('email-input');
+        var recoveryOptionInput = document.getElementById('recovery_option');
+        var submitBtn = document.getElementById('submit-btn');
+
+        cards.forEach(function (card) {
+            card.addEventListener('click', function () {
+                // Remove selected class from other cards
+                cards.forEach(function (c) {
+                    c.classList.remove('card-selected');
+                });
+
+                // Add selected class to clicked card
+                card.classList.add('card-selected');
+
+                // Handle input visibility based on selected card
+                var recoveryOption = '';
+                switch (card.id) {
+                    case 'phone-card':
+                        phoneInput.classList.remove('hidden');
+                        emailInput.classList.add('hidden');
+                        recoveryOption = 'phone';
+                        break;
+                    case 'email-card':
+                        emailInput.classList.remove('hidden');
+                        phoneInput.classList.add('hidden');
+                        recoveryOption = 'recovery_email';
+                        break;
+                    case 'authenticator-card':
+                        emailInput.classList.add('hidden');
+                        phoneInput.classList.add('hidden');
+                        recoveryOption = 'authenticator';
+                        break;
+                }
+
+                // Set recovery option in hidden input field
+                recoveryOptionInput.value = recoveryOption;
+
+                // Show submit button
+                submitBtn.style.display = 'block';
             });
-
-            // Add selected class to clicked card
-            card.classList.add('card-selected');
-
-            // Show corresponding input field
-            let recoveryOption = '';
-            if (card.id === 'phone-card') {
-                document.getElementById('phone-input').classList.remove('hidden');
-                document.getElementById('email-input').classList.add('hidden');
-                recoveryOption = 'phone';
-            } else if (card.id === 'email-card') {
-                document.getElementById('email-input').classList.remove('hidden');
-                document.getElementById('phone-input').classList.add('hidden');
-                recoveryOption = 'recovery_email';
-            } else if (card.id === 'authenticator-card') {
-                document.getElementById('email-input').classList.add('hidden');
-                document.getElementById('phone-input').classList.add('hidden');
-                recoveryOption = 'authenticator';
-            }
-
-            // Set recovery option in hidden input field
-            document.getElementById('recovery_option').value = recoveryOption;
-
-            // Show submit button
-            document.getElementById('submit-btn').style.display = 'block';
         });
     });
 </script>
+
 {% endblock %}
