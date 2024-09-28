@@ -71,12 +71,19 @@
 
     <!-- Secure Your Account Section -->
     <div class="row mb-5">
-        <div class="col-12">
-            <div class="card shadow-lg h-100 p-4 pastel-light-blue">
+        <div class="col-12 mb-3">
+            <div class="card shadow-lg h-100 p-4 pastel-light-yellow">
                 <div class="card-body">
                     <h4>Secure Your Account</h4>
+                </div>
+            </div>
+        </div>
 
+        <div class="col-6">
+            <div class="card shadow-lg h-100 p-4 pastel-light-blue">
+                <div class="card-body">
                     <!-- Change Password Section -->
+                    <h5 class="mt-4">Update your Password</h5>
                     <form action="{{ url_for('app_user.update_password') }}" method="post">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="form-group mb-3">
@@ -89,25 +96,35 @@
                         </div>
                         <button type="submit" name="action" value="change_password" class="btn btn-primary mt-2">Change Password</button>
                     </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-6">
+            <div class="card shadow-lg h-100 p-4 pastel-light-blue">
+                <div class="card-body">
 
                     <!-- Account Recovery Section -->
-                    <h5 class="mt-4">Contact Information for Account Recovery</h5>
+                    <h4 class="mt-4">Update Account Recovery Options</h4>
                     <form action="{{ url_for('app_user.profile_manager') }}" method="post">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="form-group mb-3">
-                            <label for="recovery_phone">Recovery Contact Number:</label>
+                            <label for="recovery_phone">Update Recovery Contact Number:</label>
                             <input type="text" id="recovery_phone" name="recovery_phone" class="form-control">
+                            <button type="submit" class="btn btn-secondary mt-2">Update contact number</button>
                         </div>
                         <div class="form-group mb-3">
-                            <label for="recovery_email">Recovery Email:</label>
+                            <label for="recovery_email">Update Recovery Email:</label>
                             <input type="email" id="recovery_email" name="recovery_email" class="form-control">
+                            <button type="submit" class="btn btn-secondary mt-2">Update Contact Information</button>
                         </div>
-                        <button type="submit" class="btn btn-primary mt-2">Update Contact Information</button>
+                        
                     </form>
 
-                    <!-- Authenticator App Setup -->
-                    <h5 class="mt-4">Two-Factor Authentication</h5>
-                    <a href="{{ url_for('app_user.security_manager') }}" class="btn btn-primary">Set Up Authenticator App</a>
+                    <div class="card-body bg-warning shadow-lg">
+                        <!-- Authenticator App Setup -->
+                        <div class="card-title"> <h5 class="mt-4">Two-Factor Authentication</h5></div>
+                        <div class="card-body"><a href="{{ url_for('app_user.security_manager') }}" class="btn btn-primary">Set Up Authenticator App</a></div>
+                    </div>
                 </div>
             </div>
         </div>
