@@ -35,13 +35,14 @@
         <div id="qr-popup-content">
             <span id="close-popup">&times;</span>
             <h2>Scan this QR Code with Your Authenticator App</h2>
-            <img src="{{ url_for('qrcode_route') }}" alt="QR Code">
+            <img src="{{ url_for('app_user.qrcode_route') }}" alt="QR Code">
             <p>If you can't scan the QR code, enter this code manually into your app:</p>
             <p><strong>{{ totp_secret }}</strong></p>
         </div>
     </div>
 
-    <form action="{{ url_for('verify_2fa') }}" method="post">
+    <form action="{{ url_for('app_user.verify_2fa') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <p>After scanning, enter the 6-digit code from your authenticator app:</p>
         <input type="text" name="token" placeholder="Enter code" required>
         <button type="submit">Verify</button>
