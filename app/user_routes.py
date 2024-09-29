@@ -34,15 +34,16 @@ import io
 def qrcode_route():
     totp_secret = session.get('totp_secret')
     if not totp_secret:
-        return 'TOTP secret not found.', 400
+        return 'TOTP secret not found. Please start the 2FA setup process.', 400
 
     # Use the user's email as the identifier
-    user_identifier = current_user.email
-
+    user_email = current_user.email
     # Generate the provisioning URI
-    totp_uri = pyotp.totp.TOTP(totp_secret).provisioning_uri(name=user_identifier, issuer_name='WSCompanion')
-
-    # Generate QR code image
+    # First create TOTP object:
+    totp=pyotp.TOTP(totp_secret)
+    # Generate the provision URI that will be used by authenticator app and hence provide all inormation to auth app:
+    totp_uri = totp.provisioning_uri(name=user_email, issuer_name='WSCompanion')
+    # Generate QR code image for this provisioning uri:
     img = qrcode.make(totp_uri)
     buf = io.BytesIO()
     img.save(buf, format='PNG')
@@ -57,7 +58,7 @@ def qrcode_route():
 @login_required  # Ensure the user is logged in
 def enable_2fa():
     # Generate and store the TOTP secret
-    totp_secret = pyotp.random_base32()
+    totp_secret = generate_otp_secret()
     session['totp_secret'] = totp_secret
     return render_template('enable_2fa.html', totp_secret=totp_secret)
 # ----------------------------------------------------------------

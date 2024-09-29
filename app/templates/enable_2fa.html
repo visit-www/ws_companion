@@ -1,70 +1,84 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Enable Two-Factor Authentication</title>
-    <style>
-        /* Styles for the QR code popup */
-        #qr-popup {
-            display: none;
-            position: fixed;
-            z-index: 1;
-            padding-top: 100px;
-            left: 0; top: 0; width: 100%; height: 100%;
-            overflow: auto; background-color: rgba(0,0,0,0.4);
-        }
-        #qr-popup-content {
-            background-color: #fefefe;
-            margin: auto; padding: 20px;
-            border: 1px solid #888; width: 300px; text-align: center;
-        }
-        #close-popup {
-            color: #aaa; float: right; font-size: 28px; font-weight: bold;
-        }
-        #close-popup:hover, #close-popup:focus {
-            color: black; text-decoration: none; cursor: pointer;
-        }
-    </style>
-</head>
-<body>
-    <h1>Enable Two-Factor Authentication</h1>
-    <p>Click the button below to display a QR code that you can scan with your authenticator app.</p>
-    <button id="show-qr-btn">Show QR Code</button>
-
-    <!-- QR Code Popup -->
-    <div id="qr-popup">
-        <div id="qr-popup-content">
-            <span id="close-popup">&times;</span>
-            <h2>Scan this QR Code with Your Authenticator App</h2>
-            <img src="{{ url_for('app_user.qrcode_route') }}" alt="QR Code">
-            <p>If you can't scan the QR code, enter this code manually into your app:</p>
-            <p><strong>{{ totp_secret }}</strong></p>
+{% extends 'base.html' %}
+{% block content %}
+<div class="mt-2 m-5 card ">
+    <h1 class="mt-2">Enable Two-Factor Authentication</h1>
+    <div class="mt-2 row g-5"> <!-- Added 'g-3' for gutter spacing between columns -->
+        <!-- First Card -->
+        <div class="col-md-6 col-sm-12">
+            <div class="card">
+                <!-- Card Title -->
+                <div class="card-header">
+                    <h4>Click the button below to display a QR code that you can scan with your authenticator app.</h4>
+                </div>
+                <!-- Card Body -->
+                <div class="card-body">
+                    <button class="btn btn-outline-success mt-3" id="show-qr-btn">Show QR Code</button>
+                </div>
+                <!-- Card body-->
+                <div class="card-body">
+                    <p>If you can't scan the QR code, enter this code manually into your app:</p>
+                    <p><strong>{{ session['totp_secret'] }}</strong></p>
+                </div>
+            </div>
+        </div>
+        <!-- Second Card -->
+        <div class="col-md-6 col-sm-12">
+            <div class="card">
+                <!-- Card Title -->
+                <div class="card-header mb-3">
+                    <h4>After scanning, enter the 6-digit code from your authenticator app:</h4>
+                </div>
+                <!-- Card Body -->
+                <div class="card-body">
+                    <form action="{{ url_for('app_user.verify_2fa') }}" method="post">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <div class="mt-4">
+                            <input type="text" name="token" class="form-control" placeholder="Enter code" required>
+                        </div>
+                        <button class="btn btn-outline-success mt-5" type="submit">Verify</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- QR Code Popup -->
+        <div class="col-12">
+            <!-- QR Code Popup -->
+            <div id="qr-popup" style="display:none">
+                <div id="qr-popup-content">
+                    <h2>Scan this QR Code with Your Authenticator App</h2>
+                    <img src="{{ url_for('app_user.qrcode_route') }}" alt="QR Code">
+                </div>
+            </div>
         </div>
     </div>
+</div>
+{% endblock %}
 
-    <form action="{{ url_for('app_user.verify_2fa') }}" method="post">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <p>After scanning, enter the 6-digit code from your authenticator app:</p>
-        <input type="text" name="token" placeholder="Enter code" required>
-        <button type="submit">Verify</button>
-    </form>
 
-    <script>
-        // JavaScript to handle the QR code popup
+{% block script %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
         var showQrBtn = document.getElementById('show-qr-btn');
-        var qrPopup = document.getElementById('qr-popup');
-        var closePopup = document.getElementById('close-popup');
 
-        showQrBtn.onclick = function() {
-            qrPopup.style.display = 'block';
-        }
-        closePopup.onclick = function() {
-            qrPopup.style.display = 'none';
-        }
-        window.onclick = function(event) {
-            if (event.target == qrPopup) {
+        // Add click event listener to the button
+        showQrBtn.addEventListener('click', function() {
+            var qrPopup = document.getElementById('qr-popup');
+
+            if (showQrBtn.innerHTML == "Hide QR Code") {
+                // Hide the QR Code popup
                 qrPopup.style.display = 'none';
+                showQrBtn.innerHTML = "Show QR Code";
+            } else {
+                // Show the QR Code popup
+                qrPopup.style.display = 'block';
+                showQrBtn.innerHTML = "Hide QR Code";
             }
-        }
-    </script>
-</body>
-</html>
+        });
+    });
+</script>
+
+
+
+{% endblock %}
+
