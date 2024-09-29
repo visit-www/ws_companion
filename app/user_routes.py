@@ -1,5 +1,5 @@
 # * Imports
-from flask import Blueprint, request, render_template, redirect, url_for, flash, session, jsonify
+from flask import Blueprint, request, render_template, redirect, url_for, flash, session, jsonify,send_file
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash,check_password_hash
 from .models import User, UserContentState, CategoryNames, ModuleNames,UserData,UserProfile,UserFeedback,UserReportTemplate
@@ -21,6 +21,59 @@ app_user_bp = Blueprint(
     static_folder='static',
     static_url_path='/static'
 )
+
+# ----------------------------------------------------------------
+# * Route t degenerate qr code for 2factor authentication:
+# ----------------------------------------------------------------
+from .util import load_default_data,add_default_admin,add_default_contents,add_anonymous_user
+import pyotp
+import qrcode
+import io
+@app_user_bp.route('/qrcode')
+def qrcode_route():
+    totp_secret = session.get('totp_secret')
+    if not totp_secret:
+        return 'TOTP secret not found.', 400
+
+    # Replace with the user's actual email or username
+    user=db.session.query(db.User).filter_by(id=current_user.id).first()
+    user_email=user.email
+    # Generate the provisioning URI
+    totp_uri = pyotp.totp.TOTP(totp_secret).provisioning_uri(name=user_email, issuer_name='WSCompanion')
+
+    # Generate QR code image
+    img = qrcode.make(totp_uri)
+    buf = io.BytesIO()
+    img.save(buf, format='PNG')
+    buf.seek(0)
+    return send_file(buf, mimetype='image/png')
+
+# ----  
+# * verify qr code route 
+#-----
+@app_user_bp.route('/verify_2fa', methods=['POST'])
+def verify_2fa():
+    token = request.form.get('token')
+    totp_secret = session.get('totp_secret')
+
+    if not totp_secret:
+        return 'TOTP secret not found.', 400
+
+    totp = pyotp.TOTP(totp_secret)
+    if totp.verify(token):
+        # Verification successful
+        #Save the TOTP secret to the user's account in the databas
+        user = db.session.query(User).filter_by(id=current_user.id).first()
+        user.totp_secret = totp_secret
+        db.session.add(user)
+        db.session.commit()
+
+        # Clear the TOTP secret from the session
+        db.session.pop('totp_secret', None)
+
+        return 'Two-Factor Authentication has been enabled.'
+    else:
+        return 'Invalid token. Please try again.', 400
 
 #----------------------------------------------------------------
 # * Login and Logout routes

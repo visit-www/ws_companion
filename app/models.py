@@ -106,6 +106,7 @@ class User(UserMixin, Base):
         default=lambda: datetime.now(timezone.utc),  # Correctly uses current UTC time at record creation
         nullable=False
     )
+    totp_secret:so.Mapped[Optional[str]] = sa.Column(sa.String(16), nullable=True)
     recovery_phone: so.Mapped[Optional[str]] = sa.Column(sa.String(20), unique=True, nullable=True)  # Updated to Optional
     recovery_email: so.Mapped[Optional[str]] = sa.Column(sa.String(150), unique=True, nullable=True)  # Updated to Optional
 

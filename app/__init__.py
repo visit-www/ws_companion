@@ -1,4 +1,4 @@
-from flask import Flask, request, redirect, url_for, flash,session,send_from_directory
+from flask import Flask, request, redirect, url_for, flash,session,send_from_directory, render_template
 from flask_login import current_user
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
@@ -14,6 +14,10 @@ from datetime import datetime,timedelta,timezone
 from flask_mail import Mail
 from uuid import UUID
 from .util import load_default_data,add_default_admin,add_default_contents,add_anonymous_user
+import pyotp
+import qrcode
+import io
+
 
 # Initialize Flask extensions (SQLAlchemy, Flask-Migrate, LoginManager, Flask-Admin, CSRFProtect)
 got_first_request=True
@@ -29,6 +33,7 @@ flask_admin = Admin(
 # instantiate flak mail
 mail = Mail()
 
+
 # Create Flask application instance and configure it with the specified configuration settings
 def create_app():
     app = Flask(__name__)
@@ -43,6 +48,8 @@ def create_app():
     flask_admin.init_app(app)
     # Initialize Flask-Mail
     mail.init_app(app)
+    #import secret key ofr pyotp
+    app.secret_key =Config.SECRET_KEY
     
     # User loader function
     from .models import User
@@ -74,6 +81,13 @@ def create_app():
     @app.route('/user_data/<path:filename>')
     def serve_user_data(filename):
         return send_from_directory(userdir, filename)
+    
+    @app.route('/enable_2fa')
+    def enable_2fa():
+        # Generate a new TOTP secret key
+        totp_secret = pyotp.random_base32()
+        session['totp_secret'] = totp_secret  # Temporarily store the secret in the session
+        return render_template('enable_2fa.html', totp_secret=totp_secret)
     
     # * other Blueprints to be registered
     # App admin routes
