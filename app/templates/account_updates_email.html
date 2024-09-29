@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Account Update Notice</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f7f9fa;
+            color: #333;
+            padding: 20px;
+            margin: 0;
+        }
+        .email-container {
+            max-width: 90vw;
+            margin: auto;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fba952;
+            box-shadow: 2px 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .header {
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            color: #0c8819;
+        }
+        .body {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #555;
+            line-height: 1.5;
+        }
+        .button {
+            display: block;
+            width: fit-content;
+            margin: 30px auto;
+            padding: 15px 25px;
+            background-color: #cce3ba;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 16px;
+        }
+        .footer {
+            margin-top: 30px;
+            font-size: 16px;
+            text-align: center;
+            color: #5b5731;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(25, 1, 1, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">Account Update Notice</div>
+        <div class="body">
+            <p>Dear {{ user_name }},</p>
+            <p>We wanted to let you know that a significant change was made to your WSCompanion account.</p>
+            <p><strong>Changed Details:</strong></p>
+            {% if account_update_type == 'Added Recovery Phone' %}
+                <p>Recovery Phone Added: {{ recovery_phone }}</p>
+            {% elif account_update_type == 'Added Recovery Email' %}
+                <p>Recovery Email Added: {{ recovery_email }}</p>
+            {% elif account_update_type == 'Activated Authenticator App' %}
+                <p>Authenticator App Activated</p>
+            {% else %}
+                <p>{{ account_update_type }}</p>
+            {% endif %}
+            <p>If you made this change, you can safely ignore this email.</p>
+            <p><strong>If you didn't make this change, please secure your account immediately.</strong></p>
+            <p>To secure your account:</p>
+            <ol>
+                <li>Click the button below to reset your password.</li>
+                <li>After resetting your password, log in to your account.</li>
+                <li>Go to the <strong>My Account</strong> page.</li>
+                <li>Review and update your security settings.</li>
+                <li>Remove any unfamiliar phone numbers, recovery emails, or authenticator app activations.</li>
+            </ol>
+            <a href="{{ reset_link }}" class="button">Secure My Account</a>
+            <p>If you need further assistance, please contact our support team immediately.</p>
+        </div>
+        <div class="footer">
+            <p>Stay safe,<br>The WSCompanion Team</p>
+        </div>
+    </div>
+</body>
+</html>
