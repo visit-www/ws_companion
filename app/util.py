@@ -15,8 +15,21 @@ def verify_password_reset_token(token, expiration=600):
         return data
     except (BadSignature, SignatureExpired):
         return None
+
+#Functions to generate otps using pyotp for mfa:
+
+import pyotp
+def generate_otp_secret():
+    #Generates a new TOTP secret key
+    return pyotp.random_base32()
+
+def generate_otp_token(secret, interval=200):
+    #Generates a TOTP token based on the given secret and interval
+    totp = pyotp.TOTP(secret, interval=interval)
+    return totp.now()
+
     
-    # Default app initialization
+# Default app initialization
 import json
 from datetime import datetime, timezone
 from .models import db,Content, User, UserData, UserContentState, AdminReportTemplate

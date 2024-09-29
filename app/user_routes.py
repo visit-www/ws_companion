@@ -30,16 +30,17 @@ import pyotp
 import qrcode
 import io
 @app_user_bp.route('/qrcode')
+@login_required
 def qrcode_route():
     totp_secret = session.get('totp_secret')
     if not totp_secret:
         return 'TOTP secret not found.', 400
 
-    # Replace with the user's actual email or username
-    user=db.session.query(db.User).filter_by(id=current_user.id).first()
-    user_email=user.email
+    # Use the user's email as the identifier
+    user_identifier = current_user.email
+
     # Generate the provisioning URI
-    totp_uri = pyotp.totp.TOTP(totp_secret).provisioning_uri(name=user_email, issuer_name='WSCompanion')
+    totp_uri = pyotp.totp.TOTP(totp_secret).provisioning_uri(name=user_identifier, issuer_name='WSCompanion')
 
     # Generate QR code image
     img = qrcode.make(totp_uri)
@@ -48,32 +49,56 @@ def qrcode_route():
     buf.seek(0)
     return send_file(buf, mimetype='image/png')
 
-# ----  
+
+# ----------------------------------------------------------------
+# * enale 2fa:
+#---------------------------------------------------------------
+@app_user_bp.route('/enable_2fa')
+@login_required  # Ensure the user is logged in
+def enable_2fa():
+    # Generate and store the TOTP secret
+    totp_secret = pyotp.random_base32()
+    session['totp_secret'] = totp_secret
+    return render_template('enable_2fa.html', totp_secret=totp_secret)
+# ----------------------------------------------------------------
+# * enale 2fa:
+#---------------------------------------------------------------
+@app_user_bp.route('/disable_2fa', methods=['POST'])
+@login_required
+def disable_2fa():
+    user = current_user  # Assuming you have `current_user` from Flask-Login
+    user.totp_secret = None
+    db.session.commit()
+    flash('Two-Factor Authentication has been disabled.', 'success')
+    return redirect(url_for('app_user.user_management'))
+
+
+# ----------------------------------------------------------------
 # * verify qr code route 
-#-----
+#----------------------------------------------------------------
 @app_user_bp.route('/verify_2fa', methods=['POST'])
+@login_required
 def verify_2fa():
     token = request.form.get('token')
     totp_secret = session.get('totp_secret')
 
     if not totp_secret:
-        return 'TOTP secret not found.', 400
+        flash('TOTP secret not found.', 'danger')
+        return redirect(url_for('app_user.user_management'))
 
     totp = pyotp.TOTP(totp_secret)
     if totp.verify(token):
-        # Verification successful
-        #Save the TOTP secret to the user's account in the databas
-        user = db.session.query(User).filter_by(id=current_user.id).first()
+        # Save the totp_secret to the user's record
+        user = current_user
         user.totp_secret = totp_secret
-        db.session.add(user)
         db.session.commit()
-
-        # Clear the TOTP secret from the session
-        db.session.pop('totp_secret', None)
-
-        return 'Two-Factor Authentication has been enabled.'
+        session.pop('totp_secret', None)
+        flash('Two-Factor Authentication has been enabled.', 'success')
+        return redirect(url_for('app_user.user_management'))
     else:
-        return 'Invalid token. Please try again.', 400
+        flash('Invalid token. Please try again.', 'danger')
+        return redirect(url_for('app_user.enable_2fa'))
+
 
 #----------------------------------------------------------------
 # * Login and Logout routes

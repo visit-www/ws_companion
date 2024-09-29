@@ -123,9 +123,23 @@
 
                     <div class="card-body pastel-light-blue shadow-lg">
                         <!-- Authenticator App Setup -->
-                        <div class="card-title"> <h5 class="mt-4">Two-Factor Authentication</h5></div>
-                        <div class="card-body"><a href="{{ url_for('app_user.security_manager') }}" class="btn btn-primary">Set Up Authenticator App</a></div>
+                        <div class="card-title">
+                            <h5 class="mt-4">Two-Factor Authentication</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if current_user.totp_secret %}
+                                <p>Two-Factor Authentication is currently <strong>enabled</strong> on your account.</p>
+                                <form action="{{ url_for('app_user.disable_2fa') }}" method="post">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-danger">Disable Authenticator App</button>
+                                </form>
+                            {% else %}
+                                <p>Two-Factor Authentication is currently <strong>disabled</strong> on your account.</p>
+                                <a href="{{ url_for('app_user.enable_2fa') }}" class="btn btn-primary">Set Up Authenticator App</a>
+                            {% endif %}
+                        </div>
                     </div>
+                    
                 </div>
             </div>
         </div>
