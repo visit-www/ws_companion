@@ -9,7 +9,7 @@ from config import Config
 from datetime import timedelta, datetime, timezone
 from flask_mail import Message
 from . import mail  # Import the mail instance from your app initialization
-from .util import generate_password_reset_token,verify_password_reset_token
+from .util import generate_password_reset_token,verify_password_reset_token, generate_otp_secret,generate_otp_token
 from datetime import datetime, timezone
 import os
 import shutil
@@ -573,14 +573,27 @@ def profile_manager():
                     db.session.add(current_user)
                     db.session.commit()
                     db.session.commit()
-                    flash('Recovery phone number added successfully!', 'info')
                     user=db.session.query(User).filter_by(id=current_user.id).first()
-                    print(f"debugging : the recovery phone number is {user.recovery_phone}")
+                    user_email=user.email
+                    user_name=user.username
+                    account_update_type="Added Recovery Phone"
+                    #send intimation to the user that a recovery phone has been added.
+                    #create reset link to secure accunt :
+                        # Generate the password reset token
+                    token = generate_password_reset_token({'email': user_email})
+                    
+                    # Create the reset link
+                    reset_link = url_for('app_user.change_password', token=token, _external=True, _scheme='https')
+                    
+                    msg=Message("Important: Suspicious activity on your ws-companion account", recipients=[user_email])
+                    msg.html = render_template('account_updates_email.html',user_name=user_name,account_update_type=account_update_type,recovery_phone=recovery_phone,reset_link=reset_link)
+                    msg.body = render_template('account_updates_email.txt', reset_link=reset_link)
+                    mail.send(msg)
+                    flash('Recovery phone number added successfully!', 'info')
                 except Exception as e:
                     db.session.rollback()  # Rollback the session on error
                     flash(f'An error occurred while updating the recovery phone number: {e}', 'danger')
                     user=db.session.query(User).filter_by(id=current_user.id).first()
-                    print(f"debugging : the recovery phone number is {user.recovery_phone}")
             else:
                 flash('Please enter a valid recovery phone number')
             pass
