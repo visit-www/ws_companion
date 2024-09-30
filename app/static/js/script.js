@@ -5,11 +5,26 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     toastList.forEach(toast => toast.show());
 });
+//code to ensure there is no background scrolling when embed code are displated 
+document.addEventListener('DOMContentLoaded', () => {
+    const modalElement = document.getElementById('embedCodeModal');
 
+    // Check if modalElement exists to avoid errors
+    if (modalElement) {
+        modalElement.addEventListener('show.bs.modal', () => {
+            document.body.classList.add('modal-open');
+        });
+
+        modalElement.addEventListener('hide.bs.modal', () => {
+            document.body.classList.remove('modal-open');
+        });
+    } else {
+        console.error('Modal element not found.');
+    }
+});
 let lastUsedButton = null;
 let lastUsedType = null;
 
-// Update your existing function to store the last used button and type
 document.addEventListener('DOMContentLoaded', function () {
     // Define the function to handle the embed code
     function setEmbedCodeFromButton(button) {
@@ -56,8 +71,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (type === 'video') {
             video_container.innerHTML = embedCode; // Inject the embed code
             video_container.style.display = 'block';
-        } else if (type === 'webpage') {
-            webpage_container.innerHTML = embedCode;
+        } else if (type === 'webpage' || type === 'drawio') {
+            webpage_container.innerHTML = embedCode;  // Inject webpage or draw.io content here
             webpage_container.style.display = 'block';
         } else if (type === 'image') {
             image_container.innerHTML = embedCode;
@@ -90,11 +105,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     webpage_container.appendChild(script);
                 }
             }
-            webpage_container.style.display = 'block';
-        } else {
-            // Default case
-            webpage_container.innerHTML = embedCode;
-            webpage_container.style.display = 'block';
+            webpage_container.style.display = 'flex';
         }
 
         // Ensure the modal clears content when hidden
@@ -116,6 +127,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 });
+
 
 // Functions to inject carousel when screen size is small.
 // Functions to inject carousel when screen size is small.

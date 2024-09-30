@@ -8,14 +8,14 @@
       </div>
       <div class="modal-body">
         <!-- Container for video content -->
-        <div class="embed-responsive embed-responsive-16by9 video-screen" id="videoContainer" style="display: none;">
+        <div class="embed-responsive video-screen" id="videoContainer" style="display: none;">
         </div>
-        <!-- Container for webpage content -->
-        <div id="webpageContainer" class ="embed-responsive-16by9 video-screen" style="display: none;">
-          <iframe id="webpageIframe" src="" class="w-100" style="height: 500px; border: none; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); border-radius: 8px;"></iframe>
+        <!-- Container for webpage content (iframe) -->
+        <div id="webpageContainer" class="video-screen justify-content-center" style="display: none;">
+          <iframe id="webpageIframe" src="" class="w-100 h-100" style="border: none;"></iframe>
         </div>
         <!-- Container for image content -->
-        <div id="imageContainer" class ="embed-responsive-16by9 video-screen" style="display: none;">
+        <div id="imageContainer" class="video-screen" style="display: none;">
           <img id="embedImage" src="" alt="Embedded Content" class="img-fluid" style="border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);">
         </div>
       </div>

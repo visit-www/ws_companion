@@ -157,12 +157,16 @@ styling of the pop up modal :*/
 }
 .modal-body {
     padding: 6px; /* Remove padding around the iframe */
+    max-height: 70vh; /* Set a maximum height */
+    overflow-y: auto; /* Enable vertical scrolling */
+
 }
 
 .modal-content {
     border-radius: 20px; /* Optional: Remove modal border radius if you want it flush */
-    
+    z-index: 1050; /* Ensure this is higher than other elements */
 }
+
 
 
 .video-screen {
@@ -180,8 +184,16 @@ styling of the pop up modal :*/
 
 .modal-body iframe {
     width: 100%;
-    height: calc(100vh - 200px); /* Ensure it takes up available height */
+    max-height: 70vh; /* Set a maximum height */
+    overflow-y: auto; /* Enable vertical scrolling */
     
+}
+#webpageIframe {
+    height: 100%; /* Set to 100% of the parent */
+}
+/* iOS specific fix */
+.modal-body {
+    -webkit-overflow-scrolling: touch; /* Ensure smooth scrolling on iOS devices */
 }
 
 /* =================================================================*/
