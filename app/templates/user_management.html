@@ -5,8 +5,8 @@
     <hr>
 
     <!-- Basic Info and Profile Picture Section -->
-    <div class="row mb-5">
-        <div class="col-md-4 col-sm-12">
+    <div class="row mb-3">
+        <div class="col-md-4 col-sm-6 mb-3">
             <div class="card shadow-lg h-100 p-3 pastel-light-green">
                 <div class="card-body text-center">
                     <!-- Dynamically setting src using target_folder and filename -->
@@ -17,13 +17,13 @@
                     <form action="{{ url_for('app_user.profile_manager') }}" method="post" enctype="multipart/form-data">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="file" name="profile_pic" class="form-control mt-2">
-                        <button type="submit" name='action' value='update_profile_pic' class="btn btn-primary btn-sm mt-2">Upload Profile Picture</button>
+                        <button type="submit" name='action' value='update_profile_pic' class="btn btn-outline-success btn-sm mt-2">Upload Profile Picture</button>
                     </form>
                 </div>
             </div>
         </div>
 
-        <div class="col-md-8 col-sm-12">
+        <div class="col-md-8 col-sm-6">
             <div class="card shadow-lg h-100 p-3 pastel-light-green">
                 <div class="card-body">
                     <h4>Basic Information</h4>
@@ -32,79 +32,54 @@
                         <div class="form-group mb-3">
                             <label for="username">Username:</label>
                             <input type="text" id="username" name="username" class="form-control" value="{{ current_user.username }}">
-                            <button type="submit" name="action" value="update_username" class="btn btn-primary mt-2">Update Username</button>
+                            <button type="submit" name="action" value="update_username" class="btn btn-outline-success mt-2">Update Username</button>
                         </div>
                         <div class="form-group mb-3">
                             <label for="email">Email:</label>
                             <input type="email" id="email" name="email" class="form-control" value="{{ current_user.email }}">
-                            <button type="submit" name="action" value="update_email" class="btn btn-primary mt-2">Update Email</button>
+                            <button type="submit" name="action" value="update_email" class="btn btn-outline-success mt-2">Update Email</button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Subscription Status Section -->
-<div class="row mb-5">
-    <div class="col-md-6 col-sm-12">
-        <div class="card shadow-lg h-100 p-3" id="subscription-status">
-            <div class="card-body">
-                <h4>Subscription Status</h4>
-                <p>Status: <span id="subscription-status-text" class="fw-bold">{{ 'Paid' if current_user.is_paid else 'Free' }}</span></p>
-                <a href="{{ url_for('app_user.finance_manager') }}" class="btn btn-primary">Check Subscriptions</a>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-6 col-sm-12">
-        <div class="card shadow-lg h-100 p-3 bg-danger " id="delete_my_account">
-            <div class="card-body">
-                <h4 class="text-white">DELETE MY ACCOUNT</h4>
-                <p class="fw-bold bg-danger">Request Account Purge</p>
-                <p>Your account won't be deleted immediately. We will send you an email link to confirm your request.</p>
-                <a href="{{ url_for('app_user.delete_account') }}" class="btn btn-secondary">Request Deletion of Your Account</a>
-            </div>
-        </div>
-    </div>
-</div>
-
-
     <!-- Secure Your Account Section -->
     <div class="row mb-5">
-        <div class="col-12 mb-3">
-            <div class="card shadow-lg h-100 p-4 pastel-light-yellow">
+        <div class="col-lg-12 col-md-12 col-sm-12 mb-3">
+            <div class="card shadow-lg pastel-light-yellow">
                 <div class="card-body">
                     <h4>Secure Your Account</h4>
                 </div>
             </div>
         </div>
 
-        <div class="col-6">
-            <div class="card shadow-lg h-100 p-4 pastel-light-blue">
+        <div class="col-lg-6 col-md-6 col-sm-12">
+            <div class="card shadow-lg pastel-light-blue mb-3">
                 <div class="card-body">
                     <!-- Change Password Section -->
-                    <h5 class="mt-4">Update your Password</h5>
+                    <h5 class="mt-4 mb-4">Update your Password</h5>
                     <form action="{{ url_for('app_user.update_password') }}" method="post">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <div class="form-group mb-3">
+                        <div class="form-group mb-5">
                             <label for="password">New Password:</label>
                             <input type="password" id="password" name="new-password" class="form-control">
                         </div>
-                        <div class="form-group mb-3">
+                        <div class="form-group mb-4">
                             <label for="retype-password">Retype Password:</label>
                             <input type="password" id="retype_password" name="retyped-password" class="form-control">
                         </div>
-                        <button type="submit" name="action" value="change_password" class="btn btn-primary mt-2">Change Password</button>
+                        <button type="submit" name="action" value="change_password" class="btn btn-outline-primary mt-2">Change Password</button>
                     </form>
                 </div>
             </div>
         </div>
-        <div class="col-6">
-            <div class="card shadow-lg h-100 p-4 pastel-light-blue">
+        <div class="col-lg-6 col-md-6 col-sm-12 mb-3">
+            <div class="card shadow-lg pastel-light-blue">
                 <div class="card-body">
 
                     <!-- Account Recovery Section -->
-                    <h4 class="mt-4">Update Account Recovery Options</h4>
+                    <h4 class="mt-1">Account Recovery Options</h4>
                     <form action="{{ url_for('app_user.profile_manager') }}" method="post">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <div class="form-group mb-3">
@@ -118,28 +93,28 @@
                             <input type="email" id="recovery_email" name="recovery_email" class="form-control">
                             <button type="submit" name="action" value="add_recovery_email" class="btn btn-outline-warning mt-2">Update Recovery Email</button>
                         </div>
-                        
-                    </form>
-
-                    <div class="card-body pastel-light-blue shadow-lg">
-                        <!-- Authenticator App Setup -->
-                        <div class="card-title">
-                            <h5 class="mt-4">Two-Factor Authentication</h5>
-                        </div>
-                        <div class="card-body">
-                            {% if current_user.totp_secret %}
-                                <p>Two-Factor Authentication is currently <strong>enabled</strong> on your account.</p>
-                                <form action="{{ url_for('app_user.disable_2fa') }}" method="post">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="btn btn-danger">Disable Authenticator App</button>
-                                </form>
-                            {% else %}
-                                <p>Two-Factor Authentication is currently <strong>disabled</strong> on your account.</p>
-                                <a href="{{ url_for('app_user.enable_2fa') }}" class="btn btn-primary">Set Up Authenticator App</a>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
+                    </form> 
+                </div>
+            </div>
+        </div>
+        <div class="col-12 m-auto justify-content-center">
+            <!-- Authenticator App Setup -->
+            
+            <div class="card shadow-lg pastel-light-green">
+                <div class="card-title">
+                    <h5 class="mt-4">Two-Factor Authentication</h5>
+                </div>
+                <div class="card-body">
+                    {% if current_user.totp_secret %}
+                        <p>Two-Factor Authentication is currently <strong>enabled</strong> on your account.</p>
+                        <form action="{{ url_for('app_user.disable_2fa') }}" method="post">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger">Disable Authenticator App</button>
+                        </form>
+                    {% else %}
+                        <p>Two-Factor Authentication is currently <strong>disabled</strong> on your account.</p>
+                        <a href="{{ url_for('app_user.enable_2fa') }}" class="btn btn-outline-success">Set Up Authenticator App</a>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -147,7 +122,7 @@
 
     <!-- Customize Home Page Section (Full Width) -->
     <div class="row mb-5">
-        <div class="col-12">
+        <div class="col-lg-6 col-md-6 col-sm-11 mt-3">
             <div class="card shadow-lg h-100 p-3 pastel-light-peach">
                 <div class="card-body">
                     <h4>Customize Home Page</h4>
@@ -169,17 +144,14 @@
                                 {% endfor %}
                             </select>
                         </div>
-                        <button type="submit" class="btn btn-primary">Save Preferences</button>
+                        <button type="submit" class="btn btn-outline-primary mt-4">Save Preferences</button>
                     </form>
                 </div>
             </div>
         </div>
-    </div>
-
     <!-- Customized Report Templates Section -->
-    <div class="row mb-5">
-        <div class="col-12">
-            <div class="card shadow-lg h-100 p-3 pastel-grey">
+        <div class="col-lg-6 col-md-6 col-sm-11 mt-3">
+            <div class="card shadow-lg h-100 p-3 bg-primary text-dark">
                 <div class="card-body">
                     <h4>Customized Report Templates</h4>
                     <form action="{{ url_for('app_user.profile_manager') }}" method="post" enctype="multipart/form-data">
@@ -200,12 +172,34 @@
                             <label for="template_file">Upload Template (PDF/Word):</label>
                             <input type="file" id="template_file" name="template_file" class="form-control">
                         </div>
-                        <button type="submit" class="btn btn-primary mt-2">Add Template</button>
+                        <button type="submit" class="btn btn-custom-yellow pastel-light-yellow mt-2">Add Template</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
+    <!-- Subscription Status Section -->
+<div class="row mb-5">
+    <div class="col-md-6 col-sm-12 mt-2 mb-3">
+        <div class="card shadow-lg h-100 p-3" id="subscription-status">
+            <div class="card-body">
+                <h4>Subscription Status</h4>
+                <p>Status: <span id="subscription-status-text" class="fw-bold">{{ 'Paid' if current_user.is_paid else 'Free' }}</span></p>
+                <a href="{{ url_for('app_user.finance_manager') }}" class="btn btn-outline-danger mt-4" style="color:black;">Check Subscriptions</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 col-sm-12 mt-2 mb-3">
+        <div class="card shadow-lg h-100 p-3 bg-danger " id="delete_my_account">
+            <div class="card-body">
+                <h4 class="text-white">DELETE MY ACCOUNT</h4>
+                <p class="fw-bold bg-danger">Request Account Purge</p>
+                <p>Your account won't be deleted immediately. We will send you an email link to confirm your request.</p>
+                <a href="{{ url_for('app_user.delete_account') }}" class="btn pastel-light-yellow shadow btn-warning">Request Deletion of Your Account</a>
+            </div>
+        </div>
+    </div>
+</div>
 
 </div>
 {% endblock %}
