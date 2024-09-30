@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Mermaid Diagram Viewer - Radiology Workstation Companion{% endblock %}
+
+{% block hero_container %}
+<div class="hero-container text-center my-4">
+    <h1 class="display-4">Mermaid Diagram Viewer</h1>
+</div>
+{% endblock %}
+{%block content %}
+<div class="container my-4">
+    <div class="d-flex justify-content-around align-items-center border p-2">
+        <!-- Back to category button -->
+        <a href="{{ url_for('content_routes.view_category', display_name=display_name, category=cat) }}" class="btn btn-outline-primary">Back to {{cat|upper}}</a>
+    </div>
+</div>
+
+<!-- Mermaid diagram viewer -->
+    <pre class="mermaid">
+        {{ diagram_content|safe }}
+        
+    </pre>
+{% endblock %}
+{% block script %}
+{{super()}}
+<!-- Load the Mermaid library -->
+<script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: true });
+</script>
+
+{% endblock %}
+

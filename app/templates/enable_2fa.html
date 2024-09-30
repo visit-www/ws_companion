@@ -4,7 +4,7 @@
     <h1 class="mt-2">Enable Two-Factor Authentication</h1>
     <div class="mt-2 row g-5"> <!-- Added 'g-3' for gutter spacing between columns -->
         <!-- First Card -->
-        <div class="col-md-6 col-sm-12">
+        <div class="col-md-6 col-sm-10">
             <div class="card">
                 <!-- Card Title -->
                 <div class="card-header">
@@ -22,7 +22,7 @@
             </div>
         </div>
         <!-- Second Card -->
-        <div class="col-md-6 col-sm-12">
+        <div class="col-md-6 col-sm-10">
             <div class="card">
                 <!-- Card Title -->
                 <div class="card-header mb-3">
@@ -46,7 +46,7 @@
             <div id="qr-popup" style="display:none">
                 <div id="qr-popup-content">
                     <h2>Scan this QR Code with Your Authenticator App</h2>
-                    <img src="{{ url_for('app_user.qrcode_route') }}" alt="QR Code">
+                    <img src="{{ url_for('app_user.qrcode_route') }}" alt="QR Code" style="max-width: 80vw; height: auto;">
                 </div>
             </div>
         </div>

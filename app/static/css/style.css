@@ -271,6 +271,32 @@ styling of the pop up modal :*/
     max-width: 100%;
     height: auto;
 }
+.watermark-card {
+    background-size:contain; /* Ensure the background covers the entire card */
+    background-position: center; /* Center the background */
+    background-repeat: no-repeat; /* Avoid repeating the background */
+    background-blend-mode:luminosity; /* Optionally blend the image to make it lighter */
+    position: relative; /* Ensures z-indexing works properly */
+}
+
+.my-card-body {
+    z-index: 2; /* Ensure the text and buttons are above the background */
+    background-color: rgba(223, 236, 211, 0.5); /* Optional: Adds a slight white background behind text */
+}
+
+.my-card:hover {
+    transform: scale(1.05);
+    transition: all 0.3s ease-in-out;
+}
+.card-title {
+    font-size: 1.25rem; /* Increase font size on desktop */
+}
+
+@media (max-width: 576px) {
+    .card-title {
+        font-size: 1rem; /* Adjust for mobile */
+    }
+}
 
 /* Adjust form elements on small screens */
 @media (max-width: 576px) {
@@ -415,6 +441,16 @@ hr{
     border-color: #004085;
 }
 
+.btn-custom-yellow {
+    background-color: white;
+    color: black; /* Optional: Set the text color */
+    border: 1px solid #ddd; /* Optional: Add border for better contrast */
+}
+
+.btn-custom-yellow:hover {
+    background-color: #FFF8E1; /* Pastel yellow */
+    cursor: pointer;
+}
 /* Nvabar ansd hero continae styles */
 /* General Styling Adjustments */
 .navbar-brand {
