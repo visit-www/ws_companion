@@ -64,22 +64,28 @@ def view_document(category, id):
 
     # Generate file_url for easy passing to serve_file function
     file_url = url_for('content_routes.serve_file', filepath=document.filepath)
-    file_name = f"Reading {document.title.capitalize()}" or "You are reading Document"
+    file_name = f"Reading {document.title.capitalize()}" if document.title else "You are reading Document"
     
     # Check if the file is a Mermaid diagram (.mmd)
     if document.file.endswith('.mmd'):
         # Read the content of the Mermaid .mmd file
-        mermaid_file_path = os.path.join(basedir,document.filepath)
-        print(f"debug 2 : figuring out file_url by caaling serve_file route is {mermaid_file_path}")
+        mermaid_file_path = os.path.join(basedir, document.filepath)
+        print(f"debug 2 : figuring out file_url by calling serve_file route is {mermaid_file_path}")
         with open(mermaid_file_path, 'r') as file:
             diagram_content = file.read()
 
         # Render Mermaid diagram viewer
         return render_template('mermaid_viewer.html', doc=document, cat=category, display_name=display_name, diagram_content=diagram_content)
+
+    # Handle SVG, PNG, and HTML files
+    elif document.file.endswith(('.svg', '.png', '.html')):
+        # Handle SVG, PNG, and HTML in drawio_viewer.html
+        return render_template('drawio_viewer.html', doc=document, cat=category, display_name=display_name, file_url=file_url)
+
     else:
-        # Render PDF viewer
+        # Render PDF viewer for unsupported files (default fallback)
         print(file_url)
-        return render_template('pdf_viewer.html', doc=document, cat=category, display_name=display_name, file_url=file_url, file_name=file_name) 
+        return render_template('pdf_viewer.html', doc=document, cat=category, display_name=display_name, file_url=file_url, file_name=file_name)
 
 # Route to safely serve files to users in dcoument viewer
 @content_routes_bp.route('/files/<path:filepath>')
