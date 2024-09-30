@@ -39,3 +39,4 @@ Thumbs.db
 # Jupyter notebook checkpoints (if applicable)
 .ipynb_checkpoints/
 .strategies/
+.mermaid_diagrams/
