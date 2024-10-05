@@ -65,23 +65,27 @@ def view_document(category, id):
     # Generate file_url for easy passing to serve_file function
     file_url = url_for('content_routes.serve_file', filepath=document.filepath)
     file_name = f"Reading {document.title.capitalize()}" if document.title else "You are reading Document"
-    
+    file_path = os.path.join(basedir, document.filepath)
     # Check if the file is a Mermaid diagram (.mmd)
     if document.file.endswith('.mmd'):
         # Read the content of the Mermaid .mmd file
-        mermaid_file_path = os.path.join(basedir, document.filepath)
-        print(f"debug 2 : figuring out file_url by calling serve_file route is {mermaid_file_path}")
-        with open(mermaid_file_path, 'r') as file:
+        print(f"debug 2 : figuring out file_url by calling serve_file route is {file_path}")
+        with open(file_path, 'r') as file:
             diagram_content = file.read()
 
         # Render Mermaid diagram viewer
         return render_template('mermaid_viewer.html', doc=document, cat=category, display_name=display_name, diagram_content=diagram_content)
 
     # Handle SVG, PNG, and HTML files
-    elif document.file.endswith(('.svg', '.png', '.html')):
+    elif document.file.endswith(('.svg', '.png')):
         # Handle SVG, PNG, and HTML in drawio_viewer.html
         return render_template('drawio_viewer.html', doc=document, cat=category, display_name=display_name, file_url=file_url)
-
+    elif document.file.endswith(('.html')):
+        # Read the content of the HTML file
+        with open(file_path, 'r') as file:
+            html_content = file.read()
+        # Handle HTML files in html_viewer.html
+        return render_template('html_viewer.html', html_content=html_content, doc=document, cat=category, display_name=display_name)
     else:
         # Render PDF viewer for unsupported files (default fallback)
         print(file_url)
