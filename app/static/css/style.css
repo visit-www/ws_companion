@@ -289,8 +289,23 @@ styling of the pop up modal :*/
     background-repeat: no-repeat; /* Avoid repeating the background */
     background-blend-mode:luminosity; /* Optionally blend the image to make it lighter */
     position: relative; /* Ensures z-indexing works properly */
+    background-color: rgba(255, 255, 255, 0.9); /* Optional white overlay */
+    background-size: 40%; /* Make the image smaller */
+    background-position: center center; /* Position it in the center */
+    background-repeat: no-repeat; /* Prevent the image from repeating */
+    position: relative; 
 }
+.my-card-title{
+    font-weight: 800;
+    color: #28a745;
 
+}
+.decorative-line {
+    border: 0;
+    height: 2px;
+    background: linear-gradient(to right, #ccc, #000, #ccc);
+    margin: 20px 0;
+}
 .my-card-body {
     z-index: 2; /* Ensure the text and buttons are above the background */
     background-color: rgba(223, 236, 211, 0.5); /* Optional: Adds a slight white background behind text */

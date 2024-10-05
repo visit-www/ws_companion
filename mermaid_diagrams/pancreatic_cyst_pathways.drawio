@@ -1,145 +1,154 @@
-<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.7.8 Chrome/128.0.6613.36 Electron/32.0.1 Safari/537.36" version="24.7.8">
-  <diagram id="1mcb1jH_JW-JfYHz93MK" name="Page-1">
-    <mxGraphModel dx="2422" dy="4198" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="1600" background="#ffffff" math="0" shadow="1">
+<mxfile host="Electron" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/24.7.17 Chrome/128.0.6613.36 Electron/32.0.1 Safari/537.36" version="24.7.17">
+  <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
+    <mxGraphModel dx="3247" dy="3360" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1200" pageHeight="1920" background="none" math="0" shadow="0">
       <root>
-        <mxCell id="0" />
-        <mxCell id="1" parent="0" />
-        <mxCell id="GtAM_smUoqs3giXOvm2I-13" value="" style="group;rounded=1;glass=1;shadow=1;sketch=1;curveFitting=1;jiggle=2;whiteSpace=wrap;textShadow=1;labelBorderColor=none;labelBackgroundColor=none;fillColor=none;gradientColor=none;" vertex="1" connectable="0" parent="1">
-          <mxGeometry x="-850" y="-2270" width="840" height="1180" as="geometry" />
-        </mxCell>
-        <mxCell id="4" value="&lt;h1 style=&quot;text-align: center;&quot;&gt;&lt;span style=&quot;&quot;&gt;Pancreatic cyst pathways (IPMN)&lt;/span&gt;&lt;/h1&gt;" style="text;html=1;strokeColor=none;fillColor=none;spacing=5;spacingTop=-20;whiteSpace=wrap;overflow=hidden;rounded=1;sketch=1;curveFitting=1;jiggle=2;glass=1;shadow=1;textShadow=1;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" vertex="1">
-          <mxGeometry x="188.99999999999997" width="440.99999999999994" height="51.304347826086946" as="geometry" />
-        </mxCell>
-        <mxCell id="10" value="NO" style="edgeStyle=none;html=1;shape=flexArrow;fillColor=#b1ddf0;strokeColor=#10739e;sketch=1;curveFitting=1;jiggle=2;flowAnimation=1;shadow=1;textShadow=1;labelBorderColor=none;fontFamily=Courier New;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" source="8" target="9" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="13" value="YES" style="edgeStyle=none;shape=flexArrow;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;textShadow=1;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" source="8" target="12" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="8" value="Has patient had optimum imaging (CT/MRI/MRCP)?&lt;br style=&quot;border-color: var(--border-color);&quot;&gt;Is patient safe for resetcion ?" style="ellipse;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;fontStyle=1;shadow=1;sketch=1;curveFitting=1;jiggle=2;textShadow=1;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" vertex="1">
-          <mxGeometry x="283.5" y="92.34782608695652" width="304.5" height="102.60869565217389" as="geometry" />
-        </mxCell>
-        <mxCell id="9" value="*Complete baseline imaging&lt;br&gt;*Consider no further Ix If comorbities significant" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;shadow=1;textShadow=1;sketch=1;curveFitting=1;jiggle=2;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" vertex="1">
-          <mxGeometry x="21" y="102.60869565217389" width="157.5" height="82.08695652173913" as="geometry" />
-        </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-14" value="NO" style="edgeStyle=none;shape=flexArrow;html=1;fillColor=#b1ddf0;strokeColor=#10739e;sketch=1;curveFitting=1;jiggle=2;flowAnimation=1;shadow=1;textShadow=1;labelBorderColor=none;fontFamily=Courier New;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" source="12" target="5JMBHkiXRSv9p0aSp2tF-13" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-16" value="YES" style="edgeStyle=none;shape=flexArrow;html=1;entryX=1;entryY=0.25;entryDx=0;entryDy=0;fillColor=#b1ddf0;strokeColor=#10739e;sketch=1;curveFitting=1;jiggle=2;flowAnimation=1;shadow=1;textShadow=1;labelBorderColor=none;fontFamily=Courier New;gradientColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" source="12" target="5JMBHkiXRSv9p0aSp2tF-15" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="176.29629629629625" y="347.05882352941177" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <UserObject label="&amp;nbsp;Any high risk features?&amp;nbsp;" tooltip="HIGH&#x9;RISK&#x9;Features:&#xa;&#x9;• Jaundice&#xa;• Main&#x9;PD &gt;10mm&#xa;• Enhancing&#x9;nodule&#x9;&gt;5mm&#x9;within&#x9;cyst" id="12">
-          <mxCell style="rhombus;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;shadow=1;rounded=1;sketch=1;curveFitting=1;jiggle=2;textShadow=1;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" vertex="1">
-            <mxGeometry x="377.99999999999994" y="266.78260869565213" width="125.99999999999997" height="102.60869565217389" as="geometry" />
-          </mxCell>
-        </UserObject>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-17" value="YES" style="edgeStyle=none;shape=flexArrow;html=1;exitX=0;exitY=0;exitDx=0;exitDy=0;width=12;endSize=4.28;entryX=1;entryY=0.5;entryDx=0;entryDy=0;fillColor=#b1ddf0;strokeColor=#10739e;sketch=1;curveFitting=1;jiggle=2;flowAnimation=1;shadow=1;textShadow=1;labelBorderColor=none;fontFamily=Courier New;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" source="5JMBHkiXRSv9p0aSp2tF-13" target="5JMBHkiXRSv9p0aSp2tF-15" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="165.92592592592587" y="376.80672268907557" as="targetPoint" />
-            <Array as="points">
-              <mxPoint x="241.49999999999997" y="400.1739130434782" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-24" value="NO" style="edgeStyle=none;html=1;entryX=0.478;entryY=0.011;entryDx=0;entryDy=0;entryPerimeter=0;shape=flexArrow;fillColor=#b1ddf0;strokeColor=#10739e;sketch=1;curveFitting=1;jiggle=2;flowAnimation=1;shadow=1;textShadow=1;labelBorderColor=none;fontFamily=Courier New;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" source="5JMBHkiXRSv9p0aSp2tF-13" target="5JMBHkiXRSv9p0aSp2tF-23" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <UserObject label="&amp;nbsp;Any worisome features?&amp;nbsp;" tooltip="Worrisome&#x9;Features:&#xa;&#x9;• Pancreatitis&#x9;&#xa;• Main&#x9;PD&#x9;&gt;5mm&#x9;&#xa;• Mural&#x9;nodule/solid&#x9;component&#x9;&#xa;• Thick&#x9;cyst&#x9;wall&#x9;&#xa;• Cyst&#x9;size&gt;30mm&#x9;&#xa;• Abrupt&#x9;change&#x9;in&#x9;PD&#x9;caliber&#x9;&#xa;• Cyst&#x9;growth&#x9;&gt;5mm/&#x9;2&#x9;years&#x9;" id="5JMBHkiXRSv9p0aSp2tF-13">
-          <mxCell style="rhombus;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;shadow=1;textShadow=1;sketch=1;curveFitting=1;jiggle=2;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" vertex="1">
-            <mxGeometry x="377.99999999999994" y="441.2173913043478" width="125.99999999999997" height="102.60869565217389" as="geometry" />
-          </mxCell>
-        </UserObject>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-19" value="" style="edgeStyle=none;html=1;exitX=0.604;exitY=1.058;exitDx=0;exitDy=0;exitPerimeter=0;fillColor=#dae8fc;strokeColor=#6c8ebf;sketch=1;curveFitting=1;jiggle=2;flowAnimation=1;shadow=1;textShadow=1;labelBorderColor=none;fontFamily=Courier New;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" source="5JMBHkiXRSv9p0aSp2tF-15" target="5JMBHkiXRSv9p0aSp2tF-18" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-22" style="edgeStyle=none;html=1;exitX=0.663;exitY=1.058;exitDx=0;exitDy=0;entryX=0.347;entryY=-0.005;entryDx=0;entryDy=0;entryPerimeter=0;exitPerimeter=0;fillColor=#dae8fc;strokeColor=#6c8ebf;sketch=1;curveFitting=1;jiggle=2;flowAnimation=1;shadow=1;textShadow=1;labelBorderColor=none;fontFamily=Courier New;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" source="5JMBHkiXRSv9p0aSp2tF-15" target="5JMBHkiXRSv9p0aSp2tF-20" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-15" value="URGENT HPB MDT Discussion&amp;nbsp;" style="whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;shadow=1;textShadow=1;sketch=1;curveFitting=1;jiggle=2;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" vertex="1">
-          <mxGeometry x="21" y="318.0869565217391" width="136.5" height="82.08695652173913" as="geometry" />
-        </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-18" value="Surgery" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;shadow=1;textShadow=1;sketch=1;curveFitting=1;jiggle=2;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" vertex="1">
-          <mxGeometry y="492.52173913043475" width="115.49999999999999" height="112.8695652173913" as="geometry" />
-        </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-20" value="EUS + Aspiration +/- Contrast : Then rediscuss in HPB MDT" style="ellipse;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;fontStyle=1;shadow=1;textShadow=1;sketch=1;curveFitting=1;jiggle=2;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" vertex="1">
-          <mxGeometry x="136.5" y="482.2608695652173" width="115.49999999999999" height="112.8695652173913" as="geometry" />
-        </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-26" value="" style="edgeStyle=none;shape=flexArrow;html=1;fontSize=10;fillColor=#b1ddf0;strokeColor=#10739e;sketch=1;curveFitting=1;jiggle=2;flowAnimation=1;shadow=1;textShadow=1;labelBorderColor=none;fontFamily=Courier New;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" source="5JMBHkiXRSv9p0aSp2tF-23" target="5JMBHkiXRSv9p0aSp2tF-25" edge="1">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-23" value="MRI or pancreatic CT at 6 months to assess stability and place on virtual pancreatic cyst clinic waiting list * &lt;font style=&quot;font-size: 10px; font-weight: normal;&quot;&gt;*At&lt;span style=&quot;&quot;&gt;&#x9;&lt;/span&gt;point&lt;span style=&quot;&quot;&gt;&#x9;&lt;/span&gt;of&lt;span style=&quot;&quot;&gt;&#x9;&lt;/span&gt;placement&lt;span style=&quot;&quot;&gt;&#x9;&lt;/span&gt;on&lt;span style=&quot;&quot;&gt;&#x9;&lt;/span&gt;virtual&lt;span style=&quot;&quot;&gt;&#x9;&lt;/span&gt;cyst&lt;span style=&quot;&quot;&gt;&#x9;&lt;/span&gt;waiting&lt;span style=&quot;&quot;&gt;&#x9;&lt;/span&gt;list&lt;span style=&quot;&quot;&gt;&#x9;&lt;/span&gt;patients&lt;span style=&quot;&quot;&gt;&#x9;&lt;/span&gt;to&lt;span style=&quot;&quot;&gt;&#x9;&lt;/span&gt;be&lt;span style=&quot;&quot;&gt;&#x9;&lt;/span&gt;offered&lt;span style=&quot;&quot;&gt;&#x9;&lt;/span&gt;OPC&lt;span style=&quot;&quot;&gt;&#x9;&lt;/span&gt;review&lt;/font&gt;&lt;span style=&quot;&quot;&gt;&#x9;&lt;/span&gt;" style="whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;shadow=1;textShadow=1;sketch=1;curveFitting=1;jiggle=2;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" vertex="1">
-          <mxGeometry x="273" y="605.391304347826" width="336" height="92.34782608695652" as="geometry" />
-        </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-27" style="edgeStyle=none;shape=flexArrow;html=1;entryX=0.436;entryY=0.982;entryDx=0;entryDy=0;entryPerimeter=0;fontSize=10;fillColor=#b1ddf0;strokeColor=#10739e;sketch=1;curveFitting=1;jiggle=2;flowAnimation=1;shadow=1;textShadow=1;labelBorderColor=none;fontFamily=Courier New;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" source="5JMBHkiXRSv9p0aSp2tF-25" target="5JMBHkiXRSv9p0aSp2tF-20" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <Array as="points">
-              <mxPoint x="230.99999999999997" y="738.7826086956521" />
-            </Array>
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-28" value="YES" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;textShadow=1;labelBorderColor=none;labelBackgroundColor=none;" parent="5JMBHkiXRSv9p0aSp2tF-27" vertex="1" connectable="0">
-          <mxGeometry relative="1" as="geometry">
+        <mxCell id="WIyWlLk6GJQsqaUBKTNV-0" />
+        <mxCell id="WIyWlLk6GJQsqaUBKTNV-1" parent="WIyWlLk6GJQsqaUBKTNV-0" />
+        <mxCell id="WIyWlLk6GJQsqaUBKTNV-4" value="Yes" style="rounded=1;html=1;jettySize=auto;orthogonalLoop=1;fontSize=11;endArrow=block;endFill=0;endSize=8;strokeWidth=1;shadow=0;labelBackgroundColor=none;edgeStyle=orthogonalEdgeStyle;sketch=1;curveFitting=1;jiggle=2;" parent="WIyWlLk6GJQsqaUBKTNV-1" source="WIyWlLk6GJQsqaUBKTNV-6" target="WIyWlLk6GJQsqaUBKTNV-10" edge="1">
+          <mxGeometry y="20" relative="1" as="geometry">
             <mxPoint as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-30" style="edgeStyle=none;shape=flexArrow;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontSize=10;fillColor=#b1ddf0;strokeColor=#10739e;sketch=1;curveFitting=1;jiggle=2;flowAnimation=1;shadow=1;textShadow=1;labelBorderColor=none;fontFamily=Courier New;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" source="5JMBHkiXRSv9p0aSp2tF-25" target="5JMBHkiXRSv9p0aSp2tF-29" edge="1">
+        <mxCell id="d_hilEAjyQErpma9YruG-5" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="WIyWlLk6GJQsqaUBKTNV-6" target="d_hilEAjyQErpma9YruG-4">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-31" value="NO" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];fontSize=10;textShadow=1;labelBorderColor=none;labelBackgroundColor=none;" parent="5JMBHkiXRSv9p0aSp2tF-30" vertex="1" connectable="0">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint as="offset" />
+        <mxCell id="d_hilEAjyQErpma9YruG-6" value="NO" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];rounded=1;sketch=1;curveFitting=1;jiggle=2;" vertex="1" connectable="0" parent="d_hilEAjyQErpma9YruG-5">
+          <mxGeometry x="-0.2182" y="1" relative="1" as="geometry">
+            <mxPoint y="-11" as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-25" value="Cyst growth or other worrisome feature at 6 /12?" style="rhombus;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;shadow=1;textShadow=1;sketch=1;curveFitting=1;jiggle=2;rounded=1;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" vertex="1">
-          <mxGeometry x="367.49999999999994" y="738.7826086956521" width="157.5" height="143.65217391304344" as="geometry" />
+        <mxCell id="WIyWlLk6GJQsqaUBKTNV-6" value="&lt;span style=&quot;font-size: 16px; font-weight: 700;&quot;&gt;Has patient had optimum imaging (CT/MRI/MRCP)?&lt;/span&gt;&lt;br style=&quot;font-size: 16px; font-weight: 700; border-color: var(--border-color);&quot;&gt;&lt;span style=&quot;font-size: 16px; font-weight: 700;&quot;&gt;Is patient safe for resetcion ?&lt;/span&gt;" style="rhombus;whiteSpace=wrap;html=1;shadow=0;fontFamily=Helvetica;fontSize=12;align=center;strokeWidth=1;spacing=6;spacingTop=-4;fillColor=#fff2cc;strokeColor=#d6b656;rounded=1;sketch=1;curveFitting=1;jiggle=2;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+          <mxGeometry x="-100" y="-10" width="370" height="260" as="geometry" />
         </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-39" style="edgeStyle=none;html=1;fontSize=10;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fillColor=#dae8fc;strokeColor=#6c8ebf;sketch=1;curveFitting=1;jiggle=2;flowAnimation=1;shadow=1;textShadow=1;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" source="5JMBHkiXRSv9p0aSp2tF-29" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="313.7037037037036" y="1051.0924369747897" as="targetPoint" />
+        <mxCell id="d_hilEAjyQErpma9YruG-8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="WIyWlLk6GJQsqaUBKTNV-10" target="d_hilEAjyQErpma9YruG-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-9" value="NO" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];rounded=1;sketch=1;curveFitting=1;jiggle=2;" vertex="1" connectable="0" parent="d_hilEAjyQErpma9YruG-8">
+          <mxGeometry x="-0.0846" y="2" relative="1" as="geometry">
+            <mxPoint x="13" y="4" as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-40" style="edgeStyle=none;html=1;fontSize=10;entryX=0.75;entryY=0;entryDx=0;entryDy=0;fillColor=#dae8fc;strokeColor=#6c8ebf;sketch=1;curveFitting=1;jiggle=2;flowAnimation=1;shadow=1;textShadow=1;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" source="5JMBHkiXRSv9p0aSp2tF-29" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="134.8148148148148" y="1051.0924369747897" as="targetPoint" />
+        <mxCell id="d_hilEAjyQErpma9YruG-46" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="WIyWlLk6GJQsqaUBKTNV-10" target="d_hilEAjyQErpma9YruG-45">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-47" value="YES" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];rounded=1;sketch=1;curveFitting=1;jiggle=2;" vertex="1" connectable="0" parent="d_hilEAjyQErpma9YruG-46">
+          <mxGeometry x="0.0168" y="-1" relative="1" as="geometry">
+            <mxPoint x="-7" y="-19" as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-41" style="edgeStyle=none;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontSize=10;fillColor=#dae8fc;strokeColor=#6c8ebf;sketch=1;curveFitting=1;jiggle=2;flowAnimation=1;shadow=1;textShadow=1;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" source="5JMBHkiXRSv9p0aSp2tF-29" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="549.6296296296296" y="1041.1764705882351" as="targetPoint" />
+        <UserObject label="Any High Risk Features ?" link="data:action/json,{&quot;actions&quot;:[{&quot;show&quot;:{&quot;cells&quot;:[&quot;1&quot;]}},{&quot;highlight&quot;:{&quot;cells&quot;:[&quot;1&quot;]}},{&quot;wait&quot;:&quot;4500&quot;},{&quot;delay&quot;:30,&quot;steps&quot;:30,&quot;wipeOut&quot;:{&quot;cells&quot;:[&quot;1&quot;]}}]}" id="WIyWlLk6GJQsqaUBKTNV-10">
+          <mxCell style="rhombus;whiteSpace=wrap;html=1;shadow=0;fontFamily=Helvetica;fontSize=12;align=center;strokeWidth=1;spacing=6;spacingTop=-4;fillColor=#d5e8d4;strokeColor=#82b366;rounded=1;sketch=1;curveFitting=1;jiggle=2;" parent="WIyWlLk6GJQsqaUBKTNV-1" vertex="1">
+            <mxGeometry x="-2.5" y="340" width="175" height="140" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <mxCell id="d_hilEAjyQErpma9YruG-4" value="&lt;span style=&quot;color: rgb(92, 92, 92); font-size: 16px; font-weight: 700;&quot;&gt;*Do complete baseline imaging&lt;/span&gt;&lt;br style=&quot;color: rgb(92, 92, 92); font-size: 16px; font-weight: 700;&quot;&gt;&lt;span style=&quot;color: rgb(92, 92, 92); font-size: 16px; font-weight: 700;&quot;&gt;*Consider no further Ix If comorbidities significant&lt;/span&gt;" style="whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;shadow=0;strokeWidth=1;spacing=6;spacingTop=-4;rounded=1;sketch=1;curveFitting=1;jiggle=2;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="-600" y="80" width="230" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-14" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="d_hilEAjyQErpma9YruG-7" target="d_hilEAjyQErpma9YruG-13">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-38" value="NO" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];rounded=1;sketch=1;curveFitting=1;jiggle=2;" vertex="1" connectable="0" parent="d_hilEAjyQErpma9YruG-14">
+          <mxGeometry x="-0.1692" y="2" relative="1" as="geometry">
+            <mxPoint x="13" y="6" as="offset" />
           </mxGeometry>
         </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-42" style="edgeStyle=none;html=1;entryX=0.5;entryY=0;entryDx=0;entryDy=0;fontSize=10;fillColor=#dae8fc;strokeColor=#6c8ebf;sketch=1;curveFitting=1;jiggle=2;flowAnimation=1;shadow=1;textShadow=1;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" source="5JMBHkiXRSv9p0aSp2tF-29" edge="1">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="777.7777777777776" y="1041.1764705882351" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-29" value="Enter surveillance&amp;nbsp;&amp;nbsp;" style="whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;fontStyle=1;shadow=1;fontSize=10;textShadow=1;sketch=1;curveFitting=1;jiggle=2;rounded=1;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" vertex="1">
-          <mxGeometry x="388.49999999999994" y="954.2608695652173" width="115.49999999999999" height="51.304347826086946" as="geometry" />
-        </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-44" value="&amp;lt; 10mm&lt;br&gt;MRI/CT&amp;nbsp; in 2 Years **" style="rounded=1;whiteSpace=wrap;html=1;shadow=1;fontSize=10;fillColor=#fad7ac;strokeColor=#b46504;textShadow=1;sketch=1;curveFitting=1;jiggle=2;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" vertex="1">
-          <mxGeometry x="62.999999999999986" y="1046.6086956521738" width="125.99999999999997" height="61.565217391304344" as="geometry" />
-        </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-45" value="10-20 mm&lt;br&gt;MRI/CT Yearly for 2 years, then 2 Yearly if static.&amp;nbsp;" style="rounded=1;whiteSpace=wrap;html=1;shadow=1;fontSize=10;fillColor=#fad7ac;strokeColor=#b46504;textShadow=1;sketch=1;curveFitting=1;jiggle=2;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" vertex="1">
-          <mxGeometry x="251.99999999999994" y="1046.6086956521738" width="125.99999999999997" height="61.565217391304344" as="geometry" />
-        </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-46" value="20-30 mm&lt;br&gt;MRI/CT in 6&amp;nbsp; Monthly for 1 Year, then Yearly if static.**" style="rounded=1;whiteSpace=wrap;html=1;shadow=1;fontSize=10;fillColor=#fad7ac;strokeColor=#b46504;textShadow=1;sketch=1;curveFitting=1;jiggle=2;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" vertex="1">
-          <mxGeometry x="493.49999999999994" y="1036.3478260869565" width="125.99999999999997" height="61.565217391304344" as="geometry" />
-        </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-60" style="edgeStyle=none;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;fontSize=10;shape=flexArrow;fillColor=#b1ddf0;strokeColor=#10739e;sketch=1;curveFitting=1;jiggle=2;flowAnimation=1;shadow=1;textShadow=1;labelBorderColor=none;fontFamily=Courier New;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" source="5JMBHkiXRSv9p0aSp2tF-47" target="5JMBHkiXRSv9p0aSp2tF-13" edge="1">
+        <mxCell id="d_hilEAjyQErpma9YruG-48" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0.5;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;sketch=1;curveFitting=1;jiggle=2;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="d_hilEAjyQErpma9YruG-7" target="d_hilEAjyQErpma9YruG-45">
           <mxGeometry relative="1" as="geometry">
             <Array as="points">
-              <mxPoint x="787.4999999999999" y="492.52173913043475" />
+              <mxPoint x="-150" y="650" />
+              <mxPoint x="-150" y="410" />
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-47" value="&amp;gt; 30 mm&lt;br&gt;Alternate&amp;nbsp; EUS and&amp;nbsp;&lt;br&gt;MRI/CT every 6&amp;nbsp; Months.**" style="rounded=1;whiteSpace=wrap;html=1;shadow=1;fontSize=10;fillColor=#fad7ac;strokeColor=#b46504;textShadow=1;sketch=1;curveFitting=1;jiggle=2;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" vertex="1">
-          <mxGeometry x="713.9999999999999" y="1036.3478260869565" width="125.99999999999997" height="61.565217391304344" as="geometry" />
+        <mxCell id="d_hilEAjyQErpma9YruG-49" value="YES" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];rounded=1;sketch=1;curveFitting=1;jiggle=2;" vertex="1" connectable="0" parent="d_hilEAjyQErpma9YruG-48">
+          <mxGeometry x="-0.4337" y="4" relative="1" as="geometry">
+            <mxPoint x="27" y="-24" as="offset" />
+          </mxGeometry>
         </mxCell>
-        <mxCell id="5JMBHkiXRSv9p0aSp2tF-55" value="**Cease&#x9;or&#x9;do&#x9;not&#x9;offer&#x9;surveillance&#x9;to&#x9;patients&#x9;&gt;75&#x9;(head&#x9;/neck&#x9;lesion)&#x9;or&#x9;&gt;79&#x9;(distal&#x9;lesion.&#x9;&#x9;Otherwise&#x9;continue&#x9;surveillance until&#x9;patient&#x9;deemed&#x9;not&#x9;&#xa;fit&#x9;for&#x9;potential&#x9;resection." style="text;fontSize=12;verticalAlign=middle;strokeColor=#23445d;fillColor=#bac8d3;shadow=1;textShadow=1;whiteSpace=wrap;labelBorderColor=none;labelBackgroundColor=none;" parent="GtAM_smUoqs3giXOvm2I-13" vertex="1">
-          <mxGeometry y="1149.2173913043475" width="829.4999999999999" height="30.782608695652172" as="geometry" />
+        <UserObject label="Any Worrisome Features ?" link="data:action/json,{&quot;actions&quot;:[{&quot;show&quot;:{&quot;cells&quot;:[&quot;2&quot;]}},{&quot;highlight&quot;:{&quot;cells&quot;:[&quot;2&quot;]}},{&quot;wait&quot;:&quot;6500&quot;},{&quot;delay&quot;:30,&quot;steps&quot;:30,&quot;wipeOut&quot;:{&quot;cells&quot;:[&quot;2&quot;]}}]}" id="d_hilEAjyQErpma9YruG-7">
+          <mxCell style="rhombus;whiteSpace=wrap;html=1;shadow=0;fontFamily=Helvetica;fontSize=12;align=center;strokeWidth=1;spacing=6;spacingTop=-4;fillColor=#d5e8d4;strokeColor=#82b366;rounded=1;sketch=1;curveFitting=1;jiggle=2;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+            <mxGeometry x="-2" y="580" width="175" height="140" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <object label="&lt;h4 style=&quot;color: rgb(0, 0, 0); font-family: &amp;quot;Architects Daughter&amp;quot;; text-align: left; font-size: 14px;&quot;&gt;&lt;p style=&quot;font-weight: 400; font-family: &amp;quot;Courier New&amp;quot;;&quot;&gt;&lt;b&gt;HIGH RISK Features&amp;nbsp;&lt;/b&gt;&lt;/p&gt;&lt;p style=&quot;font-weight: 400; text-align: center; font-family: &amp;quot;Courier New&amp;quot;;&quot;&gt;&lt;/p&gt;&lt;ol style=&quot;font-weight: 400; text-align: center; font-family: &amp;quot;Courier New&amp;quot;;&quot;&gt;&lt;li style=&quot;text-align: left;&quot;&gt;&lt;b&gt;Jaundice&lt;/b&gt;&lt;/li&gt;&lt;li style=&quot;text-align: left;&quot;&gt;&lt;b&gt;Main PD &amp;gt;10mm&lt;/b&gt;&lt;/li&gt;&lt;li style=&quot;text-align: left;&quot;&gt;&lt;b&gt;Enhancing nodule&lt;br&gt;&amp;gt;5mm within cyst&lt;/b&gt;&lt;/li&gt;&lt;/ol&gt;&lt;/h4&gt;" id="1">
+          <mxCell style="strokeWidth=1;shadow=1;dashed=0;align=center;html=1;shape=mxgraph.mockup.text.stickyNote2;fontColor=#666666;mainText=;fontSize=17;whiteSpace=wrap;fillColor=#ffffcc;strokeColor=#F62E00;rounded=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+            <mxGeometry x="200" y="270" width="270" height="230" as="geometry" />
+          </mxCell>
+        </object>
+        <object label="&lt;h4 style=&quot;color: rgb(0, 0, 0); font-family: &amp;quot;Architects Daughter&amp;quot;; text-align: left; font-size: 14px;&quot;&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;font face=&quot;Courier New&quot;&gt;Worrisome Features:&lt;/font&gt;&lt;/span&gt;&lt;/h4&gt;&lt;h4 style=&quot;color: rgb(0, 0, 0); font-family: &amp;quot;Architects Daughter&amp;quot;; text-align: left; font-size: 14px;&quot;&gt;&lt;ol&gt;&lt;li&gt;&lt;span style=&quot;background-color: initial; text-align: right;&quot;&gt;&lt;font face=&quot;o3xBd0pNIZcg5TNtLDEX&quot;&gt;&lt;i&gt;Pancreatitis&lt;/i&gt;&lt;/font&gt;&lt;/span&gt;&lt;/li&gt;&lt;li&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;font face=&quot;o3xBd0pNIZcg5TNtLDEX&quot;&gt;&lt;i&gt;Main PD &amp;gt;5mm&lt;/i&gt;&lt;/font&gt;&lt;/span&gt;&lt;/li&gt;&lt;li&gt;&lt;font face=&quot;o3xBd0pNIZcg5TNtLDEX&quot;&gt;&lt;i&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;Mural nodule/solid&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;component&lt;/span&gt;&lt;/i&gt;&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;font face=&quot;o3xBd0pNIZcg5TNtLDEX&quot;&gt;&lt;i&gt;Thick cyst wall&amp;nbsp;&lt;/i&gt;&lt;/font&gt;&lt;/span&gt;&lt;/li&gt;&lt;li&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;&lt;font face=&quot;o3xBd0pNIZcg5TNtLDEX&quot;&gt;&lt;i&gt;Cyst size&amp;gt;30mm&lt;/i&gt;&lt;/font&gt;&lt;/span&gt;&lt;/li&gt;&lt;li&gt;&lt;font face=&quot;o3xBd0pNIZcg5TNtLDEX&quot;&gt;&lt;i&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;Abrupt change in PD&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;caliber&lt;/span&gt;&lt;/i&gt;&lt;/font&gt;&lt;/li&gt;&lt;li&gt;&lt;font face=&quot;o3xBd0pNIZcg5TNtLDEX&quot;&gt;&lt;i&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;Cyst growth &amp;gt;5mm/&lt;/span&gt;&lt;span style=&quot;background-color: initial;&quot;&gt;2 years&lt;/span&gt;&lt;/i&gt;&lt;/font&gt;&lt;/li&gt;&lt;/ol&gt;&lt;/h4&gt;" id="2">
+          <mxCell style="strokeWidth=1;shadow=1;dashed=0;align=center;html=1;shape=mxgraph.mockup.text.stickyNote2;fontColor=#666666;mainText=;fontSize=17;whiteSpace=wrap;fillColor=#ffffcc;strokeColor=#F62E00;rounded=1;" vertex="1" visible="0" parent="WIyWlLk6GJQsqaUBKTNV-1">
+            <mxGeometry x="210" y="540" width="290" height="240" as="geometry" />
+          </mxCell>
+        </object>
+        <mxCell id="d_hilEAjyQErpma9YruG-17" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="d_hilEAjyQErpma9YruG-13" target="d_hilEAjyQErpma9YruG-16">
+          <mxGeometry relative="1" as="geometry" />
         </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-13" value="&lt;span style=&quot;color: rgb(92, 92, 92); font-size: 16px; font-weight: 700;&quot;&gt;MRI or pancreatic CT at 6 months to assess stability and place on virtual pancreatic cyst clinic waiting list&amp;nbsp;&lt;/span&gt;&lt;hr style=&quot;color: rgb(92, 92, 92); font-size: 16px; font-weight: 700;&quot;&gt;&lt;div style=&quot;color: rgb(92, 92, 92); font-size: 16px; font-weight: 700;&quot;&gt;*&amp;nbsp;&lt;font style=&quot;font-weight: normal;&quot;&gt;*At&amp;nbsp;point&amp;nbsp;of&amp;nbsp;placement&amp;nbsp;on&amp;nbsp;virtual&amp;nbsp;cyst&amp;nbsp;waiting&amp;nbsp;list&amp;nbsp;patients&amp;nbsp;to&amp;nbsp;be&amp;nbsp;offered&amp;nbsp;OPD review&lt;/font&gt;&lt;/div&gt;" style="whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;shadow=0;strokeWidth=1;spacing=6;spacingTop=-4;rounded=1;sketch=1;curveFitting=1;jiggle=2;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="-194.5" y="850" width="560" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-29" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="d_hilEAjyQErpma9YruG-16" target="d_hilEAjyQErpma9YruG-28">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-37" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;sketch=1;curveFitting=1;jiggle=2;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="d_hilEAjyQErpma9YruG-16" target="d_hilEAjyQErpma9YruG-36">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-42" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.5;entryY=0;entryDx=0;entryDy=0;sketch=1;curveFitting=1;jiggle=2;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="d_hilEAjyQErpma9YruG-16" target="d_hilEAjyQErpma9YruG-32">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-16" value="&lt;span style=&quot;color: rgb(92, 92, 92); font-size: 16px; font-weight: 700;&quot;&gt;Cyst growth or other worrisome feature at 6 /12?&lt;/span&gt;" style="rhombus;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;shadow=0;strokeWidth=1;spacing=6;spacingTop=-4;align=center;rounded=1;sketch=1;curveFitting=1;jiggle=2;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="-51" y="1130" width="272" height="220" as="geometry" />
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-26" value="&lt;span style=&quot;font-size: 16px;&quot;&gt;&amp;lt; 10mm&lt;/span&gt;&lt;br style=&quot;font-size: 16px;&quot;&gt;&lt;span style=&quot;font-size: 16px;&quot;&gt;MRI/CT&amp;nbsp; in 2 Years **&lt;/span&gt;" style="whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;shadow=0;strokeWidth=1;spacing=6;spacingTop=-4;rounded=1;sketch=1;curveFitting=1;jiggle=2;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="-470" y="1440" width="210" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-28" value="&lt;span style=&quot;font-size: 16px;&quot;&gt;10-20 mm&lt;/span&gt;&lt;br style=&quot;font-size: 16px;&quot;&gt;&lt;span style=&quot;font-size: 16px;&quot;&gt;MRI/CT Yearly for 2 years, then 2 Yearly if static.&amp;nbsp;&lt;/span&gt;" style="whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;shadow=0;strokeWidth=1;spacing=6;spacingTop=-4;rounded=1;sketch=1;curveFitting=1;jiggle=2;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="-230" y="1440" width="210" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-32" value="&lt;span style=&quot;font-size: 16px;&quot;&gt;&amp;gt; 30 mm&lt;/span&gt;&lt;br style=&quot;font-size: 16px;&quot;&gt;&lt;span style=&quot;font-size: 16px;&quot;&gt;Alternate&amp;nbsp; EUS and&amp;nbsp;&lt;/span&gt;&lt;br style=&quot;font-size: 16px;&quot;&gt;&lt;span style=&quot;font-size: 16px;&quot;&gt;MRI/CT every 6&amp;nbsp; Months.**&lt;/span&gt;" style="whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;shadow=0;strokeWidth=1;spacing=6;spacingTop=-4;rounded=1;sketch=1;curveFitting=1;jiggle=2;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="430" y="1440" width="210" height="85" as="geometry" />
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-36" value="&lt;span style=&quot;font-size: 16px;&quot;&gt;20-30 mm&lt;/span&gt;&lt;br style=&quot;font-size: 16px;&quot;&gt;&lt;span style=&quot;font-size: 16px;&quot;&gt;MRI/CT in 6&amp;nbsp; Monthly for 1 Year, then Yearly if static.**&lt;/span&gt;" style="whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;shadow=0;strokeWidth=1;spacing=6;spacingTop=-4;rounded=1;sketch=1;curveFitting=1;jiggle=2;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="165.5" y="1440" width="200" height="82.5" as="geometry" />
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-41" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;entryX=0.952;entryY=0.125;entryDx=0;entryDy=0;entryPerimeter=0;sketch=1;curveFitting=1;jiggle=2;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="d_hilEAjyQErpma9YruG-16" target="d_hilEAjyQErpma9YruG-26">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-43" value="NO" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];rounded=1;sketch=1;curveFitting=1;jiggle=2;" vertex="1" connectable="0" parent="d_hilEAjyQErpma9YruG-41">
+          <mxGeometry x="-0.9429" y="2" relative="1" as="geometry">
+            <mxPoint x="13" y="7" as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-44" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;&lt;span style=&quot;font-size: 16px; font-weight: normal;&quot;&gt;**Cease or do not offer surveillance to patients &amp;gt;75 (head /neck lesion) or &amp;gt;79 (distal lesion. Otherwise continue surveillance until patient deemed not&amp;nbsp;&lt;/span&gt;&lt;span style=&quot;font-size: 16px; font-weight: normal;&quot;&gt;fit for potential resection.&lt;/span&gt;&lt;/h1&gt;" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=1;fillColor=#008a00;strokeColor=#005700;strokeWidth=3;fontColor=#ffffff;labelBackgroundColor=#336600;sketch=1;curveFitting=1;jiggle=2;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="-450" y="1570" width="1090" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-53" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.573;exitY=1.002;exitDx=0;exitDy=0;exitPerimeter=0;sketch=1;curveFitting=1;jiggle=2;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="d_hilEAjyQErpma9YruG-45" target="d_hilEAjyQErpma9YruG-52">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-55" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.566;exitY=1.002;exitDx=0;exitDy=0;exitPerimeter=0;sketch=1;curveFitting=1;jiggle=2;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="d_hilEAjyQErpma9YruG-45" target="d_hilEAjyQErpma9YruG-54">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-45" value="&lt;span style=&quot;color: rgb(92, 92, 92); font-size: 16px; font-weight: 700;&quot;&gt;URGENT HPB MDT Discussion&amp;nbsp;&lt;/span&gt;" style="whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;shadow=0;strokeWidth=1;spacing=6;spacingTop=-4;rounded=1;sketch=1;curveFitting=1;jiggle=2;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="-600" y="357.5" width="230" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-52" value="&lt;span style=&quot;color: rgb(92, 92, 92); font-size: 16px; font-weight: 700;&quot;&gt;URGENT HPB MDT Discussion&amp;nbsp;&lt;/span&gt;" style="whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;shadow=0;strokeWidth=1;spacing=6;spacingTop=-4;rounded=1;sketch=1;curveFitting=1;jiggle=2;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="-720" y="540" width="230" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-54" value="&lt;span style=&quot;font-size: 16px; font-weight: 700;&quot;&gt;EUS + Aspiration +/- Contrast : Then rediscuss in HPB MDT&lt;/span&gt;" style="whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;shadow=0;strokeWidth=1;spacing=6;spacingTop=-4;rounded=1;sketch=1;curveFitting=1;jiggle=2;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="-430" y="540" width="190" height="110" as="geometry" />
+        </mxCell>
+        <mxCell id="d_hilEAjyQErpma9YruG-59" value="Pancreatic Cyst Pathways" style="text;strokeColor=#005700;fillColor=#008a00;html=1;fontSize=24;fontStyle=1;verticalAlign=middle;align=center;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;fontColor=#ffffff;rounded=1;glass=1;shadow=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="-560" y="-160" width="1060" height="100" as="geometry" />
+        </mxCell>
+        <UserObject label="" tooltip="Click box for more info" id="d_hilEAjyQErpma9YruG-60">
+          <mxCell style="shape=mxgraph.signs.travel.information_2;html=1;pointerEvents=1;fillColor=#000000;strokeColor=none;verticalLabelPosition=bottom;verticalAlign=top;align=center;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;shadow=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+            <mxGeometry x="79.02000000000017" y="670" width="12.96" height="26.386308068459634" as="geometry" />
+          </mxCell>
+        </UserObject>
+        <UserObject label="" tooltip="CLick box for more info." id="d_hilEAjyQErpma9YruG-61">
+          <mxCell style="shape=mxgraph.signs.travel.information_2;html=1;pointerEvents=1;fillColor=#000000;strokeColor=none;verticalLabelPosition=bottom;verticalAlign=top;align=center;hachureGap=4;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;shadow=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+            <mxGeometry x="79.02000000000017" y="430" width="12.96" height="26.386308068459634" as="geometry" />
+          </mxCell>
+        </UserObject>
       </root>
     </mxGraphModel>
   </diagram>
