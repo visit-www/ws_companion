@@ -17,7 +17,7 @@
         </div>
     
         <!-- Card Box -->
-        <div class="card-box my-card-box row g-4">
+        <div class="card-box my-card-box row g-4" id="contentContainer">
             {% for content in contents %}
                 {% set title = content.title %}
                 {% set category = content.category %}
@@ -29,10 +29,8 @@
                 {% set content_img = url_for('main_routes.static', filename='thumbnails/' + (keyword if keyword else 'liver') + '.svg') %}
 
                 <!-- Card -->
-                <div class="col-sm-6 col-md-2 col-lg-2">
-                    <div class="card my-card h-100 rounded watermark-card bg-wight" 
-                        id="{{ card_index}}" 
-                        style="background-image: url('{{content_img}}');">
+                <div class="col-sm-6 col-md-2 col-lg-2 content-item my-card ">
+                    <div class="card h-100 rounded watermark-card bg-wight" id="{{ card_index}}" style="background-image: url('{{content_img}}');">
                         
                         <!-- Card Body -->
                         <div class="card-body my-card-body d-flex flex-column shadow-lg" style="z-index: 2;">
@@ -75,3 +73,22 @@
 </p>
 
 {% endblock %}
+{% block script %}
+{{super()}}
+<script>
+document.getElementById('toggleViewBtn').addEventListener('click', function () {
+    const contentItems = document.querySelectorAll('.content-item'); // Select all cards
+    
+    contentItems.forEach(item => {
+        // Toggle between standard grid display and list display
+        if (item.classList.contains('col-sm-6')) {
+            item.classList.remove('col-sm-6', 'col-md-2', 'col-lg-2'); // Remove grid view classes
+            item.classList.add('col-10', 'm-auto','mb-5','list-view'); // Add list view classes
+        } else {
+            item.classList.remove('col-10', 'm-auto','mb-5','list-view'); // Remove list view classes
+            item.classList.add('col-sm-6', 'col-md-2', 'col-lg-2'); // Add grid view classes
+        }
+    });
+});
+</script>
+{% endblock %}    

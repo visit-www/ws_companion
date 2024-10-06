@@ -147,7 +147,36 @@
     background-color: hsl(123, 84%, 85%);
     box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2); /* Slightly larger shadow on active */
 }
+/*----------------------------------------------------------------
+/* List view styles for crtageroy html (activated when toggle view is clikced)*/
+/* List view styling */
+.my-card-box.list-view .content-item {
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+}
 
+.my-card-box.list-view .content-item .card {
+    flex: 1;
+    margin-right: 15px;
+}
+
+.my-card-box.list-view .content-item .card-body {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.my-card-box.list-view .content-item .card-body h5, 
+.my-card-box.list-view .content-item .card-body p {
+    text-align: left;
+}
+
+.my-card-box.list-view .content-item .card-body .btn-group {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
 /* =================================================================
 styling of the pop up modal :*/
 .modal-header .modal-footer{
