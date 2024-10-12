@@ -52,35 +52,36 @@ def view_category(category):
 @login_required
 def view_document(category, id):
     category = category.split('.')[-1]
+    flash(f"category: {category}")
     display_name = request.args.get('display_name')
-
+    
     # Fetch the document from the database based on its ID
     document = db.session.query(Content).filter_by(id=id).first()
-
     # Ensure the document exists
     if not document:
         flash('Document not found', 'warning')
         return redirect(url_for('main_routes.index'))
-
     # Generate file_url for easy passing to serve_file function
     file_url = url_for('content_routes.serve_file', filepath=document.filepath)
     file_name = f"Reading {document.title.capitalize()}" if document.title else "You are reading Document"
     file_path = os.path.join(basedir, document.filepath)
+    # Check if the file is a report template (.docx)
+    if category=='report_template'.upper():
+        return render_template('smart_report_viewer.html')
     # Check if the file is a Mermaid diagram (.mmd)
-    if document.file.endswith('.mmd'):
+    elif document.file.endswith('.mmd'):
         # Read the content of the Mermaid .mmd file
         print(f"debug 2 : figuring out file_url by calling serve_file route is {file_path}")
         with open(file_path, 'r') as file:
             diagram_content = file.read()
-
         # Render Mermaid diagram viewer
         return render_template('mermaid_viewer.html', doc=document, cat=category, display_name=display_name, diagram_content=diagram_content)
-
     # Handle SVG, PNG, and HTML files
     elif document.file.endswith(('.svg', '.png')):
         # Handle SVG, PNG, and HTML in drawio_viewer.html
         return render_template('drawio_viewer.html', doc=document, cat=category, display_name=display_name, file_url=file_url)
     elif document.file.endswith(('.html')):
+    
         # Read the content of the HTML file
         with open(file_path, 'r') as file:
             html_content = file.read()
@@ -90,7 +91,6 @@ def view_document(category, id):
         # Render PDF viewer for unsupported files (default fallback)
         print(file_url)
         return render_template('pdf_viewer.html', doc=document, cat=category, display_name=display_name, file_url=file_url, file_name=file_name)
-
 # Route to safely serve files to users in dcoument viewer
 @content_routes_bp.route('/files/<path:filepath>')
 @login_required

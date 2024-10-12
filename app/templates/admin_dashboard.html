@@ -10,8 +10,8 @@
     <!-- Admin Cards -->
     <div class="row g-4">
         <!-- View and Manage Database Card -->
-        <div class="col-md-4">
-            <div class="card mb-4">
+        <div class="col-md-3">
+            <div class="card mb-3">
                 <div class="card-body">
                     <h5 class="card-title">Database Management</h5>
                     <p class="card-text">Visualise and Manage the database.</p>
@@ -21,7 +21,7 @@
         </div>
 
         <!-- Content Management Card -->
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card text-center shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">Add Contents</h5>
@@ -38,7 +38,7 @@
         </div>
 
         <!-- User Management Card -->
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card text-center shadow-sm">
                 <div class="card-body">
                     <h5 class="card-title">Add Users</h5>
@@ -49,6 +49,16 @@
                         <input type="hidden" name="button_id" value="users"> <!-- Ensure the button ID matches the expected model -->
                         <button type="submit" class="btn btn-success">Manage Users</button>
                     </form>
+                </div>
+            </div>
+        </div>
+        <!-- Smart report template card -->
+        <div class="col-md-3">
+            <div class="card text-center shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">SmartReport Template</h5>
+                    <p class="card-text">Create SmartReport Templates.</p>
+                    <a href="{{ url_for('app_admin.create_report_template') }}" class="btn btn-success">Create SmartReport Templates</a>
                 </div>
             </div>
         </div>
