@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+
+{% block title %}Report Templates{% endblock %}
+
+{% block content %}
+    <h2 class="m-3">Report Templates: {{template_title}}</h2>
+    <hr>
+    <div class="table-responsive m-3">
+        <table class="table table-bordered m-auto">
+            <thead>
+                <tr class="pastel-light-green">
+                    <th class="w-auto"><h3>Report Section</h3></th>
+                    <th><h3>Data</h3></th>
+                    <th><h3>Export Data</h3></th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Patient Information Section -->
+                <tr>
+                    <td class="bg-light w-auto"><h5>Patient Information</h5></td>
+                    <td class="w-75">
+                        <form>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="form-group row g-2 m-auto">
+                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
+                                        <label for="patient_name">Name:</label>
+                                    </div>
+                                    <div class="col-10">
+                                        <input type="text" class="form-control" id="patient_name" placeholder="Enter patient name">
+                                    </div>
+                                </div>
+                                <div class="form-group row g-2 m-auto">
+                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
+                                        <label for="patient_gender">Gender:</label>
+                                    </div>
+                                    <div class="col-10">
+                                        <input type="text" class="form-control" id="patient_gender" placeholder="Enter gender">
+                                    </div>
+                                </div>
+                                <div class="form-group row g-2 m-auto">
+                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
+                                        <label for="patient_id">ID:</label>
+                                    </div>
+                                    <div class="col-10">
+                                        <input type="text" class="form-control" id="patient_id" placeholder="Enter patient ID">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group row g-2 m-auto">  
+                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
+                                        <label for="patient_age">Age:</label>
+                                    </div>
+                                    <div class="col-10">
+                                        <input type="text" class="form-control" id="patient_age" placeholder="Enter age">
+                                    </div>
+                                </div>
+                                <div class="form-group row g-2 m-auto">
+                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
+                                        <label for="patient_dob">DOB:</label>
+                                    </div>
+                                    <div class="col-10">
+                                        <input type="text" class="form-control" id="patient_dob" placeholder="Enter DOB">
+                                    </div>
+                                </div>
+                                <div class="form-group row g-2 m-auto">
+                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
+                                        <label for="patient_location">Location:</label>
+                                    </div>
+                                    <div class="col-10">
+                                        <input type="text" class="form-control" id="patient_location" placeholder="Enter location">
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </td>
+                    <td class="w-auto bg-light">
+                        <a class="btn btn-outline-primary" href="#">Export Data</a>
+                    </td>
+                </tr>
+
+                <!-- Clinical Information Section -->
+                <tr>
+                    <td class="bg-light w-auto"><h5>Clinical Information</h5></td>
+                    <td class="w-75">
+                        <textarea id="clinical_info" class="form-control" placeholder="Enter clinical information">{{clinical_info}}</textarea>
+                    </td>
+                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
+                </tr> 
+                <!-- Comparison Section -->
+                <tr>
+                    <td class="bg-light w-auto"><h5>Comparison</h5></td>
+                    <td class="w-75">
+                        <textarea id="comparison" class="form-control" placeholder="Enter comparison information">{{comparison}}</textarea>
+                    </td>
+                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
+                </tr>
+                <!-- Observations Section -->   
+                <tr>
+                    <td class="bg-light w-auto"><h5>Observations</h5></td>
+                    <td class="w-75">
+                        <select id="observation_select" class="form-control mb-2">
+                            <option value="">Select observation template</option>
+                            <option value="obs1">Observation 1</option>
+                            <option value="obs2">Observation 2</option>
+                        </select>
+                        <textarea id="observation_text" class="form-control" placeholder="Enter detailed observations">{{observations}}</textarea>
+                    </td>
+                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
+                </tr>
+                <!-- Conclusion Section -->
+                <tr>
+                    <td class="bg-light w-auto"><h5>Conclusions</h5></td>
+                    <td class="w-75">
+                        <textarea id="conclusion" class="form-control" placeholder="Enter conclusions">{{conclusions}}</textarea>
+                    </td>
+                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
+                </tr>
+                <!-- Recommendation Section -->
+                <tr>
+                    <td class="bg-light w-auto"><h5>Recommendations</h5></td>
+                    <td class="w-75">
+                        <textarea id="recommendation" class="form-control" placeholder="Enter recommendations">{{recommendations}}</textarea>
+                    </td>
+                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Generate Report Button Section -->
+    <div class="generate-report card bg-light">
+        <h5 class="card-header">Generate Report</h5>
+        <div class="card-body">
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="report_type_pdf" value="pdf">
+                <label class="form-check-label" for="report_type_pdf">PDF</label>
+            </div>
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" id="report_type_word" value="word">
+                <label class="form-check-label" for="report_type_word">Word</label>
+            </div>
+            <button class="btn btn-primary w-auto m-5" id="generate_report_btn">Generate My Report</button>
+        </div>
+    </div>
+{% endblock %}
+
+{% block script %}
+{{super()}}
+<script>
+    document.getElementById('generate_report_btn').addEventListener('click', function() {
+        const patientName = document.getElementById('patient_name').value;
+        const patientGender = document.getElementById('patient_gender').value;
+        const patientID = document.getElementById('patient_id').value;
+        const patientAge = document.getElementById('patient_age').value;
+        const patientDOB = document.getElementById('patient_dob').value;
+        const patientLocation = document.getElementById('patient_location').value;
+
+        const clinicalInfo = document.getElementById('clinical_info').value;
+        const comparison = document.getElementById('comparison').value;
+        const observationSelect = document.getElementById('observation_select').value;
+        const observationText = document.getElementById('observation_text').value;
+        const conclusion = document.getElementById('conclusion').value;
+        const recommendation = document.getElementById('recommendation').value;
+
+        const reportTypePDF = document.getElementById('report_type_pdf').checked;
+        const reportTypeWord = document.getElementById('report_type_word').checked;
+
+        // Add logic to pass this data to the backend for report generation
+        console.log({
+            patientName,
+            patientGender,
+            patientID,
+            patientAge,
+            patientDOB,
+            patientLocation,
+            clinicalInfo,
+            comparison,
+            observationSelect,
+            observationText,
+            conclusion,
+            recommendation,
+            reportTypePDF,
+            reportTypeWord
+        });
+    });
+</script>
+{% endblock %}

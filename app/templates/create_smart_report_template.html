@@ -1,0 +1,265 @@
+code
+{% extends 'base.html' %}
+
+{% block title %}Report Templates{% endblock %}
+
+{% block content %}
+<h2 class="m-3">Report Templates: {{ template_title }}</h2>
+<hr>
+<div class="table-responsive m-3" id="'report-content">
+    <form method="POST" action="{{ url_for('app_admin.save_report_template') }}" enctype="multipart/form-data">
+        {{ form.hidden_tag() }}
+        <h3>{{form.template_name.label}}</h3>
+        <div class="input-active w-50 m-auto mb-3">   {{form.template_name(class='form-control bg-light',rows='2')}} </div>
+        
+        <table class="table table-bordered m-auto">
+            <thead>
+                <tr class="pastel-light-green">
+                    <th class="w-auto"><h3>Report Section</h3></th>
+                    <th><h3>Data</h3></th>
+                    <th><h3>Export Data</h3></th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Patient Information Section -->
+                <tr>
+                    <td class="bg-light w-auto"><h5>Patient Information</h5></td>
+                    <td class="w-75">
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="form-group row g-2 m-auto">
+                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
+                                        {{ form.name.label }}
+                                    </div>
+                                    <div class="col-10">
+                                        {{ form.name(class_="form-control") }}
+                                    </div>
+                                </div>
+                                <div class="form-group row g-2 m-auto">
+                                        <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
+                                            {{ form.gender.label }}
+                                        </div>
+                                        <div class="col-10">
+                                            {{ form.gender(class="form-control") }}
+                                        </div>
+                                </div>
+                                <div class="form-group row g-2 m-auto">
+                                        <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
+                                            {{ form.patient_id.label }}
+                                        </div>
+                                        <div class="col-10">
+                                            {{ form.patient_id(class="form-control") }}
+                                        </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group row g-2 m-auto">  
+                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3" >
+                                        {{ form.age.label }}
+                                    </div>
+                                    <div class="col-10">
+                                        {{ form.age(class="form-control", id="age-input") }}
+                                    </div>
+                                </div>
+                                <div class="form-group row g-2 m-auto">
+                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3" id="dob">
+                                        {{ form.dob.label }}
+                                    </div>
+                                    <div class="col-10">
+                                        {{ form.dob(class="form-control", type="date", id="dob-input") }}
+                                    </div>
+                                </div>
+                                <div class="form-group row g-2 m-auto">
+                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
+                                        {{ form.location.label }}
+                                    </div>
+                                    <div class="col-10">
+                                        {{ form.location(class="form-control") }}
+                                    </div>
+                                </div>
+                            </div>
+                    </td>
+                    <td class="w-auto bg-light">
+                        <a class="btn btn-outline-primary" href="#">Export Data</a>
+                    </td>
+                </tr>
+
+                <!-- Clinical Information Section -->
+                <tr>
+                    <td class="bg-light w-auto"><h5>{{ form.clinical_info.label }}</h5></td>
+                    <td class="w-75">
+                        {{ form.clinical_info(class="form-control", rows="3") }}
+                    </td>
+                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
+                </tr> 
+                <!-- Technical Information Section -->
+                <tr>
+                    <td class="bg-light w-auto"><h5>{{ form.technical_info.label }}</h5></td>
+                    <td class="w-75">
+                        {{ form.technical_info(class="form-control", rows="3") }}
+                    </td>
+                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
+                </tr> 
+                <!-- Comparison Section -->
+                <tr>
+                    <td class="bg-light w-auto"><h5>{{ form.comparison.label }}</h5></td>
+                    <td class="w-75">
+                        {{ form.comparison(class="form-control", rows="3") }}
+                    </td>
+                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
+                </tr>
+                <!-- Observations Section -->   
+                <tr>
+                    <td class="bg-light w-auto"><h5>Observations</h5></td>
+                    <td class="w-75">
+                        <div id="observations-container">
+                            {% for observation in form.observations %}
+                            <div class="observation-sections mb-3">
+                                {{ observation.section.label }} 
+                                {{ observation.section(class="form-control") }}
+                            </div>
+                            <div clas="observation-details">
+                                {{ observation.details.label }} 
+                                {{ observation.details(class="form-control", rows="10") }}
+                            </div>
+                        
+                            {% endfor %}
+                        </div>
+                        <button type="button" id="add-observation-btn" class="btn btn-outline-warning mt-3">Add Observation</button>
+
+                    </td>
+                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
+                </tr>
+                <!-- Conclusion Section -->
+                <tr>
+                    <td class="bg-light w-auto"><h5>{{ form.conclusions.label }}</h5></td>
+                    <td class="w-75">
+                        <div class="form-group">
+                            {{ form.conclusions(class="form-control", rows="6") }}
+                        </div>
+                    </td>
+                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
+                </tr>
+                <!-- Recommendation Section -->
+                <tr>
+                    <td class="bg-light w-auto"><h5>{{ form.recommendations.label }}</h5></td>
+                    <td class="w-75">
+                        <div class="form-group">
+                            {{ form.recommendations(class="form-control", rows="5") }}
+                        </div>
+                    </td>
+                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
+                </tr>
+            </tbody>
+        </table>
+            <!-- Generate Report Button Section -->
+        <div class="generate-report card bg-light">
+            <h5 class="card-header">Save Report Template</h5>
+            <div class="card-body">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="report_type_pdf" name="report_type" value="pdf">
+                        <label class="form-check-label" for="report_type_pdf">PDF</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" id="report_type_word" name="report_type" value="word">
+                        <label class="form-check-label" for="report_type_word">Word</label>
+                    </div>
+                    <!-- Submit Button -->
+                    {{ form.submit(class="btn btn-primary w-auto m-5") }}
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block script %}
+{{ super() }}
+<script>
+    document.getElementById('add-observation-btn').addEventListener('click', function() {
+        // Determine the current count of observations to set the correct index
+        const observationCount = document.querySelectorAll('.observation-sections').length;
+
+        // Create Section container (with observation-sections class)
+        const sectionDiv = document.createElement('div');
+        sectionDiv.classList.add('observation-sections', 'mb-3');
+        
+        const sectionLabel = document.createElement('label');
+        sectionLabel.for = `observations-${observationCount}-section`;
+        sectionLabel.textContent = 'Section';
+        
+        const sectionInput = document.createElement('input');
+        sectionInput.type = 'text';
+        sectionInput.name = `observations-${observationCount}-section`;
+        sectionInput.id = `observations-${observationCount}-section`;
+        sectionInput.placeholder = 'Section Name';
+        sectionInput.classList.add('form-control', 'mb-2');
+        
+        sectionDiv.appendChild(sectionLabel);
+        sectionDiv.appendChild(sectionInput);
+
+        // Create Details container (with observation-details class)
+        const detailsDiv = document.createElement('div');
+        detailsDiv.classList.add('observation-details', 'mb-3');
+        
+        const detailsLabel = document.createElement('label');
+        detailsLabel.for = `observations-${observationCount}-details`;
+        detailsLabel.textContent = 'Details';
+
+        const detailsInput = document.createElement('textarea');
+        detailsInput.name = `observations-${observationCount}-details`;
+        detailsInput.id = `observations-${observationCount}-details`;
+        detailsInput.placeholder = 'Details';
+        detailsInput.classList.add('form-control');
+        detailsInput.rows = 10;
+
+        detailsDiv.appendChild(detailsLabel);
+        detailsDiv.appendChild(detailsInput);
+
+        // Append both section and details containers to the observations container
+        const observationsContainer = document.getElementById('observations-container');
+        observationsContainer.appendChild(sectionDiv);
+        observationsContainer.appendChild(detailsDiv);
+    });
+    // function to calculate age or dob if any one of these are entered by user :
+    document.addEventListener('DOMContentLoaded', function() {
+        // Select the input fields directly using the updated IDs
+        const dobInput = document.getElementById('dob-input');
+        const ageInput = document.getElementById('age-input');
+
+        // Trigger event on 'change' for DOB input
+        dobInput.addEventListener('change', function() {
+            const dob = new Date(this.value);
+            if (!isNaN(dob.getTime())) { // Check if dob is a valid date
+                const age = calculateAge(dob);
+                ageInput.value = age;
+            }
+        });
+
+        // Trigger event on 'input' for Age input
+        ageInput.addEventListener('input', function() {
+            const age = parseInt(this.value);
+            if (!isNaN(age)) {
+                const dob = calculateDOB(age);
+                dobInput.value = dob;
+            }
+        });
+
+        function calculateAge(dob) {
+            const today = new Date();
+            let age = today.getFullYear() - dob.getFullYear();
+            const m = today.getMonth() - dob.getMonth();
+            if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                age--;
+            }
+            return age;
+        }
+
+        function calculateDOB(age) {
+            const today = new Date();
+            const dob = new Date(today.getFullYear() - age, today.getMonth(), today.getDate());
+            return dob.toISOString().split('T')[0]; // Format to 'YYYY-MM-DD'
+        }
+    });
+
+</script>
+{% endblock %}
