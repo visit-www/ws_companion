@@ -8,15 +8,12 @@ from flask_migrate import Migrate
 from config import Config,userdir,basedir
 from flask_login import LoginManager
 from .models import Base ,db
-import logging
 import os
 from datetime import datetime,timedelta,timezone
 from flask_mail import Mail
 from uuid import UUID
 from .util import load_default_data,add_default_admin,add_default_contents,add_anonymous_user
 import pyotp
-import qrcode
-import io
 
 
 # Initialize Flask extensions (SQLAlchemy, Flask-Migrate, LoginManager, Flask-Admin, CSRFProtect)
