@@ -351,14 +351,20 @@ def create_report_template_word(data,report_type,return_path_only=False):
 
 
 # Function to create pdf document form form data :from fpdf import FPDF
-from docx2pdf import convert
+import subprocess
 def create_report_template_pdf(data, report_type, return_path_only=False):
     # Generate the Word document path
     word_file_path = create_report_template_word(data, 'word', return_path_only=True)
     pdf_file_path = os.path.join('dummy_folder', 'report_template.pdf')
     
-    # Convert Word document to PDF
-    convert(word_file_path, pdf_file_path)
+    # Convert the .docx file to .pdf using LibreOffice in headless mode
+    try:
+        subprocess.run(['libreoffice', '--headless', '--convert-to', 'pdf', word_file_path, '--outdir', 'dummy_folder'],
+        check=True)
+    except subprocess.CalledProcessError as e:
+        print("LibreOffice failed to convert the document:", e)
+        return None
+
 
     if return_path_only:
         # Return the file path for zipping or further processing
