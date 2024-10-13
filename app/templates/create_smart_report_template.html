@@ -1,18 +1,201 @@
-code
 {% extends 'base.html' %}
 
 {% block title %}Report Templates{% endblock %}
 
 {% block content %}
-<h2 class="m-3">Report Templates: {{ template_title }}</h2>
+<h2 class="m-1 text-success">Report Templates: {{ template_title }}</h2>
 <hr>
-<div class="table-responsive m-3" id="'report-content">
+<div class="table-responsive m-3" id="report-content">
     <form method="POST" action="{{ url_for('app_admin.save_report_template') }}" enctype="multipart/form-data">
         {{ form.hidden_tag() }}
-        <h3>{{form.template_name.label}}</h3>
-        <div class="input-active w-50 m-auto mb-3">   {{form.template_name(class='form-control bg-light',rows='2')}} </div>
-        
-        <table class="table table-bordered m-auto">
+        <div class="row g-3">
+            <div class="col-12 p-0">
+                <div class="row g-2">
+                    <div class="col-lg-2 col-md-2 col-sm-12 d-flex- justify-content-start bg-light">
+                        <h3 >{{ form.template_name.label }}</h3>
+                    </div>
+                    <div class="col-lg-9 col-md-9 col-sm-12 input-active mb-2 p-2">
+                        {{ form.template_name(class='form-control bg-light', rows='2') }}
+                    </div>
+                </div>
+            </div>
+            <div class="col-8 mb-3 m-auto">
+                <button type="button" class="btn btn-group-toggle btn-outline-success" id="toggle-mobile-view-btn">Mobile View</button>
+            </div>
+        </div>
+    <hr>
+
+        <!-- Hidden Observations Data (Shared Container) -->
+        <div class="observations-data" style="display: none;">
+            <div class="observations-container">
+                {% for observation in form.observations %}
+                <div class="observation-item">
+                    <div class="observation-sections mb-3 pastel-light-blue w-75 d-flex justify-content-start p-2">
+                        {{ observation.section.label }}
+                        {{ observation.section(class="form-control bg-light") }}
+                    </div>
+                    <div class="observation-details">
+                        {{ observation.details.label }}
+                        {{ observation.details(class="form-control", rows="10") }}
+                    </div>
+                    <button type="button" class="btn btn-outline-danger delete-observation-btn w-75 mt-2 mb-2">Delete this Section</button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Mobile View -->
+        <div class="mobile_view_container row g-3 mb-5" id="mobile_view" style="display:none">
+            <!-- Patient Information -->
+            <div class="patient_info_section">
+                <div class="report_section col-12">
+                    <h5 class="pastel-light-green d-flex justify-content-start p-2 w-50 rounded-2">Patient Information</h5>
+                </div>
+                <div class="data-section col-12 mb-2">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <div class="form-group row g-2 m-auto">
+                                <div class="col-8 text-success d-flex align-items-start fw-bold pe-3">
+                                    {{ form.name.label }}
+                                </div>
+                                <div class="col-11">
+                                    {{ form.name(class_="form-control") }}
+                                </div>
+                            </div>
+                            <div class="form-group row g-2 m-auto">
+                                <div class="col-8 text-success d-flex align-items-start fw-bold pe-3">
+                                    {{ form.gender.label }}
+                                </div>
+                                <div class="col-11">
+                                    {{ form.gender(class="form-control") }}
+                                </div>
+                            </div>
+                            <div class="form-group row g-2 m-auto">
+                                <div class="col-8 text-success d-flex align-items-start fw-bold pe-3">
+                                    {{ form.patient_id.label }}
+                                </div>
+                                <div class="col-11">
+                                    {{ form.patient_id(class="form-control") }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="form-group row g-2 m-auto">
+                                <div class="col-8 text-success d-flex align-items-start fw-bold pe-3">
+                                    {{ form.age.label }}
+                                </div>
+                                <div class="col-11">
+                                    {{ form.age(class="form-control", id="age-input") }}
+                                </div>
+                            </div>
+                            <div class="form-group row g-2 m-auto">
+                                <div class="col-8 text-success d-flex align-items-start fw-bold pe-3">
+                                    {{ form.dob.label }}
+                                </div>
+                                <div class="col-11">
+                                    {{ form.dob(class="form-control", type="date", id="dob-input") }}
+                                </div>
+                            </div>
+                            <div class="form-group row g-2 m-auto">
+                                <div class="col-8 text-success d-flex align-items-start fw-bold pe-3">
+                                    {{ form.location.label }}
+                                </div>
+                                <div class="col-11">
+                                    {{ form.location(class="form-control") }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="export-section col-12 mt-2 d-flex justify-content-end">
+                        <a class="btn btn-outline-secondary w-50" href="#">Export Patient Info</a>
+                    </div>
+                </div>
+            </div>
+            <hr>
+            <!-- Clinical Information -->
+            <div class="clinical_info_section">
+                <div class="report_section col-12">
+                    <h5 class="pastel-light-green d-flex justify-content-start p-2 w-50 rounded-2">{{ form.clinical_info.label }}</h5>
+                </div>
+                <div class="data-section col-12">
+                    {{ form.clinical_info(class="form-control bg-light", rows="3") }}
+                </div>
+                <div class="export-section col-12 mt-2 d-flex justify-content-end">
+                    <a class="btn btn-outline-secondary w-50 mt-2" href="#">Export Clinical Info</a>
+                </div>
+            </div>
+<hr>
+            <!-- Technical Information -->
+            <div class="technical_info_section">
+                <div class="report_section col-12">
+                    <h5 class="pastel-light-green d-flex justify-content-start p-2 w-50 rounded-2">{{ form.technical_info.label }}</h5>
+                </div>
+                <div class="data-section col-12">
+                    {{ form.technical_info(class="form-control bg-light", rows="3") }}
+                </div>
+                <div class="export-section col-12 mt-2 d-flex justify-content-end">
+                    <a class="btn btn-outline-secondary w-50" href="#">Export Protocol</a>
+                </div>
+            </div>
+<hr>
+            <!-- Comparison Section -->
+            <div class="comparison_section">
+                <div class="report_section col-12">
+                    <h5 class="pastel-light-green d-flex justify-content-start p-2 w-50 rounded-2">{{ form.comparison.label }}</h5>
+                </div>
+                <div class="data-section col-12">
+                    {{ form.comparison(class="form-control bg-light", rows="3") }}
+                </div>
+                <div class="export-section col-12 mt-2 d-flex justify-content-end">
+                    <a class="btn btn-outline-secondary w-50" href="#">Export Comparisons</a>
+                </div>
+            </div>
+<hr>
+            <!-- Observations Section -->
+            <div class="observation-section">
+                <div class="report_section col-12">
+                    <h5 class="pastel-light-green d-flex justify-content-start p-2 w-75 rounded-2">Observations</h5>
+                </div>
+                <div class="data-section col-12">
+                    <div class="observations-container">
+                        <!-- Observations will be cloned here -->
+                    </div>
+                    <button type="button" class="btn btn-outline-warning mt-3 add-observation-btn mb-3">Add Observation</button>
+                </div>
+                <div class="export-section col-12 mt-2 d-flex justify-content-end">
+                    <a class="btn btn-outline-secondary w-50" href="#">Export Observations</a>
+                </div>
+            </div>
+
+            <!-- Conclusion Section -->
+            <div class="conclusion-section">
+                <div class="report_section col-12">
+                    <h5 class="pastel-light-green d-flex justify-content-start p-2 w-50 rounded-2">{{ form.conclusions.label }}</h5>
+                </div>
+                <div class="data-section col-12">
+                    {{ form.conclusions(class="form-control", rows="6") }}
+                </div>
+                <div class="export-section col-12 mt-2 d-flex justify-content-end">
+                    <a class="btn btn-outline-secondary w-50" href="#">Export Conclusions</a>
+                </div>
+            </div>
+
+            <!-- Recommendation Section -->
+            <div class="recommendation-section">
+                <div class="report_section col-12">
+                    <h5 class="pastel-light-green d-flex justify-content-start p-2 w-50 rounded-2">{{ form.recommendations.label }}</h5>
+                </div>
+                <div class="data-section col-12">
+                    {{ form.recommendations(class="form-control", rows="5") }}
+                </div>
+                <div class="export-section col-12 mt-2 d-flex justify-content-end">
+                    <a class="btn btn-outline-secondary w-50" href="#">Export Recommendations</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Desktop View -->
+        <table class="table table-bordered m-auto" id="desktop_view" style="display:block">
             <thead>
                 <tr class="pastel-light-green">
                     <th class="w-auto"><h3>Report Section</h3></th>
@@ -36,37 +219,37 @@ code
                                     </div>
                                 </div>
                                 <div class="form-group row g-2 m-auto">
-                                        <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
-                                            {{ form.gender.label }}
-                                        </div>
-                                        <div class="col-10">
-                                            {{ form.gender(class="form-control") }}
-                                        </div>
+                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
+                                        {{ form.gender.label }}
+                                    </div>
+                                    <div class="col-10">
+                                        {{ form.gender(class="form-control") }}
+                                    </div>
                                 </div>
                                 <div class="form-group row g-2 m-auto">
-                                        <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
-                                            {{ form.patient_id.label }}
-                                        </div>
-                                        <div class="col-10">
-                                            {{ form.patient_id(class="form-control") }}
-                                        </div>
+                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
+                                        {{ form.patient_id.label }}
+                                    </div>
+                                    <div class="col-10">
+                                        {{ form.patient_id(class="form-control") }}
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-6">
-                                <div class="form-group row g-2 m-auto">  
-                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3" >
+                                <div class="form-group row g-2 m-auto">
+                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
                                         {{ form.age.label }}
                                     </div>
                                     <div class="col-10">
-                                        {{ form.age(class="form-control", id="age-input") }}
+                                        {{ form.age(class="form-control", id="age-input-desktop") }}
                                     </div>
                                 </div>
                                 <div class="form-group row g-2 m-auto">
-                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3" id="dob">
+                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
                                         {{ form.dob.label }}
                                     </div>
                                     <div class="col-10">
-                                        {{ form.dob(class="form-control", type="date", id="dob-input") }}
+                                        {{ form.dob(class="form-control", type="date", id="dob-input-desktop") }}
                                     </div>
                                 </div>
                                 <div class="form-group row g-2 m-auto">
@@ -78,9 +261,10 @@ code
                                     </div>
                                 </div>
                             </div>
+                        </div>
                     </td>
                     <td class="w-auto bg-light">
-                        <a class="btn btn-outline-primary" href="#">Export Data</a>
+                        <a class="btn btn-outline-secondary" href="#">Export Patient Info</a>
                     </td>
                 </tr>
 
@@ -90,46 +274,47 @@ code
                     <td class="w-75">
                         {{ form.clinical_info(class="form-control", rows="3") }}
                     </td>
-                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
-                </tr> 
+                    <td class="w-auto bg-light">
+                        <a class="btn btn-outline-secondary" href="#">Export Clinical Info</a>
+                    </td>
+                </tr>
+
                 <!-- Technical Information Section -->
                 <tr>
                     <td class="bg-light w-auto"><h5>{{ form.technical_info.label }}</h5></td>
                     <td class="w-75">
                         {{ form.technical_info(class="form-control", rows="3") }}
                     </td>
-                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
-                </tr> 
+                    <td class="w-auto bg-light">
+                        <a class="btn btn-outline-secondary" href="#">Export Protocol</a>
+                    </td>
+                </tr>
+
                 <!-- Comparison Section -->
                 <tr>
                     <td class="bg-light w-auto"><h5>{{ form.comparison.label }}</h5></td>
                     <td class="w-75">
                         {{ form.comparison(class="form-control", rows="3") }}
                     </td>
-                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
+                    <td class="w-auto bg-light">
+                        <a class="btn btn-outline-secondary" href="#">Export Comparisons</a>
+                    </td>
                 </tr>
-                <!-- Observations Section -->   
+
+                <!-- Observations Section -->
                 <tr>
                     <td class="bg-light w-auto"><h5>Observations</h5></td>
                     <td class="w-75">
-                        <div id="observations-container">
-                            {% for observation in form.observations %}
-                            <div class="observation-sections mb-3">
-                                {{ observation.section.label }} 
-                                {{ observation.section(class="form-control") }}
-                            </div>
-                            <div clas="observation-details">
-                                {{ observation.details.label }} 
-                                {{ observation.details(class="form-control", rows="10") }}
-                            </div>
-                        
-                            {% endfor %}
+                        <div class="observations-container">
+                            <!-- Observations will be cloned here -->
                         </div>
-                        <button type="button" id="add-observation-btn" class="btn btn-outline-warning mt-3">Add Observation</button>
-
+                        <button type="button" class="btn btn-outline-warning mt-3 add-observation-btn mb-3">Add Observation</button>
                     </td>
-                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
+                    <td class="w-auto bg-light">
+                        <a class="btn btn-outline-secondary" href="#">Export Observations</a>
+                    </td>
                 </tr>
+
                 <!-- Conclusion Section -->
                 <tr>
                     <td class="bg-light w-auto"><h5>{{ form.conclusions.label }}</h5></td>
@@ -138,8 +323,11 @@ code
                             {{ form.conclusions(class="form-control", rows="6") }}
                         </div>
                     </td>
-                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
+                    <td class="w-auto bg-light">
+                        <a class="btn btn-outline-secondary" href="#">Export Conclusions</a>
+                    </td>
                 </tr>
+
                 <!-- Recommendation Section -->
                 <tr>
                     <td class="bg-light w-auto"><h5>{{ form.recommendations.label }}</h5></td>
@@ -148,24 +336,27 @@ code
                             {{ form.recommendations(class="form-control", rows="5") }}
                         </div>
                     </td>
-                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
+                    <td class="w-auto bg-light">
+                        <a class="btn btn-outline-secondary" href="#">Export Recommendations</a>
+                    </td>
                 </tr>
             </tbody>
         </table>
-            <!-- Generate Report Button Section -->
+
+        <!-- Generate Report Button Section -->
         <div class="generate-report card bg-light">
             <h5 class="card-header">Save Report Template</h5>
             <div class="card-body">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" id="report_type_pdf" name="report_type" value="pdf">
-                        <label class="form-check-label" for="report_type_pdf">PDF</label>
-                    </div>
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" id="report_type_word" name="report_type" value="word">
-                        <label class="form-check-label" for="report_type_word">Word</label>
-                    </div>
-                    <!-- Submit Button -->
-                    {{ form.submit(class="btn btn-primary w-auto m-5") }}
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="report_type_pdf" name="report_type" value="pdf">
+                    <label class="form-check-label" for="report_type_pdf">PDF</label>
+                </div>
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="report_type_word" name="report_type" value="word">
+                    <label class="form-check-label" for="report_type_word">Word</label>
+                </div>
+                <!-- Submit Button -->
+                {{ form.submit(class="btn btn-primary w-auto m-5") }}
             </div>
         </div>
     </form>
@@ -175,91 +366,225 @@ code
 {% block script %}
 {{ super() }}
 <script>
-    document.getElementById('add-observation-btn').addEventListener('click', function() {
-        // Determine the current count of observations to set the correct index
-        const observationCount = document.querySelectorAll('.observation-sections').length;
+    // Event listener for Add Observation and Delete Observation buttons
+    document.addEventListener('click', function(event) {
+        if (event.target.classList.contains('add-observation-btn')) {
+            // Get the current observation count
+            const observationCount = document.querySelectorAll('.observations-data .observation-item').length;
 
-        // Create Section container (with observation-sections class)
-        const sectionDiv = document.createElement('div');
-        sectionDiv.classList.add('observation-sections', 'mb-3');
-        
-        const sectionLabel = document.createElement('label');
-        sectionLabel.for = `observations-${observationCount}-section`;
-        sectionLabel.textContent = 'Section';
-        
-        const sectionInput = document.createElement('input');
-        sectionInput.type = 'text';
-        sectionInput.name = `observations-${observationCount}-section`;
-        sectionInput.id = `observations-${observationCount}-section`;
-        sectionInput.placeholder = 'Section Name';
-        sectionInput.classList.add('form-control', 'mb-2');
-        
-        sectionDiv.appendChild(sectionLabel);
-        sectionDiv.appendChild(sectionInput);
+            // Create new observation fields
+            const observationItem = document.createElement('div');
+            observationItem.classList.add('observation-item');
 
-        // Create Details container (with observation-details class)
-        const detailsDiv = document.createElement('div');
-        detailsDiv.classList.add('observation-details', 'mb-3');
-        
-        const detailsLabel = document.createElement('label');
-        detailsLabel.for = `observations-${observationCount}-details`;
-        detailsLabel.textContent = 'Details';
+            const sectionDiv = document.createElement('div');
+            sectionDiv.classList.add('observation-sections', 'mb-3', 'pastel-light-blue', 'w-75', 'd-flex', 'justify-content-start', 'p-2');
 
-        const detailsInput = document.createElement('textarea');
-        detailsInput.name = `observations-${observationCount}-details`;
-        detailsInput.id = `observations-${observationCount}-details`;
-        detailsInput.placeholder = 'Details';
-        detailsInput.classList.add('form-control');
-        detailsInput.rows = 10;
+            const sectionLabel = document.createElement('label');
+            sectionLabel.setAttribute('for', `observations-${observationCount}-section`);
+            sectionLabel.textContent = 'Section';
 
-        detailsDiv.appendChild(detailsLabel);
-        detailsDiv.appendChild(detailsInput);
+            const sectionInput = document.createElement('input');
+            sectionInput.type = 'text';
+            sectionInput.name = `observations-${observationCount}-section`;
+            sectionInput.id = `observations-${observationCount}-section`;
+            sectionInput.placeholder = 'Section Name';
+            sectionInput.classList.add('form-control', 'mb-2');
 
-        // Append both section and details containers to the observations container
-        const observationsContainer = document.getElementById('observations-container');
-        observationsContainer.appendChild(sectionDiv);
-        observationsContainer.appendChild(detailsDiv);
+            sectionDiv.appendChild(sectionLabel);
+            sectionDiv.appendChild(sectionInput);
+
+            const detailsDiv = document.createElement('div');
+            detailsDiv.classList.add('observation-details', 'mb-3');
+
+            const detailsLabel = document.createElement('label');
+            detailsLabel.setAttribute('for', `observations-${observationCount}-details`);
+            detailsLabel.textContent = 'Details';
+
+            const detailsInput = document.createElement('textarea');
+            detailsInput.name = `observations-${observationCount}-details`;
+            detailsInput.id = `observations-${observationCount}-details`;
+            detailsInput.placeholder = 'Details';
+            detailsInput.classList.add('form-control');
+            detailsInput.rows = 10;
+
+            detailsDiv.appendChild(detailsLabel);
+            detailsDiv.appendChild(detailsInput);
+
+            // Delete button
+            const deleteButton = document.createElement('button');
+            deleteButton.type = 'button';
+            deleteButton.classList.add('btn', 'btn-outline-danger', 'delete-observation-btn','w-75','mt-2','mb-2');
+            deleteButton.textContent = 'Delete this Section';
+
+            // Append all elements to the observation item
+            observationItem.appendChild(sectionDiv);
+            observationItem.appendChild(detailsDiv);
+            observationItem.appendChild(deleteButton);
+
+            // Append new observation to the shared container
+            const sharedContainer = document.querySelector('.observations-data .observations-container');
+            sharedContainer.appendChild(observationItem);
+
+            // Synchronize observations to both views
+            syncObservations();
+        } else if (event.target.classList.contains('delete-observation-btn')) {
+            deleteObservation(event);
+        }
     });
-    // function to calculate age or dob if any one of these are entered by user :
+
+    function deleteObservation(event) {
+        const button = event.target;
+        const observationItem = button.closest('.observation-item');
+
+        // Find the observations container
+        const observationsContainer = observationItem.parentNode;
+
+        // Determine if we're in the mobile or desktop view
+        const isSharedContainer = observationsContainer.closest('.observations-data') !== null;
+
+        if (!isSharedContainer) {
+            // We're in one of the views (mobile or desktop)
+            // Find the index of the observationItem in this container
+            const observationItems = Array.from(observationsContainer.querySelectorAll('.observation-item'));
+            const index = observationItems.indexOf(observationItem);
+
+            if (index !== -1) {
+                // Remove the observation from the shared container at the same index
+                const sharedContainer = document.querySelector('.observations-data .observations-container');
+                const sharedObservationItems = Array.from(sharedContainer.querySelectorAll('.observation-item'));
+                const sharedObservationItem = sharedObservationItems[index];
+                if (sharedObservationItem) {
+                    sharedContainer.removeChild(sharedObservationItem);
+
+                    // Reindex observations
+                    reindexObservations();
+
+                    // Synchronize observations to both views
+                    syncObservations();
+                }
+            }
+        }
+    }
+
+    // Function to reindex observations after addition or deletion
+    function reindexObservations() {
+        const sharedContainer = document.querySelector('.observations-data .observations-container');
+        const observationItems = sharedContainer.querySelectorAll('.observation-item');
+
+        observationItems.forEach((item, index) => {
+            // Update the names and ids of inputs
+            const sectionInput = item.querySelector('input');
+            const detailsInput = item.querySelector('textarea');
+
+            sectionInput.name = `observations-${index}-section`;
+            sectionInput.id = `observations-${index}-section`;
+            sectionInput.previousElementSibling.setAttribute('for', `observations-${index}-section`);
+
+            detailsInput.name = `observations-${index}-details`;
+            detailsInput.id = `observations-${index}-details`;
+            detailsInput.previousElementSibling.setAttribute('for', `observations-${index}-details`);
+        });
+    }
+
+    // Function to synchronize observations between views
+    function syncObservations() {
+        const sharedContainer = document.querySelector('.observations-data .observations-container');
+        const observationsContainers = document.querySelectorAll('.observations-container:not(.observations-data .observations-container)');
+
+        observationsContainers.forEach(container => {
+            // Clear existing observations
+            container.innerHTML = '';
+            // Clone observations from the shared container
+            sharedContainer.childNodes.forEach(node => {
+                container.appendChild(node.cloneNode(true));
+            });
+        });
+
+        // No need to reattach event listeners as we're handling clicks at the document level
+    }
+
+
+    // Synchronize observations on page load
     document.addEventListener('DOMContentLoaded', function() {
-        // Select the input fields directly using the updated IDs
-        const dobInput = document.getElementById('dob-input');
-        const ageInput = document.getElementById('age-input');
+        syncObservations();
 
-        // Trigger event on 'change' for DOB input
-        dobInput.addEventListener('change', function() {
-            const dob = new Date(this.value);
-            if (!isNaN(dob.getTime())) { // Check if dob is a valid date
-                const age = calculateAge(dob);
-                ageInput.value = age;
-            }
-        });
-
-        // Trigger event on 'input' for Age input
-        ageInput.addEventListener('input', function() {
-            const age = parseInt(this.value);
-            if (!isNaN(age)) {
-                const dob = calculateDOB(age);
-                dobInput.value = dob;
-            }
-        });
-
-        function calculateAge(dob) {
-            const today = new Date();
-            let age = today.getFullYear() - dob.getFullYear();
-            const m = today.getMonth() - dob.getMonth();
-            if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
-                age--;
-            }
-            return age;
-        }
-
-        function calculateDOB(age) {
-            const today = new Date();
-            const dob = new Date(today.getFullYear() - age, today.getMonth(), today.getDate());
-            return dob.toISOString().split('T')[0]; // Format to 'YYYY-MM-DD'
-        }
+        // Set up age and DOB synchronization
+        setupDateInputs('dob-input', 'age-input');
+        setupDateInputs('dob-input-desktop', 'age-input-desktop');
     });
 
+    // Function to set up age and DOB synchronization
+    function setupDateInputs(dobId, ageId) {
+        const dobInput = document.getElementById(dobId);
+        const ageInput = document.getElementById(ageId);
+
+        if (dobInput && ageInput) {
+            dobInput.addEventListener('change', function() {
+                const dob = new Date(this.value);
+                if (!isNaN(dob.getTime())) {
+                    const age = calculateAge(dob);
+                    ageInput.value = age;
+                }
+            });
+
+            ageInput.addEventListener('input', function() {
+                const age = parseInt(this.value);
+                if (!isNaN(age)) {
+                    const dob = calculateDOB(age);
+                    dobInput.value = dob;
+                }
+            });
+        }
+    }
+
+    function calculateAge(dob) {
+        const today = new Date();
+        let age = today.getFullYear() - dob.getFullYear();
+        const m = today.getMonth() - dob.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+            age--;
+        }
+        return age;
+    }
+
+    function calculateDOB(age) {
+        const today = new Date();
+        const dob = new Date(today.getFullYear() - age, today.getMonth(), today.getDate());
+        return dob.toISOString().split('T')[0];
+    }
+
+    // Function to toggle between views and manage input states
+    function toggleTemplateView() {
+        let desktop_form = document.getElementById('desktop_view');
+        let mobile_form = document.getElementById('mobile_view');
+        let toggle_view_button = document.getElementById('toggle-mobile-view-btn');
+        if (desktop_form.style.display == 'block') {
+            desktop_form.style.display = 'none';
+            mobile_form.style.display = 'block';
+            toggle_view_button.innerHTML = 'Desktop View';
+            disableInputs(desktop_form);
+            enableInputs(mobile_form);
+        } else {
+            desktop_form.style.display = 'block';
+            mobile_form.style.display = 'none';
+            toggle_view_button.innerHTML = 'Mobile View';
+            disableInputs(mobile_form);
+            enableInputs(desktop_form);
+        }
+    }
+
+    function disableInputs(container) {
+        const inputs = container.querySelectorAll('input, textarea, select');
+        inputs.forEach(input => input.disabled = true);
+    }
+
+    function enableInputs(container) {
+        const inputs = container.querySelectorAll('input, textarea, select');
+        inputs.forEach(input => input.disabled = false);
+    }
+
+    document.getElementById('toggle-mobile-view-btn').addEventListener('click', function() {
+        toggleTemplateView();
+    });
 </script>
 {% endblock %}

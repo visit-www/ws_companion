@@ -541,6 +541,12 @@ hr{
     .btn-primary{
         width:40vw !important;
     }
+    .table-responsive{
+        font-size: 0.8rem;
+    }
+    .delete-observation-btn{
+        font-size: 0.5 rem;
+    }
 }
 
 
