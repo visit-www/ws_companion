@@ -18,8 +18,10 @@ class RegistrationForm(FlaskForm):
 class ObservationForm(FlaskForm):
     section = StringField('Section', validators=[Optional()])
     details = TextAreaField('Details', validators=[Optional()])
-class AddSmartReportTemplateForm(FlaskForm):
+
+class AddReportTemplateMobile(FlaskForm):
     template_name = StringField('Template Name', validators=[DataRequired()])
+    
     # Patient Information
     name = StringField('Name', validators=[Optional()])
     gender = StringField('Gender', validators=[Optional()])
@@ -27,18 +29,45 @@ class AddSmartReportTemplateForm(FlaskForm):
     age = IntegerField('Age', validators=[Optional()])
     dob = DateField('DOB', validators=[Optional()])
     location = StringField('Location', validators=[Optional()])
+    
     clinical_info = TextAreaField('Clinical Info', validators=[Optional()])
-    technical_info= TextAreaField('Technique', validators=[Optional()])
+    technical_info = TextAreaField('Technique', validators=[Optional()])
     comparison = TextAreaField('Comparison', validators=[Optional()])
-
+    
     # Observations Section (Dynamic fields)
     observations = FieldList(FormField(ObservationForm), min_entries=1)
-
+    
     # Conclusions and Recommendations
     conclusions = TextAreaField('Conclusions', validators=[Optional()])
     recommendations = TextAreaField('Recommendations', validators=[Optional()])
+    
+    # Unique Submit Button
+    submit_mobile = SubmitField('Save Report Template')
 
-    submit = SubmitField('Save Report Template')
+class AddReportTemplateDesktop(FlaskForm):
+    template_name = StringField('Template Name', validators=[DataRequired()])
+    
+    # Patient Information
+    name = StringField('Name', validators=[Optional()])
+    gender = StringField('Gender', validators=[Optional()])
+    patient_id = StringField('ID', validators=[Optional()])
+    age = IntegerField('Age', validators=[Optional()])
+    dob = DateField('DOB', validators=[Optional()])
+    location = StringField('Location', validators=[Optional()])
+    
+    clinical_info = TextAreaField('Clinical Info', validators=[Optional()])
+    technical_info = TextAreaField('Technique', validators=[Optional()])
+    comparison = TextAreaField('Comparison', validators=[Optional()])
+    
+    # Observations Section (Dynamic fields)
+    observations = FieldList(FormField(ObservationForm), min_entries=1)
+    
+    # Conclusions and Recommendations
+    conclusions = TextAreaField('Conclusions', validators=[Optional()])
+    recommendations = TextAreaField('Recommendations', validators=[Optional()])
+    
+    # Unique Submit Button
+    submit_desktop = SubmitField('Save Report Template')
     
 class AddGuidelineForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired(), Length(max=500)])

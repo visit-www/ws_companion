@@ -4,7 +4,6 @@ from sqlalchemy import inspect, Table,MetaData
 from flask_login import login_required, current_user
 from .models import User, Content
 from . import db, Base
-from .forms import AddSmartReportTemplateForm  # Import your form class
 from io import BytesIO
 from flask import send_file
 import os
@@ -96,46 +95,74 @@ def manage_model():
 # *----------------------------------------------------------------
 # create smart report templates:
 # *----------------------------------------------------------------
-@app_admin_bp.route('/create_template', methods=['GET', 'POST'])
-@login_required
-def create_report_template():
-    form= AddSmartReportTemplateForm()
-    return render_template('create_smart_report_template.html',form=form)
 
+# Import the two form classes
+from .forms import AddReportTemplateMobile, AddReportTemplateDesktop
+
+@app_admin_bp.route ('/create_report_templates')
+def create_report_template():
+    mobile_form = AddReportTemplateMobile()
+    desktop_form = AddReportTemplateDesktop()
+    return render_template('create_smart_report_template.html', mobile_form=mobile_form, desktop_form=desktop_form)
+
+# *----------------------------------------------------------------
+# create smart report templates
 from io import BytesIO
 import zipfile
-from flask import send_file
 import os
 
 @app_admin_bp.route('/save_report_template', methods=['POST'])
 @login_required
 def save_report_template():
-    form = AddSmartReportTemplateForm()
+    # Instantiate both forms with different prefixes to avoid field name conflicts
+    mobile_form = AddReportTemplateMobile(prefix='mobile')
+    desktop_form = AddReportTemplateDesktop(prefix='desktop')
     
-    if form.validate_on_submit():
+    # Determine which form was submitted by checking the presence of unique submit button names
+    if 'submit_mobile' in request.form:
+        submitted_form = mobile_form
+        form_type = 'mobile'
+    elif 'submit_desktop' in request.form:
+        submitted_form = desktop_form
+        form_type = 'desktop'
+    else:
+        # No known submit button found
+        flash("Unknown form submission.", "error")
+        return render_template('create_smart_report_template.html', mobile_form=mobile_form, desktop_form=desktop_form)
+    
+    # Validate the submitted form
+    if submitted_form.validate_on_submit():
         report_type = request.form.getlist('report_type')
+        print('Form validated')
         
         # Check if at least one report type is selected
         if not report_type:
             flash("Please select at least one report type (PDF or Word).", "error")
-            return render_template('create_smart_report_template.html', form=form)
+            return render_template('create_smart_report_template.html', mobile_form=mobile_form, desktop_form=desktop_form)
         
         # Prepare data dictionary from form fields
         data = {
-            'template_name': form.template_name.data,
-            'name': form.name.data,
-            'gender': form.gender.data,
-            'patient_id': form.patient_id.data,
-            'age': form.age.data,
-            'dob': form.dob.data,
-            'location': form.location.data,
-            'clinical_info': form.clinical_info.data,
-            'technical_info': form.technical_info.data,
-            'comparison': form.comparison.data,
-            'observations': [{'section': obs.section.data, 'details': obs.details.data} for obs in form.observations],
-            'conclusions': form.conclusions.data,
-            'recommendations': form.recommendations.data
+            'template_name': submitted_form.template_name.data or "No template name provided",
+            'name': submitted_form.name.data or "No name entered",
+            'gender': submitted_form.gender.data or "No gender provided",
+            'patient_id': submitted_form.patient_id.data or "No patient ID provided",
+            'age': submitted_form.age.data or "No age provided",
+            'dob': submitted_form.dob.data or "No date of birth provided",
+            'location': submitted_form.location.data or "No location provided",
+            'clinical_info': submitted_form.clinical_info.data or "No clinical information provided",
+            'technical_info': submitted_form.technical_info.data or "No technical information provided",
+            'comparison': submitted_form.comparison.data or "No comparison information provided",
+            'observations': [
+                {
+                    'section': obs.section.data or "Unnamed section",
+                    'details': obs.details.data or "No details provided"
+                } for obs in submitted_form.observations
+            ],
+            'conclusions': submitted_form.conclusions.data or "No conclusions provided",
+            'recommendations': submitted_form.recommendations.data or "No recommendations provided"
         }
+        print(f"----------------------------------------------------------------")
+        print(data)
         
         # Lists to collect file streams and filenames for zipping if needed
         files = []
@@ -162,10 +189,11 @@ def save_report_template():
             zipf.close()  # Explicitly close the ZipFile
             zip_stream.seek(0)
             return send_file(
-            zip_stream,
-            as_attachment=True,
-            download_name='report_templates.zip',
-            mimetype='application/zip')
+                zip_stream,
+                as_attachment=True,
+                download_name='report_templates.zip',
+                mimetype='application/zip'
+            )
         
         # If only one file is requested, send it directly
         elif len(files) == 1:
@@ -177,11 +205,14 @@ def save_report_template():
         
         else:
             flash("No report type was selected.", "error")
-            return render_template('create_smart_report_template.html', form=form)
+            return render_template('create_smart_report_template.html', mobile_form=mobile_form, desktop_form=desktop_form)
     
     # If form is not valid, re-render the form with errors
-    return render_template('create_smart_report_template.html', form=form)
-    
+    else:
+        flash("Form validation failed. Please check the entered data.", "error")
+        return render_template('create_smart_report_template.html', mobile_form=mobile_form, desktop_form=desktop_form)
+
+    #----------------------------------------------------------------
 from docx import Document
 from docx.shared import Pt, RGBColor, Inches
 from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_ALIGN_PARAGRAPH
@@ -275,27 +306,29 @@ def create_report_template_word(data,report_type,return_path_only=False):
     comparison_paragraph
     # Observations Section
     doc.add_heading('Observations:', level=1)
-    # Ensure observations is always a list, with a default entry if the list is empty or None
-    observations = data.get('observations')
-    section_name=""
-    detail = ""
-    for obs in observations:
-        for key,value in obs.items():
-            if key =='section':
-                if value=="":
-                    section_name='Section'
-                else:
-                    section_name = value
-            
-            if key=="details":
-                if value=="":
-                    detail= 'No details provided'
-                else:
-                    detail = value
 
-        # Create a new paragraph for each observation
-        obs_paragraph = doc.add_paragraph()
+    # Ensure observations is always a list, with a default empty list if it's None
+    observations = data.get('observations', [])
+
+    for obs in observations:
+        # Skip any None observation
+        if obs is None:
+            continue
     
+        # Initialize defaults for each observation
+        section_name = "Section"  # Default value for section
+        detail = "No details provided"  # Default value for details
+    
+        # Process each key-value pair within the observation
+        for key, value in obs.items():
+            if key == 'section':
+                section_name = value if value else 'Section'  # Replace empty or None with default
+            elif key == 'details':
+                detail = value if value else 'No details provided'  # Replace empty or None with default
+
+        # Create a new paragraph for each observation with section and details
+        obs_paragraph = doc.add_paragraph()
+
         # Section name in bold
         section_heading = obs_paragraph.add_run(f"{section_name}: ")
         section_heading.bold = True
@@ -525,28 +558,30 @@ def create_report_template_pdf(data, return_path_only=False):
     
     # Ensure observations is always a list, with a default entry if the list is empty or None
     
-    observations = data.get('observations')
-    section_name=""
+    observations = data.get('observations', [])  # Default to an empty list if observations is None
+    section_name = ""
     detail = ""
+
     for obs in observations:
-        for key,value in obs.items():
-            if key =='section':
-                if value=="":
-                    section_name='Section'
-                else:
-                    section_name = value
-            
-            if key=="details":
-                if value=="":
-                    detail= 'No details provided'
-                else:
-                    detail = value
+        if obs is None:  # Skip if the observation itself is None
+            continue
+
+        # Initialize defaults for each observation
+        section_name = "Section"
+        detail = "No details provided"
+    
+        for key, value in obs.items():
+            if key == 'section':
+                section_name = value if value else 'Section'  # Handle empty or None values
+            elif key == 'details':
+                detail = value if value else 'No details provided'  # Handle empty or None values
+
+        # Add section and detail to the document
         section_paragraph = Paragraph(f"{section_name}:", section_style)
         elements.append(section_paragraph)
-        # Details
         detail_paragraph = Paragraph(detail, detail_style)
         elements.append(detail_paragraph)
-        
+
     # Conclusions
     add_section('Conclusions:', data.get('conclusions', 'No conclusions provided'))
     
@@ -601,7 +636,7 @@ def create_report_template_pdf(data, return_path_only=False):
         temp_pdf_file.write(buffer.getvalue())
         temp_pdf_file.close()
         return temp_pdf_file.name
-    else:
+    else:   
         # Return the buffer for direct download
         return buffer
 
