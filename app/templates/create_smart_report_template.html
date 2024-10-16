@@ -137,14 +137,14 @@
                 </div>
                 <div class="data-section col-12">
                     <div class="observations-container" id="mobile_observations">
-                        {% for observation in desktop_form.observations %}
-                                <div class="observation-item mb-3 p-2 border rounded" id="mobile-obs-item-{{ loop.index }}-section">
+                        {% for observation in mobile_form.observations %}
+                                <div class="observation-item mb-3 p-2 border rounded" id="mobile-obs-item-{{ loop.index0 }}-section">
                                     <div class="observation-sections mb-3 pastel-light-blue w-75 d-flex justify-content-start p-2">
-                                        <label for="mobilep-{{ observation.section.id }}">Section {{ loop.index }}</label>
+                                        <label for="mobilep-{{ observation.section.id }}">Section {{ loop.index0 }}</label>
                                         {{ observation.section(class="form-control", id="mobile-" + observation.section.id) }}
                                     </div>
                                     <div class="observation-details mb-3">
-                                        <label for="mobile-{{ observation.details.id }}">Details {{ loop.index }}</label>
+                                        <label for="mobile-{{ observation.details.id }}">Details {{ loop.index0 }}</label>
                                         {{ observation.details(class="form-control", id="mobile-" + observation.details.id, rows="3") }}
                                     </div>
                                     <button type="button" data-view="mobile" class="btn btn-outline-danger delete-observation-btn w-100 mt-2">Delete this Section</button>
@@ -198,7 +198,7 @@
                 <label class="form-check-label" for="report_type_word">Word</label>
             </div>
             <!-- Remove the form attribute from the button -->
-            <button type="submit" name="submit_mobile" class="btn btn-primary w-auto m-2">Save Report Template</button>
+            <button type="submit" name="mobile-submit_mobile" class="btn btn-primary w-auto m-2">Save Report Template</button>
             </div>
         </div>
     </form>
@@ -326,13 +326,13 @@
                     <td class="w-75">
                         <div class="observations-container" id="desktop_observations">
                             {% for observation in desktop_form.observations %}
-                                <div class="observation-item mb-3 p-2 border rounded" id="desktop-obs-item-{{ loop.index }}-section">
+                                <div class="observation-item mb-3 p-2 border rounded" id="desktop-obs-item-{{ loop.index0 }}-section">
                                     <div class="observation-sections mb-3 pastel-light-blue w-75 d-flex justify-content-start p-2">
-                                        <label for="desktop-{{ observation.section.id }}">Section {{ loop.index }}</label>
+                                        <label for="desktop-{{ observation.section.id }}">Section {{ loop.index0 }}</label>
                                         {{ observation.section(class="form-control", id="desktop-" + observation.section.id) }}
                                     </div>
                                     <div class="observation-details mb-3">
-                                        <label for="desktop-{{ observation.details.id }}">Details {{ loop.index }}</label>
+                                        <label for="desktop-{{ observation.details.id }}">Details {{ loop.index0 }}</label>
                                         {{ observation.details(class="form-control", id="desktop-" + observation.details.id, rows="3") }}
                                     </div>
                                     <button type="button" data-view="desktop" class="btn btn-outline-danger delete-observation-btn w-100 mt-2">Delete this Section</button>
@@ -388,25 +388,11 @@
                 <label class="form-check-label" for="report_type_word">Word</label>
             </div>
             <!-- Remove the form attribute from the button -->
-            <button type="submit" name="submit_desktop" class="btn btn-primary w-auto m-2">Save Report Template</button>
+            <button type="submit" name="desktop-submit_desktop" class="btn btn-primary w-auto m-2">Save Report Template</button>
             </div>
         </div>
     </form>
     
-    <!-- Hidden Template for New Observations -->
-    <div id="observation-template" style="display:none">
-        <div class="observation-item mb-3 p-2 border rounded" data-index="__index__">
-            <div class="observation-sections mb-3 pastel-light-blue w-75 d-flex justify-content-start p-2">
-                <label for="observations-__index__-section">Section</label>
-                <input type="text" name="observations-__index__-section" id="observations-__index__-section" placeholder="Section Name" class="form-control" />
-            </div>
-            <div class="observation-details mb-3">
-                <label for="observations-__index__-details">Details</label>
-                <textarea name="observations-__index__-details" id="observations-__index__-details" placeholder="Details" class="form-control" rows="3"></textarea>
-            </div>
-            <button type="button" class="btn btn-outline-danger delete-observation-btn w-100 mt-2">Delete this Section</button>
-        </div>
-    </div>
 {% endblock %}
 
 {% block script %}
@@ -446,18 +432,18 @@
         let newObservationHtml = '';
 
         if (view === 'desktop') {
-            const newIndexDesktop = currentIndexDesktop + 1;
+            const newIndexDesktop = currentIndexDesktop ;
 
             // New observation HTML for desktop view
             newObservationHtml = `
                 <div class="observation-item mb-3 p-2 border rounded" id="desktop-obs-item-${newIndexDesktop}-section">
                     <div class="observation-sections mb-3 pastel-light-blue w-75 d-flex justify-content-start p-2">
                         <label for="desktop-observations-${newIndexDesktop}-section">Section ${newIndexDesktop}</label>
-                        <textarea class="form-control" id="desktop-observations-${newIndexDesktop}-section" name="observations-${newIndexDesktop}-section" placeholder="Add section name"></textarea>
+                        <textarea class="form-control" id="desktop-observations-${newIndexDesktop}-section" name="desktop-observations-${newIndexDesktop}-section" placeholder="Add section name"></textarea>
                     </div>
                     <div class="observation-details mb-3">
                         <label for="desktop-observations-${newIndexDesktop}-details">Details ${newIndexDesktop}</label>
-                        <textarea class="form-control" id="desktop-observations-${newIndexDesktop}-details" name="observations-${newIndexDesktop}-details" rows="3" placeholder="Add section details"></textarea>
+                        <textarea class="form-control" id="desktop-observations-${newIndexDesktop}-details" name="desktop-observations-${newIndexDesktop}-details" rows="3" placeholder="Add section details"></textarea>
                     </div>
                     <button type="button" data-index="${newIndexDesktop}" data-view="desktop" class="btn btn-outline-danger delete-observation-btn w-100 mt-2">Delete this Section</button>
                 </div>`;
@@ -466,7 +452,7 @@
             obs_container_desktop.insertAdjacentHTML('beforeend', newObservationHtml);
 
         } else if (view === 'mobile') {
-            const newIndexMobile = currentIndexMobile + 1;
+            const newIndexMobile = currentIndexMobile ;
 
             // New observation HTML for mobile view
             newObservationHtml = `
@@ -495,7 +481,7 @@
     
         const observationItems = container.querySelectorAll('.observation-item');
         observationItems.forEach((item, index) => {
-            const newIndex = index + 1;
+            const newIndex = index ;
         
             // Update the ID and content of observation section
             const itemSection = item.querySelector('.observation-sections');

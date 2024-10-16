@@ -99,10 +99,39 @@ def manage_model():
 # Import the two form classes
 from .forms import AddReportTemplateMobile, AddReportTemplateDesktop
 
-@app_admin_bp.route ('/create_report_templates')
+@app_admin_bp.route('/create_report_templates', methods=['GET', 'POST'])
+@login_required
 def create_report_template():
-    mobile_form = AddReportTemplateMobile()
-    desktop_form = AddReportTemplateDesktop()
+    # Initialize forms with prefixes
+    mobile_form = AddReportTemplateMobile(prefix='mobile')
+    desktop_form = AddReportTemplateDesktop(prefix='desktop')
+    
+    if request.method == 'POST':
+        # Determine which form was submitted
+        if 'submit_mobile' in request.form:
+            submitted_form = mobile_form
+            form_type = 'mobile'
+        elif 'submit_desktop' in request.form:
+            submitted_form = desktop_form
+            form_type = 'desktop'
+        else:
+            # Unknown submission, re-render with initialized forms
+            flash("Unknown form submission.", "error")
+            return render_template('create_smart_report_template.html', mobile_form=mobile_form, desktop_form=desktop_form)
+        
+        # Validate the submitted form
+        if submitted_form.validate_on_submit():
+            report_type = request.form.getlist('report_type')
+            # Process the form data here
+            flash("Form successfully submitted!", "success")
+        else:
+            flash("There were validation errors. Please correct them and resubmit.", "error")
+    
+    # Re-instantiate forms with prefixes to ensure consistency for the next render
+    mobile_form = AddReportTemplateMobile(prefix='mobile')
+    desktop_form = AddReportTemplateDesktop(prefix='desktop')
+    
+    # Render the template with re-initialized forms
     return render_template('create_smart_report_template.html', mobile_form=mobile_form, desktop_form=desktop_form)
 
 # *----------------------------------------------------------------
@@ -117,18 +146,23 @@ def save_report_template():
     # Instantiate both forms with different prefixes to avoid field name conflicts
     mobile_form = AddReportTemplateMobile(prefix='mobile')
     desktop_form = AddReportTemplateDesktop(prefix='desktop')
+    print(f"Request form data: {request.form}")
+    print('----------------------------------------------------------------')
     
     # Determine which form was submitted by checking the presence of unique submit button names
-    if 'submit_mobile' in request.form:
+    if 'mobile-submit_mobile' in request.form:
         submitted_form = mobile_form
         form_type = 'mobile'
-    elif 'submit_desktop' in request.form:
+        print(f"form type is: {form_type}")
+        print(f'Form data:', {submitted_form})
+    elif 'desktop-submit_desktop' in request.form:
         submitted_form = desktop_form
         form_type = 'desktop'
     else:
         # No known submit button found
         flash("Unknown form submission.", "error")
         return render_template('create_smart_report_template.html', mobile_form=mobile_form, desktop_form=desktop_form)
+    
     
     # Validate the submitted form
     if submitted_form.validate_on_submit():
@@ -209,6 +243,9 @@ def save_report_template():
     
     # If form is not valid, re-render the form with errors
     else:
+        print('----------------------------------------------------------------')
+        print(f"Request form data: {request.form}")
+        print(submitted_form.errors)  # Check for specific field errors
         flash("Form validation failed. Please check the entered data.", "error")
         return render_template('create_smart_report_template.html', mobile_form=mobile_form, desktop_form=desktop_form)
 
