@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+
+{% block title %}My Radiology Workstation Companion{% endblock %}
+
+{% block content %}
+    <!-- Card Canvas -->
+    <div class="my-card-canvas card-canvas m-5" id="cardContainer">
+        <h1 class="mb-4">
+            Available Contents In 
+            <span style="background-color: rgb(174, 224, 174);border-radius:8px;">{{ display_name }}</span> 
+            Category
+        </h1>
+        
+        <!-- Toggle Button -->
+        <div class="d-flex justify-content-end mb-3">
+            <button id="toggleViewBtn" class="btn btn-outline-primary">Toggle View</button>
+        </div>
+    
+        <!-- Card Box -->
+        <div class="card-box my-card-box row g-4" id="contentContainer">
+            {% for content in contents %}
+                {% set title = content.title %}
+                {% set category = content.category %}
+                {% set module = content.module %}
+                {% set embed_code = content.embed_code %}
+                {% set card_index = content.id %}
+                {% set alt_text = content_dict[content.id].alt_text %}
+                {% set keyword = content_dict[content.id].keyword %}
+                {% set content_img = url_for('main_routes.static', filename='thumbnails/' + (keyword if keyword else 'liver') + '.svg') %}
+
+                <!-- Card -->
+                <div class="col-sm-6 col-md-2 col-lg-2 content-item my-card ">
+                    <div class="card h-100 rounded watermark-card bg-wight" id="{{ card_index}}" style="background-image: url('{{content_img}}');">
+                        
+                        <!-- Card Body -->
+                        <div class="card-body my-card-body d-flex flex-column shadow-lg" style="z-index: 2;">
+                            <h5 class="card-title my-card-title">{{ title }}</h5>
+                            <hr class="decorative-line">
+                            <p class="card-text my-card-text">{{ module | upper }}</p>
+                            <p class="card-text my-card-text text-muted small">Last updated: {{ content.updated_at.strftime('%Y-%m-%d') }}</p>
+                            <div class="mt-auto">
+                                <div class="btn-group">
+                                    {% if content.filepath %}
+                                    <a href="{{ url_for('content_routes.view_reference', display_name=display_name, category=category, reference_id=content.id) }}" class="btn btn-outline-success">Content Viewer</a>
+
+                                    {% elif content.external_url %}
+                                        <a href="{{ content.external_url }}" target="_blank" class="btn btn-outline-success">View Content</a>
+                                    {% elif content.embed_code %}
+                                        <button id='embedcodebutton' class="btn btn-outline-success" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#embedCodeModal"
+                                                data-embed-code="{{ embed_code }}"
+                                                onclick="setEmbedCodeFromButton(this)">
+                                            Content Viewer
+                                        </button>
+                                    {% else %}
+                                        <p class="text-muted">No available contents to view.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <!-- End Card Body -->
+                    </div>
+                </div>
+                <!-- End Card -->
+            {% endfor %}
+        </div>
+        <!-- End Card Box -->
+    </div>
+    <!-- End Card canvas -->
+</div>
+<p class="d-flex justify-content-center mt-4">
+    <a href="{{ url_for('main_routes.index') }}" class="btn btn-secondary">Return to Home</a>
+</p>
+
+{% endblock %}
+{% block script %}
+{{super()}}
+<script>
+document.getElementById('toggleViewBtn').addEventListener('click', function () {
+    const contentItems = document.querySelectorAll('.content-item'); // Select all cards
+    
+    contentItems.forEach(item => {
+        // Toggle between standard grid display and list display
+        if (item.classList.contains('col-sm-6')) {
+            item.classList.remove('col-sm-6', 'col-md-2', 'col-lg-2'); // Remove grid view classes
+            item.classList.add('col-10', 'm-auto','mb-5','list-view'); // Add list view classes
+        } else {
+            item.classList.remove('col-10', 'm-auto','mb-5','list-view'); // Remove list view classes
+            item.classList.add('col-sm-6', 'col-md-2', 'col-lg-2'); // Add grid view classes
+        }
+    });
+});
+</script>
+{% endblock %}

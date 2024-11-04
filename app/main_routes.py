@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template,jsonify, request, flash
 from flask_wtf.csrf import generate_csrf
 from flask import render_template
-from .models import CategoryNames,User,UserData
+from .models import CategoryNames,User,UserData,Reference
 from . import db
 from flask_cors import CORS
 from flask_login import current_user, AnonymousUserMixin
@@ -63,8 +63,12 @@ def index():
         
         # Add the formatted category name to the list
         cat_dict[cat_name]=[display_name,idx]
+    # Fetch the latest reference data
+    references = db.session.query(Reference).order_by(Reference.updated_at.desc()).all()
+    reference_display_name = "References"
+    
     # Render the 'index.html' template, passing the category dictionary to the template
-    return render_template('index.html', cat_dict=cat_dict,last_login=last_login)
+    return render_template('index.html', cat_dict=cat_dict,reference_display_name=reference_display_name,references=references, last_login=last_login)
 #!----------------------------------------------------------------
 # Place holder routes for maain page navigations :
 

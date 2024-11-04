@@ -158,4 +158,21 @@ def load_default_data():
     except FileNotFoundError:
         print("default_data.json not found")
         return None
+from flask import url_for
+from markupsafe import Markup
+
+
+def inline_references(content, references):
+    """Replace specific terms in content with inline links to references."""
+    if not references:
+        return content  # Return content as-is if no references are provided
+
+    # Loop through references and replace occurrences of each term with a link
+    for ref in references:
+        term = ref.title  # Assuming the reference title is the term to match
+        link = url_for("content_routes.view_reference", category=ref.category, display_name="References", reference_id=ref.id)
+        replacement = f'<a href="{link}" class="reference-link" target="_blank">{term}</a>'
+        content = content.replace(term, replacement)  # Replace term with link in content
+
+    return Markup(content)  # Return content as HTML-safe string
 

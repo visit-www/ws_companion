@@ -10,6 +10,7 @@ dotenv.load_dotenv()
 basedir=os.path.abspath(os.path.dirname(__file__))
 # Set user_dir to the path of the user_data directory one level up from the current file
 userdir = os.path.join(basedir, 'user_data')
+creativesfolder = os.path.join(basedir, 'creatives_folder')
 ANONYMOUS_USER_ID = uuid.UUID('123e4567-e89b-12d3-a456-426614174000')
 ANONYMOUS_EMAIL = os.getenv('ANONYMOUS_EMAIL', "anonymous_user@example.com")
 ANONYMOUS_PASSWORD = os.getenv('ANONYMOUS_PASSWORD', "defaultanonymouspassword")  # Fixed typo

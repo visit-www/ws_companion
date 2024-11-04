@@ -5,7 +5,7 @@ from flask_admin.contrib.sqla import ModelView
 
 from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
-from config import Config,userdir,basedir
+from config import Config,userdir,basedir,creativesfolder
 from flask_login import LoginManager
 from .models import Base ,db
 import os
@@ -13,7 +13,9 @@ from datetime import datetime,timedelta,timezone
 from flask_mail import Mail
 from uuid import UUID
 from .util import load_default_data,add_default_admin,add_default_contents,add_anonymous_user
+
 import pyotp
+
 
 
 # Initialize Flask extensions (SQLAlchemy, Flask-Migrate, LoginManager, Flask-Admin, CSRFProtect)
@@ -57,12 +59,13 @@ def create_app():
     # Import models and add to Flask-Admin here to avoid circular import
     with app.app_context():
         from .models import User, Content, UserData, Reference, UserFeedback, UserContentState, UserProfile, UserReportTemplate, AdminReportTemplate,CategoryNames, ModuleNames
-        from .admin_views import MyModelView,UserModelView,ExtendModelView # Import both MyModelView  and UserModelView
+        from .admin_views import MyModelView,UserModelView,ExtendModelView,ReferenceAdmin # Import both MyModelView  and UserModelView and RefrenceAdmin
 
     # Register Models in Flask-Admin
     # Register admin-related models with MyModelView
     flask_admin.add_view(MyModelView(Content, db.session, endpoint='contents'))
-    flask_admin.add_view(MyModelView(Reference, db.session, endpoint='references'))
+    # Register the Reference model with the customized ReferenceAdmin
+    flask_admin.add_view(ReferenceAdmin(Reference, db.session, endpoint='references'))
     flask_admin.add_view(MyModelView(AdminReportTemplate, db.session, endpoint='admin_report_templates'))
 
     # Register user-related models with ModelView
@@ -78,6 +81,10 @@ def create_app():
     @app.route('/user_data/<path:filename>')
     def serve_user_data(filename):
         return send_from_directory(userdir, filename)
+    # Serve `creatives_folder` as a secondary static folder
+    @app.route('/creatives_folder/<path:filename>')
+    def serve_creatives_folder(filename):
+        return send_from_directory(creativesfolder,filename)
     
     @app.route('/enable_2fa')
     def enable_2fa():

@@ -1,38 +1,46 @@
 {% extends 'base.html' %}
+{% import "macros.html" as macros %}
 
 {% block title %}Viewer - Radiology Workstation Companion{% endblock %}
 
 {% block hero_container %}
 <div class="hero-container text-center my-4">
-    <h1 class="display-4">WSC Diagram Viewer</h1>
+    <h1 class="display-4 text-success">WSC Content Viewer</h1>
 </div>
 {% endblock %}
 {% block content %}
     <!-- Card Canvas -->
-<div class="my-card-canvas card-canvas m-5">
+<div class="my-card-canvas m-3 card-canvas">
     <div class="card">
-        <div class="card-footer justify-content-around align-items-center border p-2">
-        <!-- Back to category button -->
-        <a href="{{ url_for('content_routes.view_category', display_name=display_name, category=cat) }}" class="btn btn-outline-primary">Back to {{cat|upper}}</a>
+        <div class="card-header justify-content-around align-items-center border p-2">
+            <!-- Back to previous page button -->
+            <button onclick="history.back()" class="btn btn-outline-success">Back TO {{ display_name|upper }}</button>
         </div>
+        
         <div class="card-body">
-            <h2 class="card col-12 bg-success p-3">{{cat}}</h2>
+            <h2 class="card col-12 bg-success p-3 text-white">{{display_name}}</h2>
         </div>
     </div>
-    <div class="my-card-canvas ml-5 bg-dark">
+    <div id="reader-view" class="reader-view bg-dark">
             {{html_content|safe}}
     </div>  
 </div>
 {% endblock %}
-{%block script %}
-{{super()}}
+
+{% block script %}
+{{ super() }}
 <script type="text/javascript" src="https://viewer.diagrams.net/js/viewer-static.min.js"></script>
 <script>
 // Initialize Diagram Viewer
-addEventListener(DocumentLoad, function(){
-    var diag_viewer=getElemenetById('mxgraph');
-    diag_viewer.addclasslist('card, col-12 bg-white');
-    diag_viewer.innerhtml="<div class='btn btn-warning'>click for full screen view</div>";
-})
+document.addEventListener("DOMContentLoaded", function() {
+    var diag_viewer = document.getElementById('mxgraph');
+    if (diag_viewer) { // Check if the element exists
+        diag_viewer.classList.add('card', 'col-12', 'bg-white');
+        diag_viewer.innerHTML = "<div class='btn btn-warning'>Click for full screen view</div>";
+    } else {
+        console.warn("Element with ID 'mxgraph' not found.");
+    }
+});
+
 </script>
 {% endblock %}
