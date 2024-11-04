@@ -8,12 +8,12 @@
     text-align: center;
     font-size: 16px;
     color: #000;
-    font-family: 'Armata', sans-serif;
+    font-family: 'Armata' sans-serif;
 }
 
 /* Remove Link Decorations */
- a {
-    text-decoration: none !important;  /* Adding !important to ensure it overrides other styles */
+a {
+    text-decoration: none;  /* Adding !important to ensure it overrides other styles */
     color: black;
 }
 
@@ -21,14 +21,14 @@
 .navbar {
     width: 100%;
     background-color: #d9d9d9;
-    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 4px 4px rgba(0, 0, 0, 0.25);
     border-radius: 10px;
 }
 
 /* Navbar Items */
 .navbar-nav .nav-item .nav-link {
     font-family: 'Artema', sans-serif;
-    text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.11);
+    text-shadow: 0 4px 4px rgba(0, 0, 0, 0.11);
     color: #000;
 }
 
@@ -74,7 +74,7 @@
     .card-title{
         padding: 10px;
         font-size: 0.6rem !important;
-    }
+    };
     .card.action-card{
         padding:3px !important;
         aspect-ratio: 1/1 !important;
@@ -88,7 +88,7 @@
     .card-title{
         padding: 10px;
         font-size: 0.7rem !important;
-    }
+    };
 }
 
 
@@ -112,6 +112,7 @@
 .card-13 { background-color: #d9bbf9; }
 .card-14 { background-color: #d9d9d9; }
 .card-15 { background-color: #fff07c; }
+.card-16 { background-color: #d9bbf9; }
 
 /* Footer */
 .footer {
@@ -131,10 +132,30 @@
 .custom-toast .toast-body {
     color: #fff;
 }
+/* Text highlight custom classes */
+.highlight-yellow { 
+    background-color: yellow;
+    color: black;
+}
+
+.highlight-green { 
+    background-color: lightgreen;
+    color: black;
+}
+
+.highlight-gray { 
+    background-color: lightgray;
+    color: black;
+}
+
+.highlight-orange { 
+    background-color: orange;
+    color: black;
+}
 /*login button */
 .login-btn {
     background-color: #7bf1a8;
-    width: 60% !important;
+    width: 60%;
 }
 .login-btn:hover{
     background-color: #136733;
@@ -284,10 +305,10 @@ styling of the pop up modal :*/
 @media (max-width: 768px) {
     .side-controls {
         display: none; /* Hide sidebar on smaller screens */
-    }
+    };
     .document-viewer {
         flex-direction: column; /* Stack top controls on top */
-    }
+    };
     
 }
 
@@ -316,7 +337,6 @@ styling of the pop up modal :*/
     background-size:contain; /* Ensure the background covers the entire card */
     background-position: center; /* Center the background */
     background-repeat: no-repeat; /* Avoid repeating the background */
-    background-blend-mode:luminosity; /* Optionally blend the image to make it lighter */
     position: relative; /* Ensures z-indexing works properly */
     background-color: rgba(255, 255, 255, 0.9); /* Optional white overlay */
     background-size: 40%; /* Make the image smaller */
@@ -351,18 +371,29 @@ styling of the pop up modal :*/
 @media (max-width: 576px) {
     .card-title {
         font-size: 1rem; /* Adjust for mobile */
-    }
+    };
 }
 
 /* Adjust form elements on small screens */
 @media (max-width: 576px) {
     .form-control {
         font-size: 14px; /* Slightly smaller font size for inputs */
-    }
+    };
     .btn {
         width: 100%; /* Buttons take full width on small screens */
         margin-top: 10px;
-    }
+    };
+}
+/* Hover effect */
+.btn:hover {
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    transform: translateY(-2px); /* Slightly lifts the button */
+}
+
+/* Active (click) effect */
+.btn:active {
+    transform: scale(0.95); /* Slightly shrinks the button on click */
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Custom CSS for user_managment.html (Profile page) */
@@ -424,7 +455,7 @@ hr{
 @media (max-width: 768px) {
     .card-custom {
         margin-bottom: 20px; /* Adds spacing for smaller screens */
-    }
+    };
 }
 
 /********************************
@@ -475,6 +506,17 @@ hr{
 .pastel-grey {
     background-color: #E2E3E5; /* Bootstrap grey */
 }
+/* Custom Classes for Mobile Text Sizing */
+.text-header-mobile {
+    font-size: 0.9em;
+    color:green;
+}
+
+.text-para-mobile {
+    font-size: 0.8em;
+    white-space: normal;    /* Allows text to wrap */
+    overflow-wrap: break-word; /* Prevents long words from overflowing */
+}
 
 /* Additional spacing for better readability between sections */
 .mb-5 {
@@ -487,6 +529,8 @@ hr{
 }
 
 /* Button styles */
+/* Button styles */
+
 .btn-primary {
     background-color: #007BFF;
     border-color: #007BFF;
@@ -522,35 +566,35 @@ hr{
 @media (max-width: 576px) {
     .navbar-brand {
         font-size: 1.2rem; /* Smaller navbar brand font size for mobile */
-    }
+    };
     .sm_navbar_items{
         font-size: 0.9em;
-    }
+    };
     .bi-shield-fill-check {
         font-size: 1.5em; /* Smaller shield icon */
-    }
+    };
     .hero-container{
         padding: 18px !important;
-    }
+    };
     .hero-container h1 {
         font-size: 1.3rem; /* Reduced font size for mobile headings */
-    }
+    };
     .hero-container p {
         font-size: 0.9rem; /* Reduced font size for mobile subheadings */
-    }
+    };
     .btn-primary{
         width:40vw !important;
-    }
+    };
     .table-responsive{
         font-size: 0.8rem;
-    }
+    };
     .delete-observation-btn{
         font-size: 0.5 rem;
-    }
+    };
 }
 
 
-    .greeting-text {
+.greeting-text {
         font-family: 'Brush Script MT', cursive; /* Cursive handwriting effect */
         font-size: 1.2rem; /* Slightly larger font size */
         @keyframes animtext { 
@@ -558,5 +602,74 @@ hr{
                 width: 0;
             transition: all 2s ease-in-out;
             } 
-        
+        }
     }
+        
+/* Full-screen reader view */
+.reader-view {
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow-y: auto; /* Enable scrolling for long content */
+    z-index: 1000;
+    padding: 1.5rem;
+}
+
+.reader-view .content {
+    max-width: 800px; /* Limits width for readability on larger screens */
+    width: 100%;
+    margin: 0 auto;
+}
+
+@media (max-width: 768px) {
+    /* Adjust font and padding for mobile devices */
+    .reader-view {
+        font-size: 16px;
+        line-height: 1.4;
+        padding: 1rem;
+    }
+};
+
+@media (max-width: 576px) {
+    /* Further adjust for very small screens */
+    .reader-view {
+        font-size: 15px;
+        line-height: 1.3;
+        padding: 0.8rem;
+    }
+};
+/* Reusable classes for different types of anatomical terms */
+.nerve { 
+    background-color: rgb(229, 229, 168); 
+    font-weight: bold; 
+}
+
+.nucleus { 
+    background-color: rgb(239, 187, 147); 
+    font-weight: bold; 
+}
+
+.artery { 
+    background-color: rgb(227, 159, 168); 
+    font-weight: bold; 
+} 
+.vein{
+    background-color: rgb(139, 155, 227); 
+    font-weight: bold;
+}/* Artery and vein use the same color */
+
+.foramina { 
+    background-color: #e4d6c4; /* Pastel brown */
+    font-weight: bold; 
+}
+.reference {
+    font-style: italic;
+    color: #007BFF !important; /* Link color */
+    text-decoration: underline !important;
+}
+.article-headers{
+    font-weight: bold;
+    font-size: 1.1rem;
+    background-color: rgb(221, 221, 146);
+}

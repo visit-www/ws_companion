@@ -119,6 +119,31 @@
         {% block content %}
     <!--this is placeholder for contents-->
         {% endblock %}
+    <!-- This is placeholder for references-->
+        {% block references %}
+        <div class="references-container d-flex justify-content-start p-3">
+            
+            {% if references %}
+                <div class="card p-3 w-100 text-start pastel-light-peach ">
+                    <h2 class="card-title">References</h2>
+                    <ol class="card-body text-primary">
+                    {% for reference in references %}
+                        <li>
+                            <a href="{{ url_for('content_routes.view_reference', category=reference.category, display_name='References', reference_id=reference.id) }}" target="_blank">{{ reference.title }}</a>
+
+
+                        </li>
+                    {% endfor %}
+                    </ol>
+                </div>
+            {% else %}
+            <div clas="d-flex justify-content-end">
+                <p class="text-muted">No references available for this page.</p>
+            </div>
+            {% endif %}
+        </div>
+        
+        {% endblock %}
 
         <!-- Footer -->
         {% block footer %}
@@ -150,6 +175,8 @@
             </div>
         </footer>
         {% endblock %}
+        
+
     </div>
 
     {% block script %}

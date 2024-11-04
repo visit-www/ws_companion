@@ -1,0 +1,54 @@
+{
+    "user": {
+        "id": "2d1b41a9-e39c-448a-946d-b6eaf4f26a16",
+        "username": "testuser1",
+        "password": "scrypt:32768:8:1$YivPLDXFOHMN6y8a$3d45f0ea7cfda68bec1843210186af4d8f9b4f173010de68e97bf11497604cdeb7b30a8bb1bceb89a5c4facebf68f4425fa426e90076dc3c212e60583b256c84",
+        "email": "lotusheart2016@gmail.com",
+        "is_paid": false,
+        "is_admin": false,
+        "status": "inactive",
+        "created_at": "2024-09-24 03:27:41.130251",
+        "totp_secret": null,
+        "recovery_phone": "+447541281940",
+        "recovery_email": null
+    },
+    "profile": {
+        "id": "6eb7a592-463b-4ab5-bb2f-0c8ea3c39f84",
+        "user_id": "2d1b41a9-e39c-448a-946d-b6eaf4f26a16",
+        "profile_pic": "IMG_6666.jpeg",
+        "profile_pic_path": "/Users/zen/data-science/projects/ws_companion/user_data/2d1b41a9-e39c-448a-946d-b6eaf4f26a16/profile_pic/IMG_6666.jpeg",
+        "preferred_categories": "guidelines,classifications,differential_diagnosis,vetting_tools,anatomy,curated_contents,report_checker,rad_calculators,tnm_staging,image_search,physics,governance_audits,courses,research_tools,music,report_template",
+        "preferred_modules": "head_and_neck,neuroradiology,chest,cardiovascular,breast,gastrointestinal,abdominal,genitourinary,musculoskeletal,vascular,pediatric,oncologic,emergency,interventional,nuclear_medicine,radiographers,others",
+        "created_at": "2024-09-24 03:27:41.136815",
+        "updated_at": "2024-10-16 14:46:46.486714"
+    },
+    "user_data": [
+        {
+            "id": "72252768-e892-4dd8-9ed9-0c4223535899",
+            "user_id": "2d1b41a9-e39c-448a-946d-b6eaf4f26a16",
+            "content_id": null,
+            "interaction_type": "logged_out",
+            "last_interaction": "2024-10-16 14:46:58.666589",
+            "feedback": null,
+            "content_rating": null,
+            "time_spent": 0,
+            "last_login": "2024-10-15 21:40:26.644525",
+            "current_login": "2024-10-16 14:46:32.608685",
+            "session_start_time": null,
+            "login_count": 43
+        }
+    ],
+    "user_content_states": [
+        {
+            "id": "80523a60-2906-4fe9-b013-632131327a14",
+            "content_id": null,
+            "user_id": "2d1b41a9-e39c-448a-946d-b6eaf4f26a16",
+            "modified_filepath": null,
+            "annotations": null,
+            "created_at": "2024-09-24 03:27:41.136901",
+            "updated_at": "2024-09-24 03:27:41.136901"
+        }
+    ],
+    "report_templates": [],
+    "feedbacks": []
+}

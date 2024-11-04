@@ -1,0 +1,214 @@
+
+<!-- Content container - green backgraoun or can change ot yellow or whatever -->
+<div class="p-5 pastel-light-yellow shadow-lg rounded">
+    <!-- Container for Content Header and Button to expand/collapse contents of the article -->
+    <div>
+        <div class="content-header d-flex justify-content-lg-between flex-wrap align-items-center mb-3">
+            <div>
+                <h2 class="text-danger">Mandibular Nerve</h2>
+            </div>
+            <!--choiise dat-bs-traget=".someclass" to target all content with this class-->
+            <div>
+                <button class="btn btn-sm btn-danger rounded-3 w-100 btn-group-toggle" type="button" data-bs-toggle="collapse" data-bs-target=".collapsible-contents" aria-expanded="false" aria-controls="collapsible-content">
+                    Expand/Collapse Contents
+                </button>
+            </div>
+        </div>
+    </div>
+    <hr class="w-50">
+
+    <!-- Container for artilce-->
+    <div class="row g-3 mt-2">
+        
+        <!-- Section : Introduction-->
+        
+        <div class="section-heading row mb-0">
+            <div class="section-title col-auto pastel-light-yellow">
+                <h2 class="text-dark display-6 text-header-mobile text-start p-2 rounded-3">Introduction</h2>
+            </div>
+            <div class="section-contents col-12 card border-0 p-3 text-start pastel-light-yellow">
+                <p class="card-text fst-italic text-para-mobile">
+                    Mandibular (V3) nerve is the largest of the three divisions of the Fifth cranial nerve (Trigeminal Nerve).
+                </p>
+            </div>
+        </div>
+        <hr class="w-25">
+
+        <!-- Section 2: example section -->
+        <!--Section heading-->
+        <div class="row mb-0">
+            <!-- Section heading -->
+            <div class="col-auto pastel-light-yellow">
+                <h2 class="display-6 text-header-mobile text-start p-2 rounded-3">Additional Content</h2>
+            </div>
+            <!-- Section heading description and /or button to collapse/expand section content (button can be used to target come contents if needed) -->
+            <div class="section-contents col-12 card border-0 p-3 text-start pastel-light-yellow">
+                <p>Introduction to additional content 
+                    <button class="btn-yellow-main btn p-0" data-bs-toggle="collapse" data-bs-target="#additional-content" aria-expanded="false" aria-controls="additional-content">Read More</button>
+                </p>
+            </div>
+        </div>
+                
+        <!-- Section Content : Add collapse and collapsible-contents class to this div to allow operation from expand/collapse toggle button-->
+        <div class="row row-col-2 row-col-sm-1 gap-2 d-flex justify-content-between collapse collapsible-contents" id="additional-content">
+            <!-- Example of List text -->
+            <div class="card col-4 text-start pastel-light-yellow text-para-mobile>
+                <ol class="ps-3">
+                    <li>Some additional content</li>
+                    <li>Further details</li>
+                </ol>
+            </div>
+            <!--Example of Button for Scrollable Image Container -->
+            <button class="btn-yellow-main btn p-0" onclick="toggle_image_scroller('container_ids', 'artilce_title')">
+                button text</button>
+            <!-- Scrollable Image Container -->
+            <div class="col-5 row g-2 bg-dark overflow-auto" style="display: none; min-height: 400px;" id="container_id1">
+                <div class="col w-75 m-auto row row-cols-auto">
+                    <!-- Images dynamically added by JavaScript -->
+                </div>
+            </div>
+            <!-- Example of Grid Image Container -->
+            <button class="btn-yellow-main btn p-0" onclick="toggle_image_gird('container_ids', 'artilce_title')">
+                button text</button>
+            <div class="col-5 row g-2 bg-dark overflow-auto" style="display: none; min-height: 400px;" id="container_id2">
+                <div class="col w-75 m-auto row row-cols-auto">
+                    <!-- Images dynamically added by JavaScript -->
+                </div>
+            </div>
+            <!-- Example of image toggle  button -->
+            <p class="card-text fst-italic text-para-mobile text-start btn-outline-secondary" onclick="toggleImage('imageid')">button text</p>
+            <img src="/static/assets/images/image.jpeg" id="imageid" class="img-fluid mt-3 collapsible-contents">
+        </div>
+    </div>
+</div>
+<!-- Script to operate toggle  buttons for image container : Pass article_title and container_id as arguements to this button function. The images stored in  "/creatives_folder/article_title/images/image_stacks/container_id" will be rendered in the image container -->
+<script>
+    function toggle_image_scroller(container_id, article_title) {
+        // Select the container element
+        const container = document.getElementById(container_id);
+    
+        // Check if the container is already visible
+        if (container.style.display === 'block') {
+            // If visible, hide the container
+            container.style.display = 'none';
+        } else {
+            // If not visible, load images in scroll layout and show the container
+            load_image_scroller(container, article_title);
+            container.style.display = 'block';
+        }
+    }
+    
+    function toggle_image_grid(container_id, article_title) {
+        // Select the container element
+        const container = document.getElementById(container_id);
+    
+        // Check if the container is already visible
+        if (container.style.display === 'block') {
+            // If visible, hide the container
+            container.style.display = 'none';
+        } else {
+            // If not visible, load images in grid layout and show the container
+            load_image_grid(container, article_title);
+            container.style.display = 'block';
+        }
+    }
+    
+    function load_image_scroller(container, article_title) {
+        // Define the image path based on the article title and container ID
+        const imagePath = `/creatives_folder/${article_title}/images/image_stacks/${container.id}/`;
+    
+        // Clear any existing content in the container
+        container.innerHTML = '';
+        // Define a variable for the image index
+        let i = 1;
+        
+        // Function to load images sequentially in vertical scroll layout
+        function loadImage() {
+            // Create an image element
+            const img = document.createElement('img');
+            
+            const source = imagePath + `img_${container.id}_${i}.jpeg`;
+            img.src = source;  // Set the full URL
+            
+            // Add error handling to stop loading if image does not exist
+            img.onerror = function() {
+                return;
+            };
+            // On successful image load, add the image to the container
+            img.onload = function() {
+                img.classList.add('img-fluid', 'mt-3');  // Add Bootstrap classes for styling
+                img.alt = container.id + ' img' + i;
+                container.appendChild(img);
+                i++;
+                loadImage();
+            };
+        }
+        // Start loading images
+        loadImage();
+    
+        container.style.display = 'block';
+    }
+    
+    function load_image_grid(container, article_title) {
+        // Define the image path based on the article title and container ID
+        const imagePath = `/creatives_folder/${article_title}/images/image_stacks/${container.id}/`;
+    
+        // Clear any existing content in the container
+        container.innerHTML = '';
+        
+        // Bootstrap row to contain images in a grid layout
+        const row = document.createElement('div');
+        row.classList.add('row', 'gx-3', 'gy-3');  // Bootstrap row with gap for spacing
+    
+        let i = 1;
+        
+        // Function to load images in grid layout
+        function loadImage() {
+            // Create an image element
+            const img = document.createElement('img');
+            
+            const source = imagePath + `img_${container.id}_${i}.jpeg`;
+            img.src = source;
+            
+            // Add error handling to stop loading if image does not exist
+            img.onerror = function() {
+                return;
+            };
+            
+            img.onload = function() {
+                img.classList.add('img-fluid');  // Add Bootstrap classes for responsive styling
+                img.alt = container.id + ' img' + i;
+    
+                // Set a minimum height of 400px
+                img.style.minHeight = '400px';
+                img.style.objectFit = 'cover'; // Maintain aspect ratio
+    
+                // Wrap the image in a Bootstrap column
+                const col = document.createElement('div');
+                col.classList.add('col-6', 'col-md-4', 'col-lg-3');  // Responsive columns for different screen sizes
+                col.appendChild(img);
+    
+                row.appendChild(col);
+                i++;
+                loadImage();
+            };
+        }
+        
+        loadImage();
+    
+        container.appendChild(row);
+        container.style.display = 'block';
+    }
+  // Generic function to toggle the display of an image based on its ID
+    function toggleImage(imageId) {
+        const img = document.getElementById(imageId);
+        if (img.style.display === 'none' || img.style.display === '') {
+            img.style.display = 'block';
+        } else {
+            img.style.display = 'none';
+            }
+        }
+
+</script>
+    
+    
