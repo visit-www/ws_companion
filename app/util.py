@@ -131,6 +131,7 @@ def add_default_contents(contents_data):
                 category=content_data['category'],
                 module=content_data['module'],
                 status=content_data['status'],
+                external_url=content_data.get('external_url'),
                 embed_code=content_data['embed_code'],
                 description=content_data['description'],
                 created_by=content_data['created_by'],
@@ -158,6 +159,7 @@ def load_default_data():
     except FileNotFoundError:
         print("default_data.json not found")
         return None
+    
 from flask import url_for
 from markupsafe import Markup
 
