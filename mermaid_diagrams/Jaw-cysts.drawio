@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e" border="50" scale="3" compressed="false" locked="false" pages="2">
     <diagram name="Main page" id="main-layer">
-        <mxGraphModel dx="919" dy="1672" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="none" math="1" shadow="0">
+        <mxGraphModel dx="1715" dy="1673" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" background="none" math="1" shadow="0">
             <root>
                 <object label="" id="X5NqExCQtvZxIxQ7pmgY-0">
                     <mxCell/>
@@ -106,12 +106,12 @@
                     </mxCell>
                 </UserObject>
                 <object label="&lt;h1 style=&quot;text-align: center; margin-top: 0px;&quot;&gt;&lt;font&gt;&lt;span style=&quot;color: rgb(102, 102, 102); font-size: 17px;&quot;&gt;Residual cyst:&lt;/span&gt;&lt;/font&gt;&lt;/h1&gt;&lt;h1 style=&quot;text-align: center; margin-top: 0px;&quot;&gt;&lt;b style=&quot;background-color: initial; font-size: 17px; color: rgb(102, 102, 102); text-align: justify;&quot;&gt;&lt;i&gt;Same as Radicular cyst but is diagnosed when seen following dental extraction.&lt;/i&gt;&lt;/b&gt;&lt;/h1&gt;&lt;p&gt;&lt;/p&gt;" placeholders="1" tags="popup" id="residual-cyst">
-                    <mxCell style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=1;fontFamily=Times New Roman;fillColor=#fff2cc;strokeColor=#d6b656;glass=0;shadow=1;comic=1;strokeWidth=2;" parent="1" vertex="1">
+                    <mxCell style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=1;fontFamily=Times New Roman;fillColor=#fff2cc;strokeColor=#d6b656;glass=0;shadow=1;comic=1;strokeWidth=2;" parent="1" vertex="1" visible="0">
                         <mxGeometry x="-780" y="360" width="510" height="140" as="geometry"/>
                     </mxCell>
                 </object>
                 <object label="" tags="popup" id="primordial-cyst-img-1">
-                    <mxCell style="shape=image;imageAspect=0;aspect=fixed;verticalLabelPosition=bottom;verticalAlign=top;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;image=https://www.researchgate.net/profile/Zafar-Neyaz/publication/5550311/figure/fig1/AS:422355576070145@1477708824970/Primordial-cyst-Panoramic-radiograph-shows-a-welldefined-radiolucency-in-the-location-of.png;strokeWidth=80;imageBorder=default;shadow=1;" parent="1" vertex="1" visible="0">
+                    <mxCell style="shape=image;imageAspect=0;aspect=fixed;verticalLabelPosition=bottom;verticalAlign=top;sketch=1;hachureGap=4;jiggle=2;curveFitting=1;fontFamily=Architects Daughter;fontSource=https%3A%2F%2Ffonts.googleapis.com%2Fcss%3Ffamily%3DArchitects%2BDaughter;image=https://www.researchgate.net/profile/Zafar-Neyaz/publication/5550311/figure/fig1/AS:422355576070145@1477708824970/Primordial-cyst-Panoramic-radiograph-shows-a-welldefined-radiolucency-in-the-location-of.png;strokeWidth=80;imageBorder=default;shadow=1;" parent="1" vertex="1">
                         <mxGeometry x="-360" y="200" width="520" height="520" as="geometry"/>
                     </mxCell>
                 </object>
