@@ -19,16 +19,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Add the recovery_phone column with so.Mapped[str] equivalent
-    op.add_column('users',
-        sa.Column('recovery_phone', sa.String(length=20), unique=True, nullable=True)
-    )
-    
-    # Add or update the recovery_email column with so.Mapped[str] equivalent
-    op.add_column('users',
-        sa.Column('recovery_email', sa.String(length=150), unique=True, nullable=True)
-    )
-
+    # Both columns already exist — no changes needed
+    pass
 
 def downgrade() -> None:
     # Remove the recovery_phone column during downgrade
