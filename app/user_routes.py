@@ -716,3 +716,169 @@ def security_manager():
         flash('Security management functionality will be implemented here.', 'info')
     return render_template('account_security.html')
 
+# =======
+# CPD dashboard mangment ROUTES
+# =======
+from app.models import UserCPDState, CPDLog
+from dateutil.parser import parse as parse_date  # Add at the top
+
+def safe_parse_date(text: str):
+    try:
+        return parse_date(text, fuzzy=True).date()
+    except Exception:
+        return None
+@app_user_bp.route('/cpd/dashboard', methods=['GET', 'POST'])
+@login_required
+def cpd_dashboard():
+    saved_cycles = db.session.query(UserCPDState).filter_by(user_id=current_user.id).order_by(UserCPDState.created_at.desc()).all()
+    cpd_state = None
+
+    # Handle request to start a new cycle (force showing form)
+    if request.method == 'GET' and request.args.get('new_cycle') == 'true':
+        cpd_state = None
+
+    # ✅ Only check cycle_id/session if not in new_cycle mode
+    elif request.method == 'GET':
+        selected_cycle_id = request.args.get('cycle_id') or session.get('active_cpd_cycle_id')
+        if selected_cycle_id:
+            cpd_state = db.session.get(UserCPDState, selected_cycle_id)
+
+    # Handle creation of a new cycle
+    print("METHOD:", request.method)
+    print("ARGS:", request.args)
+    print("FORM:", request.form)
+    print("new_cycle?", request.args.get('new_cycle'))
+
+    if request.method == 'POST' and request.args.get('new_cycle') == 'true':
+        print("🛠 POST request to create new appraisal cycle received")
+        appraisal_start = request.form.get('appraisal_cycle_start')
+        appraisal_end = request.form.get('appraisal_cycle_end')
+
+        if appraisal_start and appraisal_end:
+            current_year = datetime.now().year
+            appraisal_month = appraisal_start.split()[0]
+            current_cpd_start = f"{appraisal_month} {current_year}"
+            current_cpd_end = f"{appraisal_month} {current_year + 1}"
+
+            new_state = UserCPDState(
+                user_id=current_user.id,
+                appraisal_cycle_start=appraisal_start,
+                appraisal_cycle_end=appraisal_end,
+                current_cpd_year_start=current_cpd_start,
+                current_cpd_year_end=current_cpd_end
+            )
+            db.session.add(new_state)
+            db.session.commit()
+            session['active_cpd_cycle_id'] = new_state.id
+            flash("✅ New appraisal cycle saved successfully.", "success")
+            return redirect(url_for('app_user.cpd_dashboard'))
+
+    # Gather CPD logs and split by current year
+    cpd_logs = db.session.query(CPDLog).filter_by(user_id=current_user.id).all()
+    current_year_logs, previous_year_logs = [], []
+    total_current, total_previous = 0, 0
+
+    if cpd_state:
+        for log in cpd_logs:
+            if (
+                log.cpd_year_start == cpd_state.current_cpd_year_start and
+                log.cpd_year_end == cpd_state.current_cpd_year_end
+            ):
+                total_current += (log.cpd_points_claimed or 0) + (1 if log.has_reflection else 0)
+                current_year_logs.append(log)
+            else:
+                total_previous += (log.cpd_points_claimed or 0) + (1 if log.has_reflection else 0)
+                previous_year_logs.append(log)
+
+    total_combined = total_current + total_previous
+    remaining = max(0, 250 - total_combined)
+
+    return render_template(
+        'cpd_dashboard.html',
+        cpd_state=cpd_state,
+        saved_cycles=saved_cycles,
+        total_current=total_current,
+        total_previous=total_previous,
+        total_combined=total_combined,
+        remaining=remaining,
+        current_year_logs=current_year_logs,
+        previous_year_logs=previous_year_logs
+    )
+
+
+
+from app.forms import AddCPDLogForm
+from app.models import CPDActivityType
+import uuid
+@app_user_bp.route('/cpd/add', methods=['GET', 'POST'])
+@login_required
+def cpd_add():
+    from .forms import AddCPDLogForm
+    from .models import CPDActivityType, CPDLog, UserCPDState
+    from werkzeug.utils import secure_filename
+    import os
+
+    form = AddCPDLogForm()
+    user_id = current_user.id
+
+    # Load activity types for dropdown
+    form.activity_type_id.choices = [(str(a.id), a.name) for a in db.session.query(CPDActivityType).all()]
+
+    if request.method == 'POST' and form.validate_on_submit():
+        # Load user CPD state
+        cpd_state = db.session.query(UserCPDState).filter_by(user_id=user_id).first()
+        if not cpd_state:
+            flash("Please set your appraisal cycle first on the CPD dashboard.", "warning")
+            return redirect(url_for("app_user.cpd_dashboard"))
+
+        files = request.files.getlist("certificate_files")
+        uploaded_paths = []
+        filenames = []
+
+        for file in files:
+            if file:
+                filename = secure_filename(file.filename)
+                upload_dir = os.path.join(userdir, str(user_id), "cpd_certificates")
+                os.makedirs(upload_dir, exist_ok=True)
+                file_path = os.path.join(upload_dir, filename)
+                file.save(file_path)
+                uploaded_paths.append(file_path)
+                filenames.append(filename)
+
+        new_log = CPDLog(
+            user_id=user_id,
+            activity_type_id=int(form.activity_type_id.data),
+            start_date=form.start_date.data,
+            end_date=form.end_date.data,
+            cpd_year_start=cpd_state.current_cpd_year_start,
+            cpd_year_end=cpd_state.current_cpd_year_end,
+            appraisal_cycle_start=cpd_state.appraisal_cycle_start,
+            appraisal_cycle_end=cpd_state.appraisal_cycle_end,
+            title=form.title.data,
+            description=form.description.data,
+            reflection=form.reflection.data,
+            has_reflection=form.has_reflection.data,
+            cpd_points_guideline=form.cpd_points_guideline.data,
+            cpd_points_claimed=form.cpd_points_claimed.data,
+            certificate_filename=";".join(filenames),
+            certificate_filepath=";".join(uploaded_paths),
+            tags=form.tags.data,
+            notes=form.notes.data,
+        )
+
+        db.session.add(new_log)
+        db.session.commit()
+        flash("CPD entry added successfully!", "success")
+        return redirect(url_for("app_user.cpd_dashboard"))
+
+    return render_template("cpd_add.html", form=form)
+
+#=====================
+# This is dummy /placholder route ofr exproting the cpd log #
+#====================
+@app_user_bp.route('/cpd/export', methods=['GET'])
+@login_required
+def export_cpd_log():
+    # Placeholder implementation
+    flash("Export functionality coming soon!", "info")
+    return redirect(url_for('app_user.cpd_dashboard'))

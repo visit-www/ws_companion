@@ -5,11 +5,15 @@ from typing import Optional
 from werkzeug.security import check_password_hash, generate_password_hash
 from flask_sqlalchemy import SQLAlchemy
 from enum import Enum as PyEnum
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date
 import json
 import uuid  # Import the UUID library
 import sqlalchemy.orm as so
 from typing import Type
+from sqlalchemy import Column, String, Integer, DateTime, Text, ForeignKey
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
+
 db = SQLAlchemy()  # Needed for Flask-SQLAlchemy integration
 # Initialize the registry and Base class using SQLAlchemy ORM
 app_registry: so.registry = so.registry()
@@ -109,7 +113,8 @@ class User(UserMixin, Base):
     totp_secret:so.Mapped[Optional[str]] = sa.Column(sa.String(32), nullable=True)
     recovery_phone: so.Mapped[Optional[str]] = sa.Column(sa.String(20), unique=True, nullable=True)  # Updated to Optional
     recovery_email: so.Mapped[Optional[str]] = sa.Column(sa.String(150), unique=True, nullable=True)  # Updated to Optional
-
+    work_sessions: so.Mapped[list["WorkSession"]] = so.relationship("WorkSession", back_populates="user", cascade="all, delete-orphan")
+    cpd_logs: so.Mapped[list["CPDLog"]] = so.relationship( "CPDLog", back_populates="user", cascade="all, delete-orphan")
     def set_password(self, password):
         self.password = generate_password_hash(password)
 
@@ -345,6 +350,108 @@ class UserFeedback(Base):
     def __repr__(self) -> str:
         return f"<UserFeedback(id={self.id}, user_display_name='{self.user_display_name}', feedback='{self.feedback[:20]}...')>"
 
+class WorkSession(Base):
+    __tablename__ = 'work_sessions'
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
+
+    start_time = Column(DateTime, nullable=False, default=datetime.utcnow)
+    end_time = Column(DateTime, nullable=True)
+
+    num_cases_reported = Column(Integer, nullable=True)
+    session_type = Column(String(50), nullable=True)  # e.g., 'remote', 'on-call', 'clinic'
+    modalities_handled = Column(String(200), nullable=True)  # e.g., 'CT, MRI, XR'
+
+    notes = Column(Text, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    user = relationship("User", back_populates="work_sessions")
+
+    def duration(self):
+        if self.start_time and self.end_time:
+            return (self.end_time - self.start_time).total_seconds() / 3600
+        return None
+    
+class CPDActivityType(Base):
+    __tablename__ = "cpd_activity_types"
+
+    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
+    name: so.Mapped[str] = sa.Column(sa.String(150), unique=True, nullable=False)  # e.g., "Distance and online learning"
+    default_credits: so.Mapped[str] = sa.Column(sa.String(50), nullable=False)  # e.g., "1/hour", "4", etc.
+
+    def __repr__(self):
+        return f"<CPDActivityType(name={self.name}, default_credits={self.default_credits})>"
+    
+class CPDLog(Base):
+    __tablename__ = 'cpd_logs'
+
+    id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
+    user_id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), sa.ForeignKey('users.id'), nullable=False)
+    activity_type_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey("cpd_activity_types.id"), nullable=False)
+
+    # Dates and Time Periods
+    start_date: so.Mapped[datetime] = sa.Column(sa.DateTime, nullable=False)
+    end_date: so.Mapped[datetime] = sa.Column(sa.DateTime, nullable=False)
+    cpd_year_start: so.Mapped[str] = sa.Column(sa.String(20), nullable=False)  # e.g., "Apr 2024"
+    cpd_year_end: so.Mapped[str] = sa.Column(sa.String(20), nullable=False)
+    appraisal_cycle_start: so.Mapped[str] = sa.Column(sa.String(20), nullable=False)
+    appraisal_cycle_end: so.Mapped[str] = sa.Column(sa.String(20), nullable=False)
+
+    # CPD Activity Info
+    title: so.Mapped[str] = sa.Column(sa.String(255), nullable=False)
+    description: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
+    reflection: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
+    has_reflection: so.Mapped[bool] = sa.Column(sa.Boolean, default=False)
+
+    # CPD Credits
+    cpd_points_guideline: so.Mapped[Optional[str]] = sa.Column(sa.String(50), nullable=True)  # e.g., from activity type
+    cpd_points_claimed: so.Mapped[Optional[float]] = sa.Column(sa.Float, nullable=True)
+
+    # Certificates
+    certificate_filename: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)
+    certificate_filepath: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)
+
+    tags: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
+    notes: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
+
+    # Metadata
+    created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.utcnow)
+    updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    # Relationships
+    user: so.Mapped['User'] = so.relationship("User", back_populates="cpd_logs")
+    activity_type: so.Mapped['CPDActivityType'] = so.relationship("CPDActivityType")
+
+    def __repr__(self):
+        return f"<CPDLog(title={self.title}, claimed={self.cpd_points_claimed})>"
+
+class UserCPDState(Base):
+    __tablename__ = 'user_cpd_states'
+
+    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
+    user_id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+
+    appraisal_cycle_start: so.Mapped[str] = sa.Column(sa.String(20), nullable=False)  # e.g. "May 2022"
+    appraisal_cycle_end: so.Mapped[str] = sa.Column(sa.String(20), nullable=False)    # e.g. "May 2027"
+    current_cpd_year_start: so.Mapped[str] = sa.Column(sa.String(20), nullable=False)  # e.g. "May 2024"
+    current_cpd_year_end: so.Mapped[str] = sa.Column(sa.String(20), nullable=False)    # e.g. "May 2025"
+    
+    appraisal_cycle_start_date: so.Mapped[date] = sa.Column(sa.Date, nullable=True)
+    appraisal_cycle_end_date: so.Mapped[date] = sa.Column(sa.Date, nullable=True)
+    current_cpd_year_start_date: so.Mapped[date] = sa.Column(sa.Date, nullable=True)
+    current_cpd_year_end_date: so.Mapped[date] = sa.Column(sa.Date, nullable=True)
+    
+    created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc))
+    updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
+
+    user: so.Mapped['User'] = sa.orm.relationship("User", backref=so.backref("cpd_state", uselist=False, cascade="all, delete-orphan"))
+
+    def __repr__(self):
+        return f"<UserCPDState(user_id={self.user_id}, current_cpd_year={self.current_cpd_year_start}-{self.current_cpd_year_end})>"
+
 #----------------------------------------------------------------
 # Define event listeners
 @sa.event.listens_for(Content, 'before_insert')
@@ -362,3 +469,4 @@ def update_contents_table(mapper, connection, target):
     except (ValueError, TypeError):
         # Initialize version as float
         target.version = 1.0
+        
