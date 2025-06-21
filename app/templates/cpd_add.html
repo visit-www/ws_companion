@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+  <h2 class="mb-4">Add CPD Activity</h2>
+  <form method="POST" enctype="multipart/form-data">
+    {{ form.hidden_tag() }}
+
+    <div class="mb-3">
+      {{ form.title.label(class="form-label") }}
+      {{ form.title(class="form-control") }}
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        {{ form.start_date.label(class="form-label") }}
+        {{ form.start_date(class="form-control") }}
+      </div>
+      <div class="col-md-6 mb-3">
+        {{ form.end_date.label(class="form-label") }}
+        {{ form.end_date(class="form-control") }}
+      </div>
+    </div>
+
+    <div class="mb-3">
+      {{ form.activity_type.label(class="form-label") }}
+      {{ form.activity_type(class="form-select") }}
+    </div>
+
+    <div class="row">
+      <div class="col-md-6 mb-3">
+        {{ form.cpd_points_guideline.label(class="form-label") }}
+        {{ form.cpd_points_guideline(class="form-control", readonly=True) }}
+      </div>
+      <div class="col-md-6 mb-3">
+        {{ form.cpd_points_claimed.label(class="form-label") }}
+        {{ form.cpd_points_claimed(class="form-control") }}
+      </div>
+    </div>
+
+    <div class="form-check mb-3">
+      {{ form.has_reflection(class="form-check-input") }}
+      {{ form.has_reflection.label(class="form-check-label") }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.description.label(class="form-label") }}
+      {{ form.description(class="form-control", rows=3) }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.reflection.label(class="form-label") }}
+      {{ form.reflection(class="form-control", rows=3) }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.external_links.label(class="form-label") }}
+      {{ form.external_links(class="form-control", rows=2, placeholder="https://...") }}
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label">Upload Certificate(s):</label>
+      {% for field in form.certificate_files %}
+        {{ field(class="form-control mb-2") }}
+      {% endfor %}
+    </div>
+
+    <div class="mb-3">
+      {{ form.tags.label(class="form-label") }}
+      {{ form.tags(class="form-control", placeholder="keywords, tags") }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.notes.label(class="form-label") }}
+      {{ form.notes(class="form-control", rows=2) }}
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save CPD Entry</button>
+  </form>
+</div>
+
+<script>
+  const activitySelect = document.querySelector('select[name="activity_type"]');
+  const guidelineField = document.querySelector('input[name="cpd_points_guideline"]');
+  const options = [...activitySelect.options];
+
+  activitySelect.addEventListener('change', function () {
+    const selected = options.find(o => o.value == this.value);
+    if (selected) {
+      const match = selected.textContent.match(/\(([^)]+)\)/);
+      guidelineField.value = match ? match[1] : '';
+    }
+  });
+</script>
+{% endblock %}

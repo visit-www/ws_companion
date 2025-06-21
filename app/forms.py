@@ -1,7 +1,8 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed
-from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField, SelectField, IntegerField,DateField,FieldList,FormField
+from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextAreaField, SelectField, IntegerField,DateField,FloatField, FileField, FieldList, FormField
 from wtforms.validators import DataRequired, Length, EqualTo, Optional, URL
+
 class LoginForm(FlaskForm):
     username = StringField('Username', validators=[DataRequired()], render_kw={"placeholder": "Enter Username", "class": "form-control"})
     password = PasswordField('Password', validators=[DataRequired()], render_kw={"placeholder": "Enter Password", "class": "form-control"})
@@ -96,3 +97,22 @@ class UploadForm(FlaskForm):
 class AddRadiologyCalculatorForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired(), Length(max=500)])
     submit = SubmitField('Add Calculator')
+    
+class AddCPDLogForm(FlaskForm):
+    title = StringField("Title", validators=[DataRequired()])
+    description = TextAreaField("Description", validators=[Optional()])
+    reflection = TextAreaField("Reflection", validators=[Optional()])
+    has_reflection = BooleanField("Include Reflection Bonus Point")
+    
+    start_date = DateField("Start Date", validators=[DataRequired()])
+    end_date = DateField("Completion Date", validators=[DataRequired()])
+    
+    activity_type = SelectField("Activity Type", coerce=int, validators=[DataRequired()])
+    cpd_points_guideline = StringField("RCR Recommended Points", validators=[Optional()])
+    cpd_points_claimed = FloatField("CPD Points Claimed", validators=[Optional()])
+
+    certificate_files = FieldList(FileField("Upload Certificate", validators=[FileAllowed(['pdf', 'jpg', 'png', 'jpeg'], 'Certificates only!')]), min_entries=3)
+    external_links = TextAreaField("External Links (one per line)", validators=[Optional()])
+
+    tags = StringField("Tags", validators=[Optional()])
+    notes = TextAreaField("Additional Notes", validators=[Optional()])

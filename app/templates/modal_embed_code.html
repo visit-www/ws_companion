@@ -25,3 +25,49 @@
     </div>
   </div>
 </div>
+<!-- Modal to show CPD appraisal cylce information-->
+<!-- Appraisal Info Modal -->
+<style>
+  /* Optional stronger override to ensure width is respected */
+  #appraisalInfoModal .modal-dialog {
+    max-width: 480px !important;
+    margin: auto;
+  }
+
+  #appraisalInfoModal .modal-content {
+    background-color: #fefcfb; /* subtle pastel base */
+    border: 1px solid #e3e3e3;
+    border-radius: 1rem;
+  }
+
+  #appraisalInfoModal .modal-header {
+    background-color: #e8f0ff;
+    border-bottom: none;
+  }
+
+  #appraisalInfoModal .modal-body {
+    font-size: 0.92rem;
+    color: #444;
+  }
+</style>
+
+<div class="modal fade" id="appraisalInfoModal" tabindex="-1" aria-labelledby="appraisalInfoModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content shadow-sm">
+      <div class="modal-header">
+        <h5 class="modal-title d-flex align-items-center text-primary" id="appraisalInfoModalLabel">
+          <i class="bi bi-info-circle-fill me-2"></i> About Appraisal Cycles
+        </h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p><strong>What is a GMC Appraisal Cycle and Revalidation?</strong></p>
+        <p>Revalidation is the process by which the GMC ensures doctors remain fit to practise. Every licensed doctor must undergo this process every five years.</p>
+        <p>Your revalidation is based on a series of annual appraisals that form a core part of demonstrating that you meet the standards in the GMC’s Good Medical Practice.</p>
+        <p>The period of 5 years is known as an <strong>appraisal cycle</strong>. At the end of this cycle, your Responsible Officer will submit a recommendation to the GMC for your revalidation.</p>
+        <p>Once revalidated, a new five-year appraisal cycle begins.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
