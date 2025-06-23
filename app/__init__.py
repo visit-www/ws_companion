@@ -2,7 +2,7 @@ from flask import Flask, request, redirect, url_for, flash,session,send_from_dir
 from flask_login import current_user
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
-
+import json
 from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
 from config import Config,userdir,basedir,creativesfolder
@@ -129,6 +129,13 @@ def create_app():
             session['show_warning'] = True
         else:
             session.pop('show_warning', None)
+    #======Add a Custom from_json Filter=====
+    
+    def from_json_filter(s):
+        try:
+            return json.loads(s) if s else []
+        except Exception:
+            return []
             
 # ================================================================
 # Functions to be executed before initialization
@@ -188,5 +195,7 @@ def create_app():
     log_dir = 'app/logs'
     os.makedirs(log_dir, exist_ok=True)  # Ensure the directory exists
     log_file = os.path.join(log_dir, 'app.log')
+    # Register custom Jinja filter for from_json
+    app.jinja_env.filters['from_json'] = from_json_filter
 
     return app

@@ -16,16 +16,6 @@
 </head>
 <body>
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-        {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show pastel-bg mx-3 mt-3" role="alert">
-            {{ message }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-        {% endfor %}
-    {% endif %}
-    {% endwith %}
     <!-- CSS Stylesheets -->
     
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Armata:wght@400&display=swap" />
@@ -109,32 +99,27 @@
     </div>
     {% endblock %}
     
-    
-
-
-
 <!-- Code to displace flash message -->
 
-<div aria-live="polite" aria-atomic="true" class="position-relative">
-    <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3" style="display: none;">
-        {% block messages %}
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="toast align-items-center custom-toast" role="alert" aria-live="assertive" aria-atomic="true">
-                            <div class="d-flex justify-content-center">
-                                <div class="toast-body text-white">
-                                    {{ message|safe|upper }}
-                                </div>
-                                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                            </div>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-        {% endblock %}
+    <div aria-live="polite" aria-atomic="true" class="position-relative z-3">
+        <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+                <div class="toast align-items-center text-white pastel-bg-{{ category }} border-0 fade" role="alert" aria-live="assertive" aria-atomic="true"
+                    data-bs-delay="{{ '999999' if category == 'danger' else '4000' }}">
+                <div class="d-flex">
+                    <div class="toast-body">
+                    {{ message|safe }}
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                </div>
+            {% endfor %}
+            {% endif %}
+        {% endwith %}
+        </div>
     </div>
-</div>
         <!-- Content Section -->
         {% block content %}
     <!--this is placeholder for contents-->

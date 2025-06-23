@@ -98,21 +98,43 @@ class AddRadiologyCalculatorForm(FlaskForm):
     title = StringField('Title', validators=[DataRequired(), Length(max=500)])
     submit = SubmitField('Add Calculator')
     
+from flask_wtf import FlaskForm
+from wtforms import (
+    StringField, TextAreaField, BooleanField, DateField,
+    SelectField, FloatField, FileField, FieldList
+)
+from wtforms.validators import DataRequired, Optional
+from flask_wtf.file import FileAllowed
+
+
 class AddCPDLogForm(FlaskForm):
     title = StringField("Title", validators=[DataRequired()])
     description = TextAreaField("Description", validators=[Optional()])
     reflection = TextAreaField("Reflection", validators=[Optional()])
     has_reflection = BooleanField("Include Reflection Bonus Point")
-    
-    start_date = DateField("Start Date", validators=[DataRequired()])
-    end_date = DateField("Completion Date", validators=[DataRequired()])
-    
-    activity_type = SelectField("Activity Type", coerce=int, validators=[DataRequired()])
+
+    start_date = DateField("Start Date", validators=[Optional()])
+    end_date = DateField("End Date", validators=[Optional()])
+
+    activity_type = SelectField(
+        "Activity Type",
+        coerce=int,
+        validators=[DataRequired()],
+        render_kw={"class": "form-select"}
+    )
+
     cpd_points_guideline = StringField("RCR Recommended Points", validators=[Optional()])
     cpd_points_claimed = FloatField("CPD Points Claimed", validators=[Optional()])
 
-    certificate_files = FieldList(FileField("Upload Certificate", validators=[FileAllowed(['pdf', 'jpg', 'png', 'jpeg'], 'Certificates only!')]), min_entries=3)
-    external_links = TextAreaField("External Links (one per line)", validators=[Optional()])
+    certificate_files = FieldList(
+        FileField(
+            "Upload Certificate",
+            validators=[FileAllowed(['docx', 'pdf', 'jpg', 'png', 'jpeg'], '❌ Only .docx, .pdf, .jpg, .png or .jpeg files are allowed.')]
+        ),
+        min_entries=3,
+        label="Upload up to 3 certificates"
+    )
 
+    external_links = TextAreaField("External Links (one per line)", validators=[Optional()])
     tags = StringField("Tags", validators=[Optional()])
     notes = TextAreaField("Additional Notes", validators=[Optional()])

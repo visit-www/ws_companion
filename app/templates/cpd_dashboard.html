@@ -2,16 +2,15 @@
 {% block content %}
 <div class="container py-4">
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for category, message in messages %}
-        <div class="alert alert-{{ category }} alert-dismissible fade show pastel-bg" role="alert">
-          {{ message }}
-          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
+  {% if not saved_cycles %}
+  <div class="alert alert-warning shadow-sm rounded p-3 mb-3">
+    <strong>⚠️ No appraisal cycles found.</strong><br>
+    To begin tracking CPD activities, please add your first appraisal cycle.
+  </div>
+  <a href="{{ url_for('app_user.cpd_dashboard', new_cycle='true') }}" class="btn btn-success mb-4">
+    ➕ Add New Appraisal Cycle
+  </a>
+  {% endif %}
 
   {% if saved_cycles %}
   <div class="mb-4 d-flex justify-content-between align-items-center flex-wrap">
@@ -21,11 +20,12 @@
       </label>
       <select class="form-select pastel-select" id="cycleSelect" onchange="selectCycle(this.value)">
         {% for cycle in saved_cycles %}
-          <option value="{{ cycle.id }}" {% if cpd_state and cpd_state.id == cycle.id %}selected{% endif %}>
-            {% if cycle.appraisal_cycle_start_date and cycle.appraisal_cycle_end_date %}
-              {{ cycle.appraisal_cycle_start_date.strftime('%d/%m/%Y') }} → {{ cycle.appraisal_cycle_end_date.strftime('%d/%m/%Y') }}
-            {% else %} ⚠️ Missing Date {% endif %}
-          </option>
+        <option value="{{ cycle.id }}" {% if cpd_state and cpd_state.id==cycle.id %}selected{% endif %}>
+          {% if cycle.appraisal_cycle_start_date and cycle.appraisal_cycle_end_date %}
+          {{ cycle.appraisal_cycle_start_date.strftime('%d/%m/%Y') }} → {{
+          cycle.appraisal_cycle_end_date.strftime('%d/%m/%Y') }}
+          {% else %} ⚠️ Missing Date {% endif %}
+        </option>
         {% endfor %}
       </select>
     </div>
@@ -44,62 +44,72 @@
   {% if appraisal_years %}
   <div class="row">
     {% for year in appraisal_years %}
-      {% set is_active = active_year and year.key == active_year.key %}
-      <div class="col-md-4 {% if is_active %}w-100{% endif %}">
-        {% if not active_year or is_active %}
-        <form method="POST" action="{{ url_for('app_user.set_active_cpd_year', year_key=year.key) }}">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit"
-            class="card shadow-sm my-2 p-3 w-100 text-start border-0 {% if is_active %}border-success bg-light{% else %}border-secondary{% endif %}">
-            <h5 class="mb-1">{{ year.start.strftime('%d/%m/%Y') }} → {{ year.end.strftime('%d/%m/%Y') }}</h5>
-            <p class="text-muted">Year: {{ year.label }}</p>
-          </button>
-        </form>
-        {% endif %}
-      </div>
-    {% endfor %}
-
-    {% if active_year %}
-    <div class="text-end mt-3">
-      <form method="POST" action="{{ url_for('app_user.clear_active_year') }}">
+    {% set is_active = active_year and year.key == active_year.key %}
+    <div class="col-md-4 {% if is_active %}w-100{% endif %}">
+      <form method="POST" action="{{ url_for('app_user.set_active_cpd_year', year_key=year.key) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="btn btn-outline-secondary">
-          <i class="bi bi-arrow-left"></i> Back to Year Selection
+        <button type="submit"
+          class="card shadow-sm my-2 p-3 w-100 text-start border-0 {% if is_active %}border-success bg-light{% else %}border-secondary{% endif %}"
+          {% if active_year and not is_active %}style="display: none;" {% endif %}>
+          <h5 class="mb-1">{{ year.start.strftime('%d/%m/%Y') }} → {{ year.end.strftime('%d/%m/%Y') }}</h5>
+          <p class="text-muted">Year: {{ year.label }}</p>
         </button>
       </form>
     </div>
-    {% endif %}
+    {% endfor %}
   </div>
   {% endif %}
 
   {% if active_year %}
+  <div class="text-end mt-3">
+    <form method="POST" action="{{ url_for('app_user.clear_active_year') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Year Selection
+      </button>
+    </form>
+  </div>
+
   <div class="card my-4 p-4 border-success bg-light shadow-sm">
-    <h5 class="mb-1">Appraisal Year: {{ active_year.start.strftime('%d/%m/%Y') }} → {{ active_year.end.strftime('%d/%m/%Y') }}</h5>
-    <p class="text-muted mb-2">Part of Cycle: {{ cpd_state.appraisal_cycle_start_date.strftime('%d/%m/%Y') }} → {{ cpd_state.appraisal_cycle_end_date.strftime('%d/%m/%Y') }}</p>
-    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div class="d-flex justify-content-between align-items-center flex-wrap">
+      <div>
+        <h5 class="mb-1">
+          Appraisal Year: {{ active_year.start.strftime('%d/%m/%Y') }} → {{ active_year.end.strftime('%d/%m/%Y') }}
+        </h5>
+        <p class="text-muted mb-2">
+          Part of Cycle: {{ cpd_state.appraisal_cycle_start_date.strftime('%d/%m/%Y') }} → {{
+          cpd_state.appraisal_cycle_end_date.strftime('%d/%m/%Y') }}
+        </p>
+      </div>
+      <div class="text-end">
+        <span class="badge rounded-pill 
+          {% if total_current >= 50 %}
+            bg-success
+          {% elif total_current >= 30 %}
+            bg-warning text-dark
+          {% else %}
+            bg-danger
+          {% endif %}">
+          Total CPD: {{ total_current }} pts
+        </span>
+      </div>
+    </div>
+
+    <hr class="my-3">
+
+    <div class="d-flex flex-wrap justify-content-start align-items-center gap-2" id="hide-on-export">
       <a href="{{ url_for('app_user.cpd_add', cycle_id=cpd_state.id) }}" class="btn btn-primary">
         <i class="bi bi-plus-circle me-1"></i> Add CPD Activity
       </a>
-      <a href="{{ url_for('app_user.upload_appraisal_docs', cycle_id=cpd_state.id) }}" class="btn btn-outline-success">
-        <i class="bi bi-upload me-1"></i> Upload Documents
-      </a>
+
       <a href="{{ url_for('app_user.export_cpd_log', cycle_id=cpd_state.id) }}" class="btn btn-outline-secondary">
-        <i class="bi bi-box-arrow-up-right me-1"></i> Export Year Log
+        <i class="bi bi-box-arrow-up-right me-1"></i> Export This Year
       </a>
-      <form method="POST" action="{{ url_for('app_user.export_full_appraisal_log') }}" class="d-flex align-items-center gap-3">
-        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <button type="submit" class="btn btn-outline-dark">
-          <i class="bi bi-box-arrow-down"></i> Export Full Cycle
-        </button>
-        <div class="form-check form-check-inline">
-          <input class="form-check-input" type="radio" name="export_format" id="exportWord" value="word" checked>
-          <label class="form-check-label" for="exportWord">Word</label>
-        </div>
-        <div class="form-check form-check-inline">
-          <input class="form-check-input" type="radio" name="export_format" id="exportPDF" value="pdf">
-          <label class="form-check-label" for="exportPDF">PDF</label>
-        </div>
-      </form>
+
+      <!-- Export Button -->
+      <button class="btn btn-outline-primary" id="export-button-full" type="button" onclick="triggerHide(this)">
+        <i class="bi bi-download"></i> Export CPD Log Of This Appraisal Cycle
+      </button>
       <form action="{{ url_for('app_user.delete_cpd_cycle', cycle_id=cpd_state.id) }}" method="POST"
         onsubmit="return confirm('⚠️ Are you sure you want to delete this appraisal cycle and all associated CPD data? This action cannot be undone.');">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -108,42 +118,275 @@
         </button>
       </form>
     </div>
-  </div>
-  {% endif %}
 
-  {% if not cpd_state and request.args.get('new_cycle') == 'true' %}
-  <div class="card mt-4 shadow-sm">
-    <form method="POST" action="{{ url_for('app_user.cpd_dashboard', new_cycle='true') }}" class="p-4">
-      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <div class="row g-3">
-        <div class="col-md-6">
-          <label for="appraisal_cycle_start" class="form-label">Appraisal Cycle Start</label>
-          <input type="date" class="form-control" id="appraisal_cycle_start" name="appraisal_cycle_start" required>
+    <!-- Collapsible Export Form -->
+    <div class="collapse mt-3" id="exportCollapse">
+      <form id="export-form" method="POST" action="{{ url_for('app_user.export_full_appraisal_log') }}" class="mt-4">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" id="export_format_input" name="export_format">
+
+        <div id="export-details" class="card p-4 shadow-sm text-center mx-auto" style="max-width: 600px;">
+          <div class="mb-3">
+            <label for="full_name" class="form-label">Your Full Name</label>
+            <input type="text" name="full_name" id="full_name" class="form-control text-center"
+              placeholder="e.g., Dr. John Smith" required>
+          </div>
+
+          <div class="mb-3">
+            <label for="gmc_number" class="form-label">GMC Number (optional)</label>
+            <input type="text" name="gmc_number" id="gmc_number" class="form-control text-center"
+              placeholder="e.g., 1234567">
+          </div>
+
+          <div class="d-flex justify-content-center gap-3 mt-3">
+            <button type="button" class="btn btn-outline-primary" onclick="triggerExport('pdf')">
+              <i class="bi bi-file-earmark-pdf-fill me-1"></i> Export as PDF
+            </button>
+            <button type="button" class="btn btn-outline-secondary" onclick="triggerExport('word')">
+              <i class="bi bi-file-earmark-word-fill me-1"></i> Export as Word
+            </button>
+          </div>
+
+          <div class="text-center mt-4">
+            <button type="button" class="btn btn-outline-danger" onclick="cancelExport()">
+              <i class="bi bi-x-circle-fill me-1"></i> Cancel Export
+            </button>
+          </div>
         </div>
-        <div class="col-md-6">
-          <label for="appraisal_cycle_end" class="form-label">Appraisal Cycle End</label>
-          <input type="date" class="form-control" id="appraisal_cycle_end" name="appraisal_cycle_end" required>
-        </div>
-      </div>
-      <div class="mt-4 text-end">
-        <button type="submit" class="btn btn-primary">
-          <i class="bi bi-check-circle me-1"></i> Save Appraisal Cycle
-        </button>
-      </div>
-    </form>
+      </form>
+    </div>
   </div>
-  {% endif %}
+</div>
+
+{% if current_year_logs %}
+<div class="card p-3 shadow-sm pastel-bg">
+  <h5 class="mb-3">CPD Activities</h5>
+  <div class="table-responsive rounded shadow-sm mt-4">
+    <table class="table table-striped table-hover align-middle">
+      <thead class="table-light text-center">
+        <tr>
+          <th>Title</th>
+          <th>Dates</th>
+          <th>Type</th>
+          <th>Points</th>
+          <th>Cert</th>
+          <th>View more information</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for log in current_year_logs|sort(attribute='end_date') %}
+        <tr>
+          <td class="fw-semibold align-middle fst-italic text-start">{{ log.title }}</td>
+
+          <td>
+            <span class="pastel-bg-info text-muted text-sm-center">Start date</span>
+            <div class="small text-muted">{{ log.start_date.strftime('%d/%m/%Y') }}</div>
+            <span class="pastel-bg-success text-muted text-sm-center">Completion date</span>
+            <div class="fw-bold">{{ log.end_date.strftime('%d/%m/%Y') }}</div>
+          </td>
+
+          <td>
+            <span class="badge bg-secondary">{{ log.activity_type.name }}</span>
+          </td>
+
+          <td class="text-center">
+            <div><span class="text-success fw-bold">{{ log.cpd_points_claimed }}</span></div>
+            <div class="small text-muted">+{{ 1 if log.has_reflection else 0 }} Reflection</div>
+            <div class="fw-bold">{{ (log.cpd_points_claimed or 0) + (1 if log.has_reflection else 0) }}</div>
+          </td>
+          <td class="text-center">
+            {% if log.certificate_filenames %}
+            {% set certs = log.certificate_filenames | from_json %}
+            <div class="certificate-links">
+              {% for cert in certs %}
+                <a href="{{ url_for('app_user.serve_certificate', filename=cert) }}"
+                   target="_blank"
+                   class="certificate-link"
+                   data-filename="{{ cert }}">
+                  <i class="bi bi-file-earmark-text"></i> 📎 View {{ loop.index }}
+                  <span class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+                </a>
+              {% endfor %}
+            </div>
+            {% else %}
+            <span class="text-muted">No certificates</span>
+            {% endif %}
+          </td>
+
+          <td>
+            {% if log.description or log.reflection or log.notes or log.external_links or log.tags %}
+            <button class="btn btn-sm btn-outline-dark" data-bs-toggle="modal"
+              data-bs-target="#notesModal{{ loop.index }}">View</button>
+
+            <!-- Modal -->
+            <div class="modal fade" id="notesModal{{ loop.index }}" tabindex="-1"
+              aria-labelledby="notesModalLabel{{ loop.index }}" aria-hidden="true">
+              <div class="modal-dialog modal-dialog-scrollable">
+                <div class="modal-content">
+                  <div class="modal-header">
+                    <h5 class="modal-title" id="notesModalLabel{{ loop.index }}">Details for: '{{ log.title }}'</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                  </div>
+                  <div class="modal-body">
+
+                    <strong>Description:</strong>
+                    {% if log.description %}
+                    <p>{{ log.description }}</p>
+                    {% else %}
+                    <p class="text-muted">No description provided.</p>
+                    {% endif %}
+
+                    <hr>
+
+                    <strong>Reflection:</strong>
+                    {% if log.reflection %}
+                    <p>{{ log.reflection }}</p>
+                    {% else %}
+                    <p class="text-muted">No reflection provided.</p>
+                    {% endif %}
+
+                    <hr>
+
+                    <strong>Notes:</strong>
+                    {% if log.notes %}
+                    <p>{{ log.notes }}</p>
+                    {% else %}
+                    <p class="text-muted">No additional notes stored.</p>
+                    {% endif %}
+
+                    <hr>
+
+                    <strong>External Links:</strong>
+                    {% if log.external_links %}
+                    {% set link = log.external_links %}
+                    {% if not link.startswith('http') %}
+                    {% set link = 'https://' + link %}
+                    {% endif %}
+                    <p><a href="{{ link }}" target="_blank">{{ log.external_links }}</a></p>
+                    {% else %}
+                    <p class="text-muted">No links for this entry.</p>
+                    {% endif %}
+
+                    <hr>
+
+                    <strong>Tags:</strong>
+                    {% if log.tags %}
+                    <p class="text-muted">{{ log.tags }}</p>
+                    {% else %}
+                    <p class="text-muted">No tags provided.</p>
+                    {% endif %}
+
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% else %}
+            <span class="text-muted fst-italic">No additional information</span>
+            {% endif %}
+          </td>
+
+          <td class="text-center">
+            <a href="{{ url_for('app_user.cpd_edit', log_id=log.id) }}" class="text-primary me-2" title="Edit">
+              <i class="bi bi-pencil-square fs-5"></i>
+            </a>
+            <form method="POST" action="{{ url_for('app_user.delete_cpd_entry', log_id=log.id) }}"
+              style="display:inline;"
+              onsubmit="return confirm('⚠️ Are you sure you want to delete this CPD entry and its certificates?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="btn btn-link text-danger p-0" title="Delete">
+                <i class="bi bi-trash-fill fs-5"></i>
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endif %}
+{% if not current_year_logs %}
+<div class="alert alert-warning">
+  No CPD entries found for the selected appraisal year
+  <strong>{{ active_year.label }}</strong>.
+</div>
+{% endif %}
+
+{% if not cpd_state and request.args.get('new_cycle') == 'true' %}
+<div class="card mt-4 shadow-sm">
+  <form method="POST" action="{{ url_for('app_user.cpd_dashboard', new_cycle='true') }}" class="p-4">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row g-3">
+      <div class="col-md-6">
+        <label for="appraisal_cycle_start" class="form-label">Appraisal Cycle Start</label>
+        <input type="date" class="form-control" id="appraisal_cycle_start" name="appraisal_cycle_start" required>
+      </div>
+      <div class="col-md-6">
+        <label for="appraisal_cycle_end" class="form-label">Appraisal Cycle End</label>
+        <input type="date" class="form-control" id="appraisal_cycle_end" name="appraisal_cycle_end" required>
+      </div>
+    </div>
+    <div class="mt-4 text-end">
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-check-circle me-1"></i> Save Appraisal Cycle
+      </button>
+    </div>
+  </form>
+</div>
+{% endif %}
 </div>
 <form id="cycleSwitchForm" method="POST" style="display: none;">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 </form>
+
 {% block scripts %}
-  <script>
-    function selectCycle(cycleId) {
-      const form = document.getElementById('cycleSwitchForm');
-      form.action = "/app_user/cpd/set_active_cycle/" + cycleId;
-      form.submit();
-    }
-  </script>
+<script>
+  function selectCycle(cycleId) {
+    const form = document.getElementById('cycleSwitchForm');
+    form.action = "/app_user/cpd/set_active_cycle/" + cycleId;
+    form.submit();
+  }
+
+  function triggerHide() {
+    document.getElementById('exportCollapse').classList.add('show');
+    document.getElementById('export-button-full').style.display = 'none';
+    document.getElementById('hide-on-export').style.display = 'none';
+    document.getElementById('full_name').focus();
+  }
+
+  function triggerExport(format) {
+    document.getElementById('export_format_input').value = format;
+    document.getElementById('export-form').submit();
+  }
+
+  function cancelExport() {
+    document.getElementById('exportCollapse').classList.remove('show');
+    document.getElementById('export-button-full').style.display = 'inline-block';
+    document.getElementById('hide-on-export').style.display = 'flex';
+  }
+</script>
+<script>
+  document.querySelectorAll('.certificate-link').forEach(link => {
+    link.addEventListener('click', () => {
+      const spinner = link.querySelector('.spinner-border');
+      if (spinner) {
+        spinner.classList.remove('d-none');
+      }
+
+      const toast = document.createElement('div');
+      toast.className = 'alert alert-info position-fixed bottom-0 end-0 m-3 shadow';
+      toast.innerHTML = `<i class="bi bi-download"></i> Opening certificate...`;
+      document.body.appendChild(toast);
+
+      setTimeout(() => {
+        toast.remove();
+        if (spinner) spinner.classList.add('d-none');
+      }, 3000);
+    });
+  });
+</script>
 {% endblock %}
+
 {% endblock %}

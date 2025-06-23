@@ -118,3 +118,4 @@ yarg==0.1.9
 zopfli==0.2.3
 pip freeze | grep psycopg2
 pip freeze | grep wtforms-sqlalchemy
+weasyprint>=60.1

@@ -15,8 +15,12 @@ config = context.config
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
-if config.config_file_name is not None:
-    fileConfig(config.config_file_name)
+from pathlib import Path
+
+# Force-load the correct alembic.ini path from root
+ini_path = Path(__file__).resolve().parent.parent / "alembic.ini"
+if ini_path.exists():
+    fileConfig(str(ini_path))
 
 # Fetch DATABASE_URL from the environment (e.g., for Heroku).
 database_url = os.getenv("DATABASE_URL", "postgresql://admin:811976@localhost:5432/wscdb")

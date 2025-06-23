@@ -409,10 +409,11 @@ class CPDLog(Base):
     # CPD Credits
     cpd_points_guideline: so.Mapped[Optional[str]] = sa.Column(sa.String(50), nullable=True)  # e.g., from activity type
     cpd_points_claimed: so.Mapped[Optional[float]] = sa.Column(sa.Float, nullable=True)
+    #CPD external links
+    external_links = sa.Column(sa.Text, nullable=True)
 
     # Certificates
-    certificate_filename: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)
-    certificate_filepath: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)
+    certificate_filenames: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
 
     tags: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
     notes: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
@@ -420,7 +421,10 @@ class CPDLog(Base):
     # Metadata
     created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.utcnow)
     updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
+    
+    cpd_state_id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), sa.ForeignKey("user_cpd_states.id", ondelete="CASCADE"), nullable=True)
+    cpd_state: so.Mapped["UserCPDState"] = so.relationship("UserCPDState", back_populates="logs")
+    
     # Relationships
     user: so.Mapped['User'] = so.relationship("User", back_populates="cpd_logs")
     activity_type: so.Mapped['CPDActivityType'] = so.relationship("CPDActivityType")
@@ -431,7 +435,7 @@ class CPDLog(Base):
 class UserCPDState(Base):
     __tablename__ = 'user_cpd_states'
 
-    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
+    id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
 
     appraisal_cycle_start: so.Mapped[str] = sa.Column(sa.String(20), nullable=False)  # e.g. "May 2022"
@@ -443,12 +447,17 @@ class UserCPDState(Base):
     appraisal_cycle_end_date: so.Mapped[date] = sa.Column(sa.Date, nullable=True)
     current_cpd_year_start_date: so.Mapped[date] = sa.Column(sa.Date, nullable=True)
     current_cpd_year_end_date: so.Mapped[date] = sa.Column(sa.Date, nullable=True)
-    
+    is_active: so.Mapped[bool] = sa.Column(sa.Boolean, default=False)
     created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc))
     updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
-
-    user: so.Mapped['User'] = sa.orm.relationship("User", backref=so.backref("cpd_state", uselist=False, cascade="all, delete-orphan"))
-
+    
+    user_id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE'), nullable=False)
+    user: so.Mapped['User'] = so.relationship("User", backref=so.backref("cpd_cycles", cascade="all, delete-orphan"))
+    logs = relationship(
+        "CPDLog",
+        back_populates="cpd_state",
+        cascade="all, delete-orphan"
+    )
     def __repr__(self):
         return f"<UserCPDState(user_id={self.user_id}, current_cpd_year={self.current_cpd_year_start}-{self.current_cpd_year_end})>"
 
