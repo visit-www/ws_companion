@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CPD Appraisal Log</title>
+    <style>
+        body {
+            font-family: "Helvetica", sans-serif;
+            margin: 40px;
+        }
+
+        .cover-page {
+            text-align: center;
+            page-break-after: always;
+        }
+
+        .cover-page img.logo {
+            width: 200px;
+            margin-bottom: 20px;
+        }
+
+        .cover-page h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .cover-page h2 {
+            font-size: 22px;
+            margin-top: 0;
+            color: #555;
+        }
+
+        .cover-page p {
+            font-size: 16px;
+            margin: 8px 0;
+        }
+
+        .qr-code {
+            margin-top: 20px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f4f4;
+        }
+
+        h4 {
+            margin-top: 40px;
+            border-bottom: 2px solid #555;
+            padding-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Cover Page -->
+<div class="cover-page">
+    <img src="{{ url_for('static', filename='assets/images/logo-transparent-bg.png') }}" class="logo" alt="WSCompanion Logo">
+
+    <h1>CPD Appraisal Report</h1>
+    <h2>{{ cpd_state.appraisal_cycle_start_date.strftime('%d %B %Y') }} → {{ cpd_state.appraisal_cycle_end_date.strftime('%d %B %Y') }}</h2>
+
+    <p><strong>Generated for:</strong> {{ full_name }}</p>
+    {% if gmc_number %}
+        <p><strong>GMC Number:</strong> {{ gmc_number }}</p>
+    {% endif %}
+
+    <div class="qr-code">
+        <p>You can access this CPD log using the link below:</p>
+        <p><a href="{{ export_url }}">{{ export_url }}</a></p>
+        <img src="https://api.qrserver.com/v1/create-qr-code/?data={{ export_url }}&amp;size=120x120" alt="QR Code">
+    </div>
+</div>
+
+<!-- Main Content -->
+{% for year, entries in cpd_data.items() %}
+    <h4>{{ year }}</h4>
+    <table>
+        <thead>
+            <tr>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>CPD Title</th>
+                <th>Claimed Points</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in entries %}
+                <tr>
+                    <td>{{ entry.start_date }}</td>
+                    <td>{{ entry.end_date }}</td>
+                    <td>{{ entry.title }}</td>
+                    <td>{{ entry.claimed_points }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p><strong>Total Points for {{ year }}:</strong> {{ yearly_totals[year] }}</p>
+{% endfor %}
+
+<hr>
+<h4>Summary</h4>
+<p><strong>Total Points Across Cycle:</strong> {{ total_points }}</p>
+<p><strong>{% if points_deficit > 0 %}Deficit{% else %}Excess{% endif %}:</strong> {{ points_deficit|abs }} CPD points from 250 requirement</p>
+
+</body>
+</html>

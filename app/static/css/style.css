@@ -501,6 +501,11 @@ hr{
 .pastel-status-free {
     background-color: #FFF3CD; /* Bootstrap yellow for free status */
 }
+/* Custom background colours flash messages */
+.pastel-bg-success { background-color: #d1f7d6; color: #065f46; }
+.pastel-bg-danger  { background-color: #fde2e2; color: #7f1d1d; }
+.pastel-bg-info    { background-color: #e0f7fa; color: #004d40; }
+.pastel-bg-warning { background-color: #fff8e1; color: #7c4700; }
 
 /* Customized Report Templates Section */
 .pastel-grey {
@@ -672,4 +677,12 @@ hr{
     font-weight: bold;
     font-size: 1.1rem;
     background-color: rgb(221, 221, 146);
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.4em 0.6em;
+}
+.table td, .table th {
+    vertical-align: middle;
 }

@@ -1,8 +1,26 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container mt-5">
-  <h2 class="mb-4">Add CPD Activity</h2>
-  <form method="POST" enctype="multipart/form-data">
+
+  <!-- Display Active Appraisal Year -->
+  {% if session.active_cpd_year_key %}
+  <div class="alert alert-info d-flex justify-content-between align-items-center">
+    <div>
+      <i class="bi bi-calendar3"></i>
+      <strong>Selected Appraisal Year:</strong> {{ session.active_cpd_year_key }}
+    </div>
+    <form method="POST" action="{{ url_for('app_user.clear_active_year') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Change Year
+      </button>
+    </form>
+  </div>
+  {% endif %}
+
+  <h2 class="mb-4">{{ 'Edit CPD Entry' if edit_mode else 'Add CPD Entry' }}</h2>
+  <form method="POST" enctype="multipart/form-data"
+  action="{{ url_for('app_user.cpd_edit', log_id=log.id) if edit_mode else url_for('app_user.cpd_add') }}">
     {{ form.hidden_tag() }}
 
     <div class="mb-3">
@@ -12,24 +30,31 @@
 
     <div class="row">
       <div class="col-md-6 mb-3">
-        {{ form.start_date.label(class="form-label") }}
-        {{ form.start_date(class="form-control") }}
+        <label for="start_date" class="form-label">Start Date</label>
+        {{ form.start_date(class_="form-control", id="start_date") }}
+        {% for error in form.start_date.errors %}
+          <div class="text-danger small mt-1">{{ error }}</div>
+        {% endfor %}
       </div>
+    
       <div class="col-md-6 mb-3">
-        {{ form.end_date.label(class="form-label") }}
-        {{ form.end_date(class="form-control") }}
+        <label for="end_date" class="form-label">End Date</label>
+        {{ form.end_date(class_="form-control", id="end_date") }}
+        {% for error in form.end_date.errors %}
+          <div class="text-danger small mt-1">{{ error }}</div>
+        {% endfor %}
       </div>
     </div>
 
     <div class="mb-3">
       {{ form.activity_type.label(class="form-label") }}
-      {{ form.activity_type(class="form-select") }}
+      {{ form.activity_type(class="form-select", id="activitySelect") }}
     </div>
 
     <div class="row">
       <div class="col-md-6 mb-3">
         {{ form.cpd_points_guideline.label(class="form-label") }}
-        {{ form.cpd_points_guideline(class="form-control", readonly=True) }}
+        {{ form.cpd_points_guideline(class="form-control", readonly=True, id="pointsGuideline") }}
       </div>
       <div class="col-md-6 mb-3">
         {{ form.cpd_points_claimed.label(class="form-label") }}
@@ -58,12 +83,22 @@
     </div>
 
     <div class="mb-3">
-      <label class="form-label">Upload Certificate(s):</label>
+      <label class="form-label">load Certificate(s):</label>
+      <div class="card-footer" id="cert-error-container" tabindex="-1">
+        {% for field_errors in form.certificate_files %}
+          {% for error in field_errors.errors %}
+            <div class="text-danger small mt-1 cert-error">
+              <i class="bi bi-exclamation-circle-fill"></i> {{ error }}
+            </div>
+          {% endfor %}
+        {% endfor %}
+      </div>
+      </div>
       {% for field in form.certificate_files %}
         {{ field(class="form-control mb-2") }}
       {% endfor %}
     </div>
-
+  
     <div class="mb-3">
       {{ form.tags.label(class="form-label") }}
       {{ form.tags(class="form-control", placeholder="keywords, tags") }}
@@ -73,21 +108,43 @@
       {{ form.notes.label(class="form-label") }}
       {{ form.notes(class="form-control", rows=2) }}
     </div>
-
-    <button type="submit" class="btn btn-primary">Save CPD Entry</button>
+    <div class="d-flex justify-content-center">
+      <button type="submit" class="btn btn-primary btn-sm px-4 py-2 rounded-pill">
+        <i class="bi bi-save"></i> Save Entry
+      </button>
+    </div>
   </form>
 </div>
 
 <script>
-  const activitySelect = document.querySelector('select[name="activity_type"]');
-  const guidelineField = document.querySelector('input[name="cpd_points_guideline"]');
-  const options = [...activitySelect.options];
+  const activitySelect = document.getElementById('activitySelect');
+  const guidelineField = document.getElementById('pointsGuideline');
 
   activitySelect.addEventListener('change', function () {
-    const selected = options.find(o => o.value == this.value);
-    if (selected) {
-      const match = selected.textContent.match(/\(([^)]+)\)/);
-      guidelineField.value = match ? match[1] : '';
+    const selected = this.options[this.selectedIndex];
+    const match = selected.textContent.match(/\(([^)]+)\)/);
+    guidelineField.value = match ? match[1] : '';
+  });
+
+  // Trigger once on load
+  window.addEventListener('DOMContentLoaded', () => {
+    const selected = activitySelect.options[activitySelect.selectedIndex];
+    const match = selected.textContent.match(/\(([^)]+)\)/);
+    guidelineField.value = match ? match[1] : '';
+  });
+</script>
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const errorContainer = document.getElementById("cert-error-container");
+    if (errorContainer && errorContainer.innerText.trim() !== "") {
+      errorContainer.focus();
+      errorContainer.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      // Fade out after 3 seconds
+      setTimeout(() => {
+        errorContainer.style.transition = "opacity 0.5s ease-out";
+        errorContainer.style.opacity = "0";
+      }, 3000);
     }
   });
 </script>

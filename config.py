@@ -36,6 +36,7 @@ class Config:
 
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     UPLOAD_FOLDER = os.path.join(basedir, 'files')
+    CERTIFICATE_UPLOAD_FOLDER = os.path.join(basedir, 'uploads', 'certificates')
     
     # Session Settings
     SESSION_COOKIE_SECURE = False
