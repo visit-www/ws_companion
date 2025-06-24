@@ -883,7 +883,8 @@ def cpd_dashboard():
         current_year_logs=current_year_logs,
         previous_year_logs=previous_year_logs,
         appraisal_years=appraisal_years,
-        active_year=active_year
+        active_year=active_year ,
+        new_cycle=request.args.get('new_cycle') == 'true'
     )
 
 #====================
@@ -1170,10 +1171,28 @@ def set_active_cpd_year(year_key):
 @login_required
 def clear_active_year():
     session.pop('active_cpd_year_key', None)
-    session.pop('active_cpd_cycle_id', None)
-    flash("🔁 You can now select another appraisal year and cycle.", "info")
-    return redirect(url_for('app_user.cpd_dashboard'))
+    flash("🔁 You can now select another appraisal year.", "info")
+    
+    active_cycle_id = session.get('active_cpd_cycle_id')
+    if active_cycle_id:
+        return redirect(url_for('app_user.cpd_dashboard', cycle_id=active_cycle_id))
+    else:
+        return redirect(url_for('app_user.cpd_dashboard'))
+#===================
+# route to set active appraisal cycle (for activation button)
+#================
+@app_user_bp.route('/cpd/set_active_cycle/<uuid:cycle_id>', methods=['POST'])
+@login_required
+def set_active_cpd_cycle(cycle_id):
+    cpd_state = db.session.get(UserCPDState, cycle_id)
+    if not cpd_state or cpd_state.user_id != current_user.id:
+        flash("❌ Invalid or unauthorized appraisal cycle.", "danger")
+        return redirect(url_for("app_user.cpd_dashboard"))
 
+    session["active_cpd_cycle_id"] = str(cycle_id)
+    session["active_cpd_year_key"] = None  # optional: reset year selection
+    flash("✅ Appraisal cycle activated successfully.", "success")
+    return redirect(url_for("app_user.cpd_dashboard", cycle_id=cycle_id))
 #===============
 #Route to serve CPD certificates.
 #===========
