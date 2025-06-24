@@ -889,9 +889,7 @@ def cpd_dashboard():
 #====================
 #This route allow user to add CPD activity #
 #====================
-#====================
-#This route allow user to add CPD activity #
-#====================
+
 import uuid
 @app_user_bp.route("/app_user/cpd/add", methods=["GET", "POST"])
 @login_required
@@ -967,6 +965,12 @@ def cpd_add():
         if end_date < active_year["start"] or end_date > active_year["end"]:
             flash(f"❌ End date must fall within the selected appraisal year: {active_year['start'].strftime('%d %b %Y')} to {active_year['end'].strftime('%d %b %Y')}", "danger")
             return render_template("cpd_add.html", form=form)
+        # === Sanitize external link ===
+        entered_external_links = form.external_links.data.strip()
+        if entered_external_links and not entered_external_links.startswith(("http://", "https://")):
+            external_links = "https://" + entered_external_links
+        else:
+            external_links = entered_external_links
 
         log = CPDLog(
             user_id=current_user.id,
@@ -979,7 +983,7 @@ def cpd_add():
             has_reflection=form.has_reflection.data,
             description=form.description.data,
             reflection=form.reflection.data,
-            external_links=form.external_links.data,
+            external_links=external_links,
             tags=form.tags.data,
             notes=form.notes.data,
             certificate_filenames=json.dumps(filenames),
@@ -1056,6 +1060,12 @@ def cpd_edit(log_id):
         if end_date < active_year["start"] or end_date > active_year["end"]:
             flash(f"❌ End date must fall within the selected appraisal year: {active_year['start'].strftime('%d %b %Y')} to {active_year['end'].strftime('%d %b %Y')}", "danger")
             return render_template("cpd_add.html", form=form, edit_mode=True, log=log)
+        # === Sanitize external link ===
+        entered_external_links = form.external_links.data.strip()
+        if entered_external_links and not entered_external_links.startswith(("http://", "https://")):
+            external_links = "https://" + entered_external_links
+        else:
+            external_links = entered_external_links
 
         # Update log entry
         log.title = form.title.data
@@ -1068,7 +1078,7 @@ def cpd_edit(log_id):
         log.end_date = end_date
         log.tags = form.tags.data
         log.notes = form.notes.data
-        log.external_links=form.external_links.data
+        log.external_links=external_links
         log.activity_type_id = int(form.activity_type.data)
 
         # Upload handling
@@ -1163,146 +1173,7 @@ def clear_active_year():
     session.pop('active_cpd_cycle_id', None)
     flash("🔁 You can now select another appraisal year and cycle.", "info")
     return redirect(url_for('app_user.cpd_dashboard'))
-#===================
-# route to export entire cpd log for 5 years#
-#================
 
-from flask import request, render_template, send_file, redirect, url_for, flash, session
-from flask_login import login_required, current_user
-from io import BytesIO
-from datetime import datetime
-from dateutil.parser import parse
-from docx import Document
-from weasyprint import HTML
-
-@app_user_bp.route("/app_user/cpd/export_full_log", methods=["POST"])
-@login_required
-def export_full_appraisal_log():
-    export_format = request.form.get("export_format")
-    full_name = request.form.get("full_name", current_user.username).strip()
-    if not full_name:
-        flash("❌ Please enter your full name to proceed with the export.", "danger")
-        return redirect(url_for("app_user.cpd_dashboard"))
-    gmc_number = request.form.get("gmc_number", "").strip()
-    active_cycle_id = session.get('active_cpd_cycle_id')
-
-    if not active_cycle_id:
-        flash("⚠️ No active appraisal cycle selected. Please choose a cycle before exporting.", "warning")
-        return redirect(url_for("app_user.cpd_dashboard"))
-
-    active_cycle = db.session.get(UserCPDState, active_cycle_id)
-    if not active_cycle:
-        flash("❌ Could not load the selected appraisal cycle.", "danger")
-        return redirect(url_for("app_user.cpd_dashboard"))
-
-    logs = (
-        db.session.query(CPDLog)
-        .filter_by(user_id=current_user.id,
-                   appraisal_cycle_start=active_cycle.appraisal_cycle_start,
-                   appraisal_cycle_end=active_cycle.appraisal_cycle_end)
-        .order_by(CPDLog.start_date.asc())
-        .all()
-    )
-
-    if not logs:
-        flash("No CPD logs found for the selected cycle.", "warning")
-        return redirect(url_for("app_user.cpd_dashboard"))
-
-    # Group logs by CPD year
-    cpd_data = {}
-    yearly_totals = {}
-    for log in logs:
-        year_key = f"{log.cpd_year_start} → {log.cpd_year_end}"
-        cpd_data.setdefault(year_key, [])
-        yearly_totals.setdefault(year_key, 0)
-
-        points = (log.cpd_points_claimed or 0) + (1 if log.has_reflection else 0)
-        yearly_totals[year_key] += points
-
-        cpd_data[year_key].append({
-            "start_date": log.start_date.strftime('%d/%m/%Y') if log.start_date else "",
-            "end_date": log.end_date.strftime('%d/%m/%Y') if log.end_date else "",
-            "title": log.title,
-            "claimed_points": points,
-        })
-
-    total_points = sum(yearly_totals.values())
-    points_deficit = max(0, 250 - total_points)
-
-    context = {
-        "cpd_state": active_cycle,
-        "cpd_data": dict(sorted(cpd_data.items())),  # ensure sorted by year
-        "yearly_totals": yearly_totals,
-        "total_points": total_points,
-        "points_deficit": points_deficit,
-        "full_name": full_name,
-        "gmc_number": gmc_number,
-        "export_url": request.host_url.rstrip("/") + url_for("app_user.cpd_dashboard"),
-    }
-
-    if export_format == "pdf":
-        html = render_template("cpd_export_template.html", **context)
-        pdf_io = BytesIO()
-        HTML(string=html, base_url=request.host_url).write_pdf(pdf_io)
-        pdf_io.seek(0)
-        return send_file(pdf_io, mimetype="application/pdf", as_attachment=True,
-                         download_name="CPD_Appraisal_Log.pdf")
-
-    elif export_format == "word":
-        doc = Document()
-        doc.add_heading(
-            f"CPD Appraisal Log: {active_cycle.appraisal_cycle_start_date.strftime('%d/%m/%Y')} → {active_cycle.appraisal_cycle_end_date.strftime('%d/%m/%Y')}",
-            level=1,
-        )
-
-        doc.add_paragraph(f"Name: {full_name}")
-        if gmc_number:
-            doc.add_paragraph(f"GMC Number: {gmc_number}")
-        doc.add_paragraph("")
-
-        sorted_year_keys = sorted(
-            cpd_data.keys(),
-            key=lambda k: datetime.strptime(k.split("→")[0].strip(), "%B %Y")
-        )
-
-        for year in sorted_year_keys:
-            doc.add_heading(year, level=2)
-            entries = cpd_data[year]
-
-            table = doc.add_table(rows=1, cols=4)
-            table.style = "Table Grid"
-            hdr_cells = table.rows[0].cells
-            hdr_cells[0].text = "Start Date"
-            hdr_cells[1].text = "End Date"
-            hdr_cells[2].text = "CPD Title"
-            hdr_cells[3].text = "Claimed Points"
-
-            for entry in entries:
-                row_cells = table.add_row().cells
-                row_cells[0].text = entry["start_date"]
-                row_cells[1].text = entry["end_date"]
-                row_cells[2].text = entry["title"]
-                row_cells[3].text = str(entry["claimed_points"])
-
-            doc.add_paragraph(f"Total Points This Year: {yearly_totals[year]}")
-            doc.add_paragraph("")
-
-        doc.add_paragraph("Summary", style="Heading 2")
-        doc.add_paragraph(f"Total Points Across Cycle: {total_points}")
-        doc.add_paragraph(f"{'Deficit' if points_deficit > 0 else 'Excess'}: {abs(points_deficit)} CPD points from 250 requirement")
-
-        word_io = BytesIO()
-        doc.save(word_io)
-        word_io.seek(0)
-        return send_file(
-            word_io,
-            mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-            as_attachment=True,
-            download_name="CPD_Appraisal_Log.docx"
-        )
-
-    flash("❌ Invalid export format selected.", "danger")
-    return redirect(url_for("app_user.cpd_dashboard"))
 #===============
 #Route to serve CPD certificates.
 #===========
@@ -1310,8 +1181,6 @@ import mimetypes
 from flask import send_file, current_app, redirect, url_for, flash
 from werkzeug.utils import safe_join
 from config import userdir
-
-
 @app_user_bp.route("/certificates/<filename>")
 @login_required
 def serve_certificate(filename):
@@ -1363,12 +1232,274 @@ def delete_cpd_entry(log_id):
         flash("❌ Could not delete CPD entry.", "danger")
 
     return redirect(url_for('app_user.cpd_dashboard'))
-#=====================
-# This is dummy /placholder route ofr exproting the cpd log #
-#====================
-@app_user_bp.route('/cpd/export', methods=['GET'])
+#===================================================================#
+# This is route for exproting the cpd log for single appraisal year #
+#====================================================================#
+@app_user_bp.route("/cpd/export_single_year", methods=["POST"])
 @login_required
-def export_cpd_log():
-    # Placeholder implementation
-    flash("Export functionality coming soon!", "info")
-    return redirect(url_for('app_user.cpd_dashboard'))
+def export_single_year_log():
+    from io import BytesIO
+    from docx import Document
+    from weasyprint import HTML
+
+    export_format = request.form.get("export_format")
+    full_name = request.form.get("full_name", current_user.username).strip()
+    gmc_number = request.form.get("gmc_number", "").strip()
+    active_cycle_id = session.get("active_cpd_cycle_id")
+    active_year_key = session.get("active_cpd_year_key")
+
+    if not active_cycle_id or not active_year_key:
+        flash("❌ No active appraisal cycle or year selected.", "danger")
+        return redirect(url_for("app_user.cpd_dashboard"))
+
+    cpd_state = db.session.get(UserCPDState, active_cycle_id)
+    if not cpd_state:
+        flash("❌ Failed to load appraisal cycle.", "danger")
+        return redirect(url_for("app_user.cpd_dashboard"))
+
+    start_yr, _ = map(int, active_year_key.split("-"))
+    ay_start = cpd_state.appraisal_cycle_start_date.replace(year=start_yr)
+    ay_end = ay_start.replace(year=start_yr + 1)
+
+    logs = (
+        db.session.query(CPDLog)
+        .filter(
+            CPDLog.user_id == current_user.id,
+            CPDLog.end_date.between(ay_start, ay_end)
+        )
+        .order_by(CPDLog.start_date.asc())
+        .all()
+    )
+
+    if not logs:
+        flash("No CPD logs found for this appraisal year.", "warning")
+        return redirect(url_for("app_user.cpd_dashboard"))
+
+    # Prepare data
+    year_label = f"{ay_start.strftime('%B %Y')} → {ay_end.strftime('%B %Y')}"
+    cpd_data = {year_label: []}
+    yearly_totals = {year_label: 0}
+
+    for log in logs:
+        points = (log.cpd_points_claimed or 0) + (1 if log.has_reflection else 0)
+        yearly_totals[year_label] += points
+        cpd_data[year_label].append({
+            "start_date": log.start_date.strftime('%d/%m/%Y'),
+            "end_date": log.end_date.strftime('%d/%m/%Y'),
+            "title": log.title,
+            "claimed_points": points,
+        })
+
+    total_points = yearly_totals[year_label]
+    points_deficit = max(0, 250 - total_points)
+
+    context = {
+        "cpd_state": cpd_state,
+        "cpd_data": cpd_data,
+        "yearly_totals": yearly_totals,
+        "total_points": total_points,
+        "points_deficit": points_deficit,
+        "full_name": full_name,
+        "gmc_number": gmc_number,
+        "export_url": request.host_url.rstrip("/") + url_for("app_user.cpd_dashboard"),
+        "export_scope": "single_year",
+        "active_year": {"start": ay_start, "end": ay_end}
+    }
+
+    if export_format == "pdf":
+        html = render_template("cpd_export_template.html", **context)
+        pdf_io = BytesIO()
+        HTML(string=html, base_url=request.host_url).write_pdf(pdf_io)
+        pdf_io.seek(0)
+        return send_file(pdf_io, mimetype="application/pdf", as_attachment=True,
+                         download_name=f"CPD_Appraisal_Year_{start_yr}-{start_yr+1}.pdf")
+
+    elif export_format == "word":
+        doc = Document()
+        doc.add_heading(f"CPD Appraisal Log: {year_label}", level=1)
+        doc.add_paragraph(f"Name: {full_name}")
+        if gmc_number:
+            doc.add_paragraph(f"GMC Number: {gmc_number}")
+        doc.add_paragraph("")
+
+        doc.add_heading(year_label, level=2)
+        table = doc.add_table(rows=1, cols=4)
+        table.style = "Table Grid"
+        hdr_cells = table.rows[0].cells
+        hdr_cells[0].text = "Start Date"
+        hdr_cells[1].text = "End Date"
+        hdr_cells[2].text = "CPD Title"
+        hdr_cells[3].text = "Claimed Points"
+
+        for entry in cpd_data[year_label]:
+            row_cells = table.add_row().cells
+            row_cells[0].text = entry["start_date"]
+            row_cells[1].text = entry["end_date"]
+            row_cells[2].text = entry["title"]
+            row_cells[3].text = str(entry["claimed_points"])
+
+        doc.add_paragraph(f"Total Points This Year: {total_points}")
+        doc.add_paragraph("")
+        doc.add_heading("Summary", level=2)
+        doc.add_paragraph(f"Total Points: {total_points}")
+        doc.add_paragraph(f"{'Deficit' if points_deficit > 0 else 'Excess'}: {abs(points_deficit)} CPD points from 250 requirement")
+
+        word_io = BytesIO()
+        doc.save(word_io)
+        word_io.seek(0)
+        return send_file(
+            word_io,
+            mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            as_attachment=True,
+            download_name=f"CPD_Appraisal_Year_{start_yr}-{start_yr+1}.docx"
+        )
+
+    flash("❌ Invalid export format selected.", "danger")
+    return redirect(url_for("app_user.cpd_dashboard"))
+
+#===================
+# route to export entire cpd log entire appraisal cycle #
+#================
+from flask import request, render_template, send_file, redirect, url_for, flash, session
+from flask_login import login_required, current_user
+from io import BytesIO
+from datetime import datetime
+from docx import Document
+from weasyprint import HTML
+
+@app_user_bp.route("/app_user/cpd/export_full_log", methods=["POST"])
+@login_required
+def export_full_appraisal_log():
+    export_format = request.form.get("export_format")
+    full_name = request.form.get("full_name", current_user.username).strip()
+    if not full_name:
+        flash("❌ Please enter your full name to proceed with the export.", "danger")
+        return redirect(url_for("app_user.cpd_dashboard"))
+    gmc_number = request.form.get("gmc_number", "").strip()
+    active_cycle_id = session.get('active_cpd_cycle_id')
+
+    if not active_cycle_id:
+        flash("⚠️ No active appraisal cycle selected. Please choose a cycle before exporting.", "warning")
+        return redirect(url_for("app_user.cpd_dashboard"))
+
+    active_cycle = db.session.get(UserCPDState, active_cycle_id)
+    if not active_cycle:
+        flash("❌ Could not load the selected appraisal cycle.", "danger")
+        return redirect(url_for("app_user.cpd_dashboard"))
+
+    logs = (
+        db.session.query(CPDLog)
+        .filter_by(user_id=current_user.id,
+                   appraisal_cycle_start=active_cycle.appraisal_cycle_start,
+                   appraisal_cycle_end=active_cycle.appraisal_cycle_end)
+        .order_by(CPDLog.start_date.asc())
+        .all()
+    )
+
+    # Collect all unique CPD year keys across the entire cycle
+    all_year_keys = set()
+    for log in logs:
+        year_key = f"{log.cpd_year_start} → {log.cpd_year_end}"
+        all_year_keys.add(year_key)
+
+    all_year_keys = sorted(
+        all_year_keys,
+        key=lambda k: datetime.strptime(k.split("→")[0].strip(), "%B %Y")
+    )
+
+    # Organize logs into year groups and compute totals
+    cpd_data = {}
+    yearly_totals = {}
+    for year_key in all_year_keys:
+        cpd_data[year_key] = []
+        yearly_totals[year_key] = 0
+
+    for log in logs:
+        year_key = f"{log.cpd_year_start} → {log.cpd_year_end}"
+        points = (log.cpd_points_claimed or 0) + (1 if log.has_reflection else 0)
+        yearly_totals[year_key] += points
+
+        cpd_data[year_key].append({
+            "start_date": log.start_date.strftime('%d/%m/%Y') if log.start_date else "",
+            "end_date": log.end_date.strftime('%d/%m/%Y') if log.end_date else "",
+            "title": log.title,
+            "claimed_points": points,
+        })
+
+    total_points = sum(yearly_totals.values())
+    points_deficit = max(0, 250 - total_points)
+
+    context = {
+        "cpd_state": active_cycle,
+        "cpd_data": cpd_data,
+        "yearly_totals": yearly_totals,
+        "total_points": total_points,
+        "points_deficit": points_deficit,
+        "full_name": full_name,
+        "gmc_number": gmc_number,
+        "export_url": request.host_url.rstrip("/") + url_for("app_user.cpd_dashboard"),
+        "export_scope": "full_cycle"
+    }
+
+    if export_format == "pdf":
+        html = render_template("cpd_export_template.html", **context)
+        pdf_io = BytesIO()
+        HTML(string=html, base_url=request.host_url).write_pdf(pdf_io)
+        pdf_io.seek(0)
+        return send_file(pdf_io, mimetype="application/pdf", as_attachment=True,
+                        download_name="CPD_Appraisal_Log.pdf")
+
+    elif export_format == "word":
+        doc = Document()
+        doc.add_heading(
+            f"CPD Appraisal Log: {active_cycle.appraisal_cycle_start_date.strftime('%d/%m/%Y')} → {active_cycle.appraisal_cycle_end_date.strftime('%d/%m/%Y')}",
+            level=1,
+        )
+
+        doc.add_paragraph(f"Name: {full_name}")
+        if gmc_number:
+            doc.add_paragraph(f"GMC Number: {gmc_number}")
+        doc.add_paragraph("")
+
+        for year in all_year_keys:
+            doc.add_heading(year, level=2)
+            entries = cpd_data.get(year, [])
+
+            if not entries:
+                doc.add_paragraph("No CPD entries recorded for this year.")
+            else:
+                table = doc.add_table(rows=1, cols=4)
+                table.style = "Table Grid"
+                hdr_cells = table.rows[0].cells
+                hdr_cells[0].text = "Start Date"
+                hdr_cells[1].text = "End Date"
+                hdr_cells[2].text = "CPD Title"
+                hdr_cells[3].text = "Claimed Points"
+
+                for entry in entries:
+                    row_cells = table.add_row().cells
+                    row_cells[0].text = entry["start_date"]
+                    row_cells[1].text = entry["end_date"]
+                    row_cells[2].text = entry["title"]
+                    row_cells[3].text = str(entry["claimed_points"])
+
+                doc.add_paragraph(f"Total Points This Year: {yearly_totals[year]}")
+
+            doc.add_paragraph("")
+
+        doc.add_paragraph("Summary", style="Heading 2")
+        doc.add_paragraph(f"Total Points Across Cycle: {total_points}")
+        doc.add_paragraph(f"{'Deficit' if points_deficit > 0 else 'Excess'}: {abs(points_deficit)} CPD points from 250 requirement")
+
+        word_io = BytesIO()
+        doc.save(word_io)
+        word_io.seek(0)
+        return send_file(
+            word_io,
+            mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            as_attachment=True,
+            download_name="CPD_Appraisal_Log.docx"
+        )
+
+    flash("❌ Invalid export format selected.", "danger")
+    return redirect(url_for("app_user.cpd_dashboard"))
