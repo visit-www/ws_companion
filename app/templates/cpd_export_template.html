@@ -70,7 +70,11 @@
     <img src="{{ url_for('static', filename='assets/images/logo-transparent-bg.png') }}" class="logo" alt="WSCompanion Logo">
 
     <h1>CPD Appraisal Report</h1>
-    <h2>{{ cpd_state.appraisal_cycle_start_date.strftime('%d %B %Y') }} → {{ cpd_state.appraisal_cycle_end_date.strftime('%d %B %Y') }}</h2>
+    {% if export_scope == 'full_cycle' %}
+        <h2>{{ cpd_state.appraisal_cycle_start_date.strftime('%d %B %Y') }} → {{ cpd_state.appraisal_cycle_end_date.strftime('%d %B %Y') }}</h2>
+    {% else %}
+        <h2>{{ active_year.start.strftime('%d %B %Y') }} → {{ active_year.end.strftime('%d %B %Y') }}</h2>
+    {% endif %}
 
     <p><strong>Generated for:</strong> {{ full_name }}</p>
     {% if gmc_number %}

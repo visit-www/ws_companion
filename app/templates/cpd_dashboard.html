@@ -102,12 +102,11 @@
         <i class="bi bi-plus-circle me-1"></i> Add CPD Activity
       </a>
 
-      <a href="{{ url_for('app_user.export_cpd_log', cycle_id=cpd_state.id) }}" class="btn btn-outline-secondary">
-        <i class="bi bi-box-arrow-up-right me-1"></i> Export This Year
-      </a>
-
-      <!-- Export Button -->
-      <button class="btn btn-outline-primary" id="export-button-full" type="button" onclick="triggerHide(this)">
+      <!-- Unified Export Buttons -->
+      <button class="btn btn-outline-secondary" type="button" onclick="prepareExport('single')">
+        <i class="bi bi-download"></i> Export This Appraisal Year Only
+      </button>
+      <button class="btn btn-outline-primary" type="button" onclick="prepareExport('full')">
         <i class="bi bi-download"></i> Export CPD Log Of This Appraisal Cycle
       </button>
       <form action="{{ url_for('app_user.delete_cpd_cycle', cycle_id=cpd_state.id) }}" method="POST"
@@ -121,9 +120,10 @@
 
     <!-- Collapsible Export Form -->
     <div class="collapse mt-3" id="exportCollapse">
-      <form id="export-form" method="POST" action="{{ url_for('app_user.export_full_appraisal_log') }}" class="mt-4">
+      <form id="export-form" method="POST" action="" class="mt-4">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" id="export_format_input" name="export_format">
+        <input type="hidden" id="year_key_input" name="year_key" value="">
 
         <div id="export-details" class="card p-4 shadow-sm text-center mx-auto" style="max-width: 600px;">
           <div class="mb-3">
@@ -159,152 +159,157 @@
 </div>
 
 {% if current_year_logs %}
-<div class="card p-3 shadow-sm pastel-bg">
-  <h5 class="mb-3">CPD Activities</h5>
-  <div class="table-responsive rounded shadow-sm mt-4">
-    <table class="table table-striped table-hover align-middle">
-      <thead class="table-light text-center">
-        <tr>
-          <th>Title</th>
-          <th>Dates</th>
-          <th>Type</th>
-          <th>Points</th>
-          <th>Cert</th>
-          <th>View more information</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for log in current_year_logs|sort(attribute='end_date') %}
-        <tr>
-          <td class="fw-semibold align-middle fst-italic text-start">{{ log.title }}</td>
+  <div class="card p-3 shadow-sm pastel-bg">
+    <h5 class="mb-3">CPD Activities</h5>
+    <div class="table-responsive rounded shadow-sm mt-4 px-3 mx-auto overflow-x-auto" style="max-width: 100%;">
+      <table class="table table-striped table-hover align-middle table-sm table-borderless table-responsive-md">
+        <thead class="table-light text-center small">
+          <tr>
+            <th class="px-3 py-2">Title</th>
+            <th class="px-3 py-2">Dates</th>
+            <th class="px-3 py-2">Type</th>
+            <th class="px-3 py-2">Points</th>
+            <th class="px-3 py-2">Cert</th>
+            <th class="px-3 py-2">View more information</th>
+            <th class="px-3 py-2">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in current_year_logs|sort(attribute='end_date') %}
+          <tr>
+            <td class="fw-semibold align-middle fst-italic text-start text-truncate px-3 py-2" style="max-width: 250px;" title="{{ log.title }}">
+              {{ log.title }}
+            </td>
 
-          <td>
-            <span class="pastel-bg-info text-muted text-sm-center">Start date</span>
-            <div class="small text-muted">{{ log.start_date.strftime('%d/%m/%Y') }}</div>
-            <span class="pastel-bg-success text-muted text-sm-center">Completion date</span>
-            <div class="fw-bold">{{ log.end_date.strftime('%d/%m/%Y') }}</div>
-          </td>
+            <td class="text-center text-sm-start px-3 py-2">
+              <div class="d-flex flex-column gap-1">
+                <div><span class="badge bg-info text-dark">Start</span> <small>{{ log.start_date.strftime('%d/%m/%Y') }}</small></div>
+                <div><span class="badge bg-success">End</span> <strong>{{ log.end_date.strftime('%d/%m/%Y') }}</strong></div>
+              </div>
+            </td>
 
-          <td>
-            <span class="badge bg-secondary">{{ log.activity_type.name }}</span>
-          </td>
+            <td class="px-3 py-2">
+              <span class="badge bg-secondary text-wrap d-inline-block" style="max-width: 150px;" title="{{ log.activity_type.name }}">
+                {{ log.activity_type.name }}
+              </span>
+            </td>
 
-          <td class="text-center">
-            <div><span class="text-success fw-bold">{{ log.cpd_points_claimed }}</span></div>
-            <div class="small text-muted">+{{ 1 if log.has_reflection else 0 }} Reflection</div>
-            <div class="fw-bold">{{ (log.cpd_points_claimed or 0) + (1 if log.has_reflection else 0) }}</div>
-          </td>
-          <td class="text-center">
-            {% if log.certificate_filenames %}
-            {% set certs = log.certificate_filenames | from_json %}
-            <div class="certificate-links">
-              {% for cert in certs %}
-                <a href="{{ url_for('app_user.serve_certificate', filename=cert) }}"
-                   target="_blank"
-                   class="certificate-link"
-                   data-filename="{{ cert }}">
+            <td class="text-center px-3 py-2">
+              <div class="fw-bold text-success">{{ log.cpd_points_claimed }}</div>
+              {% if log.has_reflection %}
+              <div class="small text-muted text-success"><i class="bi bi-check-circle-fill"></i> +1 Reflection</div>
+              {% else %}
+              <div class="small text-danger"><i class="bi bi-exclamation-circle-fill"></i> No reflection</div>
+              {% endif %}
+              <div class="fw-bold">Total: {{ (log.cpd_points_claimed or 0) + (1 if log.has_reflection else 0) }}</div>
+            </td>
+            <td class="text-center px-3 py-2">
+              {% if log.certificate_filenames %}
+              {% set certs = log.certificate_filenames | from_json %}
+              <div class="d-flex flex-column gap-1">
+                {% for cert in certs %}
+                <a href="{{ url_for('app_user.serve_certificate', filename=cert) }}" target="_blank" class="certificate-link d-inline-block">
                   <i class="bi bi-file-earmark-text"></i> 📎 View {{ loop.index }}
                   <span class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
                 </a>
-              {% endfor %}
-            </div>
-            {% else %}
-            <span class="text-muted">No certificates</span>
-            {% endif %}
-          </td>
+                {% endfor %}
+              </div>
+              {% else %}
+              <span class="text-muted">No certificates</span>
+              {% endif %}
+            </td>
 
-          <td>
-            {% if log.description or log.reflection or log.notes or log.external_links or log.tags %}
-            <button class="btn btn-sm btn-outline-dark" data-bs-toggle="modal"
-              data-bs-target="#notesModal{{ loop.index }}">View</button>
+            <td class="px-3 py-2">
+              {% if log.description or log.reflection or log.notes or log.external_links or log.tags %}
+              <button class="btn btn-sm btn-outline-dark" data-bs-toggle="modal"
+                data-bs-target="#notesModal{{ loop.index }}">View</button>
 
-            <!-- Modal -->
-            <div class="modal fade" id="notesModal{{ loop.index }}" tabindex="-1"
-              aria-labelledby="notesModalLabel{{ loop.index }}" aria-hidden="true">
-              <div class="modal-dialog modal-dialog-scrollable">
-                <div class="modal-content">
-                  <div class="modal-header">
-                    <h5 class="modal-title" id="notesModalLabel{{ loop.index }}">Details for: '{{ log.title }}'</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                  </div>
-                  <div class="modal-body">
+              <!-- Modal -->
+              <div class="modal fade" id="notesModal{{ loop.index }}" tabindex="-1"
+                aria-labelledby="notesModalLabel{{ loop.index }}" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-scrollable">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title" id="notesModalLabel{{ loop.index }}">Details for: '{{ log.title }}'</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
 
-                    <strong>Description:</strong>
-                    {% if log.description %}
-                    <p>{{ log.description }}</p>
-                    {% else %}
-                    <p class="text-muted">No description provided.</p>
-                    {% endif %}
+                      <strong>Description:</strong>
+                      {% if log.description %}
+                      <p>{{ log.description }}</p>
+                      {% else %}
+                      <p class="text-muted">No description provided.</p>
+                      {% endif %}
 
-                    <hr>
+                      <hr>
 
-                    <strong>Reflection:</strong>
-                    {% if log.reflection %}
-                    <p>{{ log.reflection }}</p>
-                    {% else %}
-                    <p class="text-muted">No reflection provided.</p>
-                    {% endif %}
+                      <strong>Reflection:</strong>
+                      {% if log.reflection %}
+                      <p>{{ log.reflection }}</p>
+                      {% else %}
+                      <p class="text-muted">No reflection provided.</p>
+                      {% endif %}
 
-                    <hr>
+                      <hr>
 
-                    <strong>Notes:</strong>
-                    {% if log.notes %}
-                    <p>{{ log.notes }}</p>
-                    {% else %}
-                    <p class="text-muted">No additional notes stored.</p>
-                    {% endif %}
+                      <strong>Notes:</strong>
+                      {% if log.notes %}
+                      <p>{{ log.notes }}</p>
+                      {% else %}
+                      <p class="text-muted">No additional notes stored.</p>
+                      {% endif %}
 
-                    <hr>
+                      <hr>
 
-                    <strong>External Links:</strong>
-                    {% if log.external_links %}
-                    {% set link = log.external_links %}
-                    {% if not link.startswith('http') %}
-                    {% set link = 'https://' + link %}
-                    {% endif %}
-                    <p><a href="{{ link }}" target="_blank">{{ log.external_links }}</a></p>
-                    {% else %}
-                    <p class="text-muted">No links for this entry.</p>
-                    {% endif %}
+                      <strong>External Links:</strong>
+                      {% if log.external_links %}
+                      {% set link = log.external_links %}
+                      {% if not link.startswith('http') %}
+                      {% set link = 'https://' + link %}
+                      {% endif %}
+                      <p><a href="{{ link }}" target="_blank">{{ log.external_links }}</a></p>
+                      {% else %}
+                      <p class="text-muted">No links for this entry.</p>
+                      {% endif %}
 
-                    <hr>
+                      <hr>
 
-                    <strong>Tags:</strong>
-                    {% if log.tags %}
-                    <p class="text-muted">{{ log.tags }}</p>
-                    {% else %}
-                    <p class="text-muted">No tags provided.</p>
-                    {% endif %}
+                      <strong>Tags:</strong>
+                      {% if log.tags %}
+                      <p class="text-muted">{{ log.tags }}</p>
+                      {% else %}
+                      <p class="text-muted">No tags provided.</p>
+                      {% endif %}
 
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-            {% else %}
-            <span class="text-muted fst-italic">No additional information</span>
-            {% endif %}
-          </td>
+              {% else %}
+              <span class="text-muted fst-italic">No additional information</span>
+              {% endif %}
+            </td>
 
-          <td class="text-center">
-            <a href="{{ url_for('app_user.cpd_edit', log_id=log.id) }}" class="text-primary me-2" title="Edit">
-              <i class="bi bi-pencil-square fs-5"></i>
-            </a>
-            <form method="POST" action="{{ url_for('app_user.delete_cpd_entry', log_id=log.id) }}"
-              style="display:inline;"
-              onsubmit="return confirm('⚠️ Are you sure you want to delete this CPD entry and its certificates?');">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button type="submit" class="btn btn-link text-danger p-0" title="Delete">
-                <i class="bi bi-trash-fill fs-5"></i>
-              </button>
-            </form>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+            <td class="px-3 py-2">
+              <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap">
+                <a href="{{ url_for('app_user.cpd_edit', log_id=log.id) }}" class="text-primary" title="Edit">
+                  <i class="bi bi-pencil-square fs-5"></i>
+                </a>
+                <form method="POST" action="{{ url_for('app_user.delete_cpd_entry', log_id=log.id) }}" style="display:inline;" onsubmit="return confirm('⚠️ Are you sure you want to delete this CPD entry and its certificates?');">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button type="submit" class="btn btn-link text-danger p-0" title="Delete">
+                    <i class="bi bi-trash-fill fs-5"></i>
+                  </button>
+                </form>
+              </div>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
-</div>
 {% endif %}
 {% endif %}
 {% if not current_year_logs %}
@@ -349,11 +354,23 @@
     form.submit();
   }
 
-  function triggerHide() {
-    document.getElementById('exportCollapse').classList.add('show');
-    document.getElementById('export-button-full').style.display = 'none';
-    document.getElementById('hide-on-export').style.display = 'none';
+  function prepareExport(type) {
+    const form = document.getElementById('export-form');
+    const yearKeyInput = document.getElementById('year_key_input');
+    const exportCollapse = document.getElementById('exportCollapse');
+    const hideSection = document.getElementById('hide-on-export');
+
+    exportCollapse.classList.add('show');
+    hideSection.style.display = 'none';
     document.getElementById('full_name').focus();
+
+    if (type === 'single') {
+      form.action = "{{ url_for('app_user.export_single_year_log') }}";
+      yearKeyInput.value = "{{ active_year.key }}";
+    } else {
+      form.action = "{{ url_for('app_user.export_full_appraisal_log') }}";
+      yearKeyInput.value = "";
+    }
   }
 
   function triggerExport(format) {
@@ -363,7 +380,6 @@
 
   function cancelExport() {
     document.getElementById('exportCollapse').classList.remove('show');
-    document.getElementById('export-button-full').style.display = 'inline-block';
     document.getElementById('hide-on-export').style.display = 'flex';
   }
 </script>
