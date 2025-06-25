@@ -875,6 +875,7 @@ def cpd_dashboard():
     return render_template(
         'cpd_dashboard.html',
         cpd_state=cpd_state,
+        active_cycle=cpd_state,
         saved_cycles=saved_cycles,
         total_current=total_current,
         total_previous=total_previous,
@@ -1107,11 +1108,24 @@ def cpd_edit(log_id):
 #====================
 #This route allow user to deleate Appraisal cylce #
 #====================
-@app_user_bp.route('/cpd/delete_cycle/<uuid:cycle_id>', methods=['POST'])
-@login_required
-def delete_cpd_cycle(cycle_id):
-    cycle_to_delete = db.session.get(UserCPDState, cycle_id)
+from flask import request, flash, redirect, url_for
+import uuid
 
+@app_user_bp.route('/cpd/delete_cycle', methods=['POST'])
+@login_required
+def delete_cpd_cycle():
+    cycle_id = request.form.get('cycle_id')
+    if not cycle_id:
+        flash("❌ No appraisal cycle selected. Please select a cycle to delete.", "warning")
+        return redirect(url_for('app_user.cpd_dashboard'))
+
+    try:
+        cycle_uuid = uuid.UUID(cycle_id)
+    except ValueError:
+        flash("❌ Invalid cycle ID format.", "danger")
+        return redirect(url_for('app_user.cpd_dashboard'))
+
+    cycle_to_delete = db.session.get(UserCPDState, cycle_uuid)
     if not cycle_to_delete or cycle_to_delete.user_id != current_user.id:
         flash("❌ Invalid appraisal cycle or permission denied.", "danger")
         return redirect(url_for('app_user.cpd_dashboard'))
@@ -1126,7 +1140,6 @@ def delete_cpd_cycle(cycle_id):
 
         for log in logs_to_delete:
             cert_files = json.loads(log.certificate_filenames or "[]")
-
             for filename in cert_files:
                 file_path = os.path.join(cert_dir, filename)
                 if os.path.exists(file_path):
@@ -1139,7 +1152,7 @@ def delete_cpd_cycle(cycle_id):
 
         db.session.delete(cycle_to_delete)
 
-        if session.get('active_cpd_cycle_id') == str(cycle_id):
+        if session.get('active_cpd_cycle_id') == str(cycle_uuid):
             session.pop('active_cpd_cycle_id', None)
 
         db.session.commit()
@@ -1151,7 +1164,6 @@ def delete_cpd_cycle(cycle_id):
         flash("❌ Failed to delete appraisal cycle. Please try again.", "danger")
 
     return redirect(url_for('app_user.cpd_dashboard'))
-
 #===================
 # route to set active year#
 #================

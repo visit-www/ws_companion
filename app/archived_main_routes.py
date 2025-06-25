@@ -43,9 +43,32 @@ def index():
             last_login = "Not available"  # Handle the case where user data is not found
     else:
         last_login = "Not available"  # Handle the case for anonymous users
+    cat_dict = {}
+    idx=-1
+
+    # Loop through each enum member in the CategoryNames enum
+    for enum_object in CategoryNames:
+        # Split the enum member name by underscores into a list of words
+        cat = enum_object.name.split("_")
+        # Keep the enum_object to be passed to view_category route later. The categpres are being stores as enum object name (all caps)
+        # we will need this later while seraching contents in a given category in view_category route. 
+        cat_name=enum_object.name
+    
+        # Capitalize the first letter of each word and join them back into a string
+        capit_cat = [word.capitalize() for word in cat]
+        
+        # Join the capitalized words with spaces to form a readable category name
+        display_name = " ".join(capit_cat)
+        idx+=1  # We need idx for given class name (class-idx) that is used by css to give card some colours.
+        
+        # Add the formatted category name to the list
+        cat_dict[cat_name]=[display_name,idx]
+    # Fetch the latest reference data
+    references = db.session.query(Reference).order_by(Reference.updated_at.desc()).all()
+    reference_display_name = "References"
     
     # Render the 'index.html' template, passing the category dictionary to the template
-    return render_template('index.html',last_login=last_login)
+    return render_template('index.html', cat_dict=cat_dict,reference_display_name=reference_display_name,references=references, last_login=last_login)
 #!----------------------------------------------------------------
 # Place holder routes for maain page navigations :
 

@@ -78,25 +78,26 @@
     </nav>
     {% endblock %}
     {% block hero_container %}
-<div class="container-fluid py-5 px-3" style="background: linear-gradient(90deg, #000000, #180461); border-radius: 0.5rem;">
-    <div class="d-flex flex-column flex-md-row align-items-center justify-content-center gap-4">
-        <!-- Logo -->
-        <a class="navbar-brand" href="{{ url_for('main_routes.index') }}">
-            <img src="{{ url_for('static', filename='assets/images/wsc-vertical-trans.png') }}" alt="WSC Logo" style="max-height: 120px; width: auto;">
-        </a>
-
-        <!-- Text Content -->
-        <div class="text-center text-md-start">
-            <h1 class="display-6 fw-bold text-light" style="font-family: 'Inter', sans-serif;">
-                Welcome to <span class="text-success">WSC</span> — Your Radiology Workflow Companion
-            </h1>
-            <p class="text-light fst-italic mt-2">
-                Empowering radiologists with smart tools for productivity, learning, and growth.
-            </p>
+    <div class="container-fluid my-4">
+        <div class="hero-container d-flex align-items-center justify-content-center py-4 px-3 bg-light rounded shadow-sm">
+            <!-- Logo -->
+            <a class="navbar-brand me-0" href="{{ url_for('main_routes.index') }}">
+                <img src="{{ url_for('static', filename='assets/images/logo-transparent-bg.png') }}" alt="Logo" style="height:180px;">
+            </a>
+            
+            <!-- Hero Container -->
+            <div class="text-container text-center">
+                <h1 class="display-5 fw-bolder mb-3" style="font-family: 'Inter', sans-serif; color: #343a40;">
+                    <span class="text-success">WSC</span> - A Workstation Companion App
+                </h1>
+                <p class="lead" style="color: #6c757d;">
+                    Simplify your radiology workflow with our intuitive and comprehensive tools. 
+                    <span class="fst-italic text-success">Because every hero needs a trusty companion.</span>
+                </p>
+            </div>
         </div>
     </div>
-</div>
-{% endblock %}
+    {% endblock %}
     
 <!-- Code to displace flash message -->
 
