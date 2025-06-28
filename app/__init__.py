@@ -7,7 +7,7 @@ from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
 from config import Config,userdir,basedir,creativesfolder
 from flask_login import LoginManager
-from .models import Base ,db
+from .models import Base ,db, Content, User, UserData
 import os
 from datetime import datetime,timedelta,timezone
 from flask_mail import Mail
@@ -58,7 +58,7 @@ def create_app():
     
     # Import models and add to Flask-Admin here to avoid circular import
     with app.app_context():
-        from .models import User, Content, UserData, Reference, UserFeedback, UserContentState, UserProfile, UserReportTemplate, AdminReportTemplate,CategoryNames, ModuleNames
+        from .models import User, Content, UserData, Reference, UserFeedback, UserContentState, UserProfile, UserReportTemplate, AdminReportTemplate,CategoryNames, ModuleNames,InteractionTypeEnum
         from .admin_views import MyModelView,UserModelView,ExtendModelView,ReferenceAdmin # Import both MyModelView  and UserModelView and RefrenceAdmin
 
     # Register Models in Flask-Admin

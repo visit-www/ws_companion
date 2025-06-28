@@ -1,26 +1,6 @@
 {% extends "base.html" %}
 
 {% block title %}Radiologist Dashboard | Workstation Companion{% endblock %}
-{% block hero_container %}
-<div class="container-fluid py-5 px-3" style="background: linear-gradient(90deg, #000000, #180461); border-radius: 0.5rem;">
-    <div class="d-flex flex-column flex-md-row align-items-center justify-content-center gap-4">
-        <!-- Logo -->
-        <a class="navbar-brand" href="{{ url_for('main_routes.index') }}">
-            <img src="{{ url_for('static', filename='assets/images/wsc-vertical-trans.png') }}" alt="WSC Logo" style="max-height: 120px; width: auto;">
-        </a>
-
-        <!-- Text Content -->
-        <div class="text-center text-md-start">
-            <h1 class="display-6 fw-bold text-light" style="font-family: 'Inter', sans-serif;">
-                Welcome to <span class="text-success">WSC</span> — Your Radiology Workflow Companion
-            </h1>
-            <p class="text-light fst-italic mt-2">
-                Empowering radiologists with smart tools for productivity, learning, and growth.
-            </p>
-        </div>
-    </div>
-</div>
-{% endblock %}
 
 {% block content %}
 <div class="container my-5">
@@ -68,7 +48,7 @@
                     <i class="bi bi-play-circle display-5 text-warning"></i>
                     <h5 class="card-title mt-3">My Productivity</h5>
                     <p class="card-text">Track your efficeincy</p>
-                    <a href="#" class="btn btn-outline-warning disabled">Coming Soon</a>
+                    <a href="{{ url_for('app_user.productivity_dashboard') }}" class="btn btn-outline-primary w-100 my-2">📈 Productivity Dashboard</a>
                 </div>
             </div>
         </div>

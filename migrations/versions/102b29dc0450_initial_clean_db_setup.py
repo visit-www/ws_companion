@@ -1,8 +1,8 @@
-"""Initial migration
+"""Initial clean DB setup
 
-Revision ID: 4726a3538ac2
+Revision ID: 102b29dc0450
 Revises: 
-Create Date: 2024-09-22 15:57:05.188541
+Create Date: 2025-06-28 05:52:05.114872
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '4726a3538ac2'
+revision: str = '102b29dc0450'
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -81,6 +81,13 @@ def upgrade() -> None:
     op.create_index(op.f('ix_contents_keywords'), 'contents', ['keywords'], unique=False)
     op.create_index(op.f('ix_contents_module'), 'contents', ['module'], unique=False)
     op.create_index(op.f('ix_contents_title'), 'contents', ['title'], unique=False)
+    op.create_table('cpd_activity_types',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('name', sa.String(length=150), nullable=False),
+    sa.Column('default_credits', sa.String(length=50), nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('name')
+    )
     op.create_table('users',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('username', sa.String(length=150), nullable=False),
@@ -90,7 +97,12 @@ def upgrade() -> None:
     sa.Column('is_admin', sa.Boolean(), nullable=True),
     sa.Column('status', sa.String(length=50), nullable=False),
     sa.Column('created_at', sa.DateTime(), nullable=False),
-    sa.PrimaryKeyConstraint('id')
+    sa.Column('totp_secret', sa.String(length=32), nullable=True),
+    sa.Column('recovery_phone', sa.String(length=20), nullable=True),
+    sa.Column('recovery_email', sa.String(length=150), nullable=True),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('recovery_email'),
+    sa.UniqueConstraint('recovery_phone')
     )
     op.create_index(op.f('ix_users_email'), 'users', ['email'], unique=True)
     op.create_index(op.f('ix_users_username'), 'users', ['username'], unique=True)
@@ -125,11 +137,28 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], onupdate='CASCADE', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
+    op.create_table('user_cpd_states',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('user_id', sa.UUID(), nullable=False),
+    sa.Column('appraisal_cycle_start', sa.String(length=20), nullable=False),
+    sa.Column('appraisal_cycle_end', sa.String(length=20), nullable=False),
+    sa.Column('current_cpd_year_start', sa.String(length=20), nullable=False),
+    sa.Column('current_cpd_year_end', sa.String(length=20), nullable=False),
+    sa.Column('appraisal_cycle_start_date', sa.Date(), nullable=True),
+    sa.Column('appraisal_cycle_end_date', sa.Date(), nullable=True),
+    sa.Column('current_cpd_year_start_date', sa.Date(), nullable=True),
+    sa.Column('current_cpd_year_end_date', sa.Date(), nullable=True),
+    sa.Column('is_active', sa.Boolean(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ondelete='CASCADE'),
+    sa.PrimaryKeyConstraint('id')
+    )
     op.create_table('user_data',
     sa.Column('id', sa.UUID(), nullable=False),
     sa.Column('user_id', sa.UUID(), nullable=False),
     sa.Column('content_id', sa.Integer(), nullable=True),
-    sa.Column('interaction_type', sa.Enum('viewed', 'bookmarked', 'recommended', 'registered', 'logged_in', 'logged_out', 'updated_profile_pic', 'updated_username', 'updated_email', 'updated_report_templates', 'updated_category_module_preferences', 'updated_contents', 'added_feedback', name='interaction_types'), nullable=False),
+    sa.Column('interaction_type', sa.Enum('VIEWED', 'BOOKMARKED', 'RECOMMENDED', 'REGISTERED', 'LOGGED_IN', 'LOGGED_OUT', 'UPDATED_PROFILE_PIC', 'UPDATED_USERNAME', 'UPDATED_EMAIL', 'UPDATED_REPORT_TEMPLATES', 'UPDATED_CATEGORY_MODULE_PREFERENCES', 'UPDATED_CONTENTS', 'ADDED_FEEDBACK', 'STARTED_SESSION', 'ENDED_SESSION', name='interaction_types', native_enum=False), nullable=True),
     sa.Column('last_interaction', sa.DateTime(), nullable=False),
     sa.Column('feedback', sa.Text(), nullable=True),
     sa.Column('content_rating', sa.Integer(), nullable=True),
@@ -138,6 +167,12 @@ def upgrade() -> None:
     sa.Column('current_login', sa.DateTime(), nullable=True),
     sa.Column('session_start_time', sa.DateTime(), nullable=True),
     sa.Column('login_count', sa.Integer(), nullable=True),
+    sa.Column('is_productivity_log', sa.Boolean(), nullable=True),
+    sa.Column('session_type', sa.Enum('tele', 'onsite-private', 'onsite-government/NHS', name='session_type_enum'), nullable=True),
+    sa.Column('modalities_handled', sa.ARRAY(sa.Enum('CT', 'X_RAY', 'MRI', 'ULTRASOUND', 'NUCLEAR_MEDICINE', 'MAMMOGRAPHY', 'OTHERS', name='modality_enum')), nullable=True),
+    sa.Column('subspecialty_tags', sa.ARRAY(sa.Enum('HEAD_AND_NECK', 'NEURORADIOLOGY', 'CHEST', 'CARDIOVASCULAR', 'BREAST', 'GASTROINTESTINAL', 'ABDOMINAL', 'GENITOURINARY', 'MUSCULOSKELETAL', 'VASCULAR', 'PEDIATRIC', 'ONCOLOGIC', 'EMERGENCY', 'INTERVENTIONAL', 'NUCLEAR_MEDICINE', 'RADIOGRAPHERS', 'OTHERS', name='module_name')), nullable=True),
+    sa.Column('num_cases_reported', sa.Integer(), nullable=True),
+    sa.Column('notes', sa.Text(), nullable=True),
     sa.ForeignKeyConstraint(['content_id'], ['contents.id'], onupdate='CASCADE', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], onupdate='CASCADE', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
@@ -162,6 +197,8 @@ def upgrade() -> None:
     sa.Column('profile_pic_path', sa.String(length=255), nullable=True),
     sa.Column('preferred_categories', sa.Text(), nullable=True),
     sa.Column('preferred_modules', sa.Text(), nullable=True),
+    sa.Column('preferred_subspecialties', sa.ARRAY(sa.Enum('HEAD_AND_NECK', 'NEURORADIOLOGY', 'CHEST', 'CARDIOVASCULAR', 'BREAST', 'GASTROINTESTINAL', 'ABDOMINAL', 'GENITOURINARY', 'MUSCULOSKELETAL', 'VASCULAR', 'PEDIATRIC', 'ONCOLOGIC', 'EMERGENCY', 'INTERVENTIONAL', 'NUCLEAR_MEDICINE', 'RADIOGRAPHERS', 'OTHERS', name='module_name')), nullable=True),
+    sa.Column('preferred_workplaces', sa.ARRAY(sa.String()), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.Column('updated_at', sa.DateTime(), nullable=False),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], onupdate='CASCADE', ondelete='CASCADE'),
@@ -192,16 +229,40 @@ def upgrade() -> None:
     op.create_index(op.f('ix_user_report_templates_module'), 'user_report_templates', ['module'], unique=False)
     op.create_index(op.f('ix_user_report_templates_template_name'), 'user_report_templates', ['template_name'], unique=True)
     op.create_index(op.f('ix_user_report_templates_user_id'), 'user_report_templates', ['user_id'], unique=False)
-    
+    op.create_table('cpd_logs',
+    sa.Column('id', sa.UUID(), nullable=False),
+    sa.Column('user_id', sa.UUID(), nullable=False),
+    sa.Column('activity_type_id', sa.Integer(), nullable=False),
+    sa.Column('start_date', sa.DateTime(), nullable=False),
+    sa.Column('end_date', sa.DateTime(), nullable=False),
+    sa.Column('cpd_year_start', sa.String(length=20), nullable=False),
+    sa.Column('cpd_year_end', sa.String(length=20), nullable=False),
+    sa.Column('appraisal_cycle_start', sa.String(length=20), nullable=False),
+    sa.Column('appraisal_cycle_end', sa.String(length=20), nullable=False),
+    sa.Column('title', sa.String(length=255), nullable=False),
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('reflection', sa.Text(), nullable=True),
+    sa.Column('has_reflection', sa.Boolean(), nullable=True),
+    sa.Column('cpd_points_guideline', sa.String(length=50), nullable=True),
+    sa.Column('cpd_points_claimed', sa.Float(), nullable=True),
+    sa.Column('external_links', sa.Text(), nullable=True),
+    sa.Column('certificate_filenames', sa.Text(), nullable=True),
+    sa.Column('tags', sa.Text(), nullable=True),
+    sa.Column('notes', sa.Text(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=True),
+    sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.Column('cpd_state_id', sa.UUID(), nullable=True),
+    sa.ForeignKeyConstraint(['activity_type_id'], ['cpd_activity_types.id'], ),
+    sa.ForeignKeyConstraint(['cpd_state_id'], ['user_cpd_states.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
-    op.create_table('alembic_version',
-    sa.Column('version_num', sa.VARCHAR(length=32), autoincrement=False, nullable=False),
-    sa.PrimaryKeyConstraint('version_num', name='alembic_version_pkc')
-    )
+    op.drop_table('cpd_logs')
     op.drop_index(op.f('ix_user_report_templates_user_id'), table_name='user_report_templates')
     op.drop_index(op.f('ix_user_report_templates_template_name'), table_name='user_report_templates')
     op.drop_index(op.f('ix_user_report_templates_module'), table_name='user_report_templates')
@@ -213,6 +274,7 @@ def downgrade() -> None:
     op.drop_table('user_profiles')
     op.drop_table('user_feedbacks')
     op.drop_table('user_data')
+    op.drop_table('user_cpd_states')
     op.drop_table('user_content_states')
     op.drop_index(op.f('ix_references_module'), table_name='references')
     op.drop_index(op.f('ix_references_file'), table_name='references')
@@ -221,6 +283,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_users_username'), table_name='users')
     op.drop_index(op.f('ix_users_email'), table_name='users')
     op.drop_table('users')
+    op.drop_table('cpd_activity_types')
     op.drop_index(op.f('ix_contents_title'), table_name='contents')
     op.drop_index(op.f('ix_contents_module'), table_name='contents')
     op.drop_index(op.f('ix_contents_keywords'), table_name='contents')

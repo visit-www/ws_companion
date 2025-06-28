@@ -90,6 +90,23 @@ class ModalityEnum(PyEnum):
     NUCLEAR_MEDICINE = 'nuclear medicine'
     MAMMOGRAPHY = 'mammography'
     OTHERS = 'others'
+    
+class InteractionTypeEnum(PyEnum):
+    VIEWED = "viewed"
+    BOOKMARKED = "bookmarked"
+    RECOMMENDED = "recommended"
+    REGISTERED = "registered"
+    LOGGED_IN = "logged_in"
+    LOGGED_OUT = "logged_out"
+    UPDATED_PROFILE_PIC = "updated_profile_pic"
+    UPDATED_USERNAME = "updated_username"
+    UPDATED_EMAIL = "updated_email"
+    UPDATED_REPORT_TEMPLATES = "updated_report_templates"
+    UPDATED_CATEGORY_MODULE_PREFERENCES = "updated_category_module_preferences"
+    UPDATED_CONTENTS = "updated_contents"
+    ADDED_FEEDBACK = "added_feedback"
+    STARTED_SESSION = "started_session"
+    ENDED_SESSION = "ended_session"
 
 # ********************************
 # * Models:
@@ -113,7 +130,6 @@ class User(UserMixin, Base):
     totp_secret:so.Mapped[Optional[str]] = sa.Column(sa.String(32), nullable=True)
     recovery_phone: so.Mapped[Optional[str]] = sa.Column(sa.String(20), unique=True, nullable=True)  # Updated to Optional
     recovery_email: so.Mapped[Optional[str]] = sa.Column(sa.String(150), unique=True, nullable=True)  # Updated to Optional
-    work_sessions: so.Mapped[list["WorkSession"]] = so.relationship("WorkSession", back_populates="user", cascade="all, delete-orphan")
     cpd_logs: so.Mapped[list["CPDLog"]] = so.relationship( "CPDLog", back_populates="user", cascade="all, delete-orphan")
     def set_password(self, password):
         self.password = generate_password_hash(password)
@@ -223,13 +239,46 @@ class AdminReportTemplate(Base):
 # Models for User Data and Preferences:
 
 # 5. UserData Model: captures user interactions with the contents
+from sqlalchemy.orm import mapped_column
+import sqlalchemy.orm as so
+from sqlalchemy.dialects.postgresql import ENUM as PGEnum  # ensure this is imported
+
+interaction_type: so.Mapped[InteractionTypeEnum] = mapped_column(
+    PGEnum(
+        InteractionTypeEnum,
+        name="interaction_types",
+        validate_strings=True,
+        create_type=False  # ✅ keep this False *only if the enum already exists*
+    ),
+    nullable=False,
+    default=InteractionTypeEnum.VIEWED
+)
 class UserData(Base):
     __tablename__ = 'user_data'
 
     id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
     user_id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False)
     content_id: so.Mapped[int] = sa.Column(sa.Integer, sa.ForeignKey('contents.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=True)
-    interaction_type: so.Mapped[str] = sa.Column(sa.Enum('viewed', 'bookmarked', 'recommended','registered','logged_in','logged_out','updated_profile_pic',"updated_username",'updated_email','updated_report_templates','updated_category_module_preferences','updated_contents','added_feedback', name='interaction_types'), nullable=False, default='viewed')
+    
+    from sqlalchemy import Enum as SAEnum
+
+    def enum_values_from_db():
+        return [
+            'viewed', 'bookmarked', 'recommended', 'registered', 'logged_in', 'logged_out',
+            'updated_profile_pic', 'updated_username', 'updated_email',
+            'updated_report_templates', 'updated_category_module_preferences',
+            'updated_contents', 'added_feedback', 'started_session', 'ended_session'
+        ]
+    interaction_type: so.Mapped[InteractionTypeEnum] = mapped_column(
+        SAEnum(
+            InteractionTypeEnum,
+            name="interaction_types",
+            create_type=False,
+            validate_strings=True,
+            native_enum=False  # stays here
+        ),
+        nullable=True
+        )
     last_interaction: so.Mapped[datetime] = sa.Column(sa.DateTime, nullable=False, default=datetime.now(timezone.utc))
     feedback: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
     content_rating: so.Mapped[Optional[int]] = sa.Column(sa.Integer, nullable=True)
@@ -238,7 +287,27 @@ class UserData(Base):
     current_login: so.Mapped[Optional[datetime]] = sa.Column(sa.DateTime, nullable=True)
     session_start_time: so.Mapped[Optional[datetime]] = sa.Column(sa.DateTime, nullable=True)
     login_count: so.Mapped[Optional[int]] = sa.Column(sa.Integer, nullable=True, default=0)
-    
+
+    # WorkSession-related fields
+    is_productivity_log: so.Mapped[bool] = sa.Column(sa.Boolean, default=False)
+
+    session_type: so.Mapped[Optional[str]] = sa.Column(
+        sa.Enum('tele', 'onsite-private', 'onsite-government/NHS', name='session_type_enum'), 
+        nullable=True
+    )
+
+    modalities_handled: so.Mapped[Optional[list[ModalityEnum]]] = sa.Column(
+        sa.ARRAY(sa.Enum(ModalityEnum, name='modality_enum')),
+        nullable=True
+    )
+
+    subspecialty_tags: so.Mapped[Optional[list[ModuleNames]]] = sa.Column(
+        sa.ARRAY(sa.Enum(ModuleNames, name='module_name')),
+        nullable=True
+    )
+
+    num_cases_reported: so.Mapped[Optional[int]] = sa.Column(sa.Integer, nullable=True)
+    notes: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
 
     # Relationships
     user = so.relationship('User', backref=so.backref('user_data', lazy='dynamic', cascade="all, delete-orphan"), passive_deletes=True)
@@ -246,7 +315,6 @@ class UserData(Base):
 
     def __repr__(self) -> str:
         return f"<UserData(id={self.id}, user_id={self.user_id}, content_id={self.content_id})>"
-
 # 6. UserContentState Model: Saves user content state for future sessions
 class UserContentState(Base):
     __tablename__ = 'user_content_states'
@@ -300,6 +368,8 @@ class UserReportTemplate(Base):
         return f"<ReportTemplate(id={self.id}, template_name='{self.template_name}', is_public={self.is_public})>"
 
 # 8. UserProfile Model: stores user preferences and profile information
+from sqlalchemy.dialects.postgresql import ARRAY
+
 class UserProfile(Base):
     __tablename__ = 'user_profiles'
 
@@ -310,6 +380,16 @@ class UserProfile(Base):
     profile_pic_path: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)  # Path to profile picture for management
     preferred_categories: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)  # Comma-separated or JSON format
     preferred_modules: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)  # Comma-separated or JSON format
+    # New fields for user-selected subspecialty and workplace interests
+    preferred_subspecialties: so.Mapped[Optional[list[ModuleNames]]] = sa.Column(
+        sa.ARRAY(sa.Enum(ModuleNames, name="module_name")),
+        nullable=True
+    )
+
+    preferred_workplaces: so.Mapped[Optional[list[str]]] = sa.Column(
+        sa.ARRAY(sa.String),
+        nullable=True
+    )
     created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), nullable=False)
     updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc), nullable=False)
 
@@ -350,31 +430,8 @@ class UserFeedback(Base):
     def __repr__(self) -> str:
         return f"<UserFeedback(id={self.id}, user_display_name='{self.user_display_name}', feedback='{self.feedback[:20]}...')>"
 
-class WorkSession(Base):
-    __tablename__ = 'work_sessions'
-
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
-
-    start_time = Column(DateTime, nullable=False, default=datetime.utcnow)
-    end_time = Column(DateTime, nullable=True)
-
-    num_cases_reported = Column(Integer, nullable=True)
-    session_type = Column(String(50), nullable=True)  # e.g., 'remote', 'on-call', 'clinic'
-    modalities_handled = Column(String(200), nullable=True)  # e.g., 'CT, MRI, XR'
-
-    notes = Column(Text, nullable=True)
-
-    created_at = Column(DateTime, default=datetime.utcnow)
-    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-    user = relationship("User", back_populates="work_sessions")
-
-    def duration(self):
-        if self.start_time and self.end_time:
-            return (self.end_time - self.start_time).total_seconds() / 3600
-        return None
-    
+#!-----------------------------------------------------------
+# Models for cpd managment #
 class CPDActivityType(Base):
     __tablename__ = "cpd_activity_types"
 
