@@ -13,7 +13,8 @@
 
 /* Remove Link Decorations */
 a {
-    text-decoration: none;  /* Adding !important to ensure it overrides other styles */
+    text-decoration: none;
+    /* Adding !important to ensure it overrides other styles */
     color: black;
 }
 
@@ -57,8 +58,9 @@ a {
     margin: 0 auto;
 }
 
-.action-card .card-body{
-    aspect-ratio: 1 / 1; /* Ensures the cards are square */
+.action-card .card-body {
+    aspect-ratio: 1 / 1;
+    /* Ensures the cards are square */
     width: 100%;
     display: flex;
     justify-content: center;
@@ -67,16 +69,20 @@ a {
     border-radius: 10px;
     box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
     transition: transform 0.3s;
-    font-size: 16px !important; 
-} 
+    font-size: 16px !important;
+}
+
 /* Reduce card and text size for smaller screens */
 @media (max-width: 530px) {
-    .card-title{
+    .card-title {
         padding: 10px;
         font-size: 0.6rem !important;
-    };
-    .card.action-card{
-        padding:3px !important;
+    }
+
+    ;
+
+    .card.action-card {
+        padding: 3px !important;
         aspect-ratio: 1/1 !important;
     }
 
@@ -84,90 +90,155 @@ a {
 
 /* Reduce card and text size for smaller screens */
 @media (max-width: 600px) {
-    
-    .card-title{
+
+    .card-title {
         padding: 10px;
         font-size: 0.7rem !important;
-    };
+    }
+
+    ;
 }
 
 
 .action-card:hover {
     transform: translateY(-5px);
 }
+
 /* Different Background Colors for Each Card */
-.card-0 { background-color: #d9bbf9; }
-.card-1 { background-color: #d9d9d9; }
-.card-2 { background-color: #90f1ef; }
-.card-3 { background-color: #ffb7ff; }
-.card-4 { background-color: #eac5d8; }
-.card-5 { background-color: #dbd8f0; }
-.card-6 { background-color: #c1fba4; }
-.card-7 { background-color: #fff07c; }
-.card-8 { background-color: #7ee8fa; }
-.card-9 { background-color: #56cbf9; }
-.card-10 { background-color: #d9bbf9; }
-.card-11 { background-color: #c1fba4; }
-.card-12 { background-color: #e58c8a; }
-.card-13 { background-color: #d9bbf9; }
-.card-14 { background-color: #d9d9d9; }
-.card-15 { background-color: #fff07c; }
-.card-16 { background-color: #d9bbf9; }
+.card-0 {
+    background-color: #d9bbf9;
+}
+
+.card-1 {
+    background-color: #d9d9d9;
+}
+
+.card-2 {
+    background-color: #90f1ef;
+}
+
+.card-3 {
+    background-color: #ffb7ff;
+}
+
+.card-4 {
+    background-color: #eac5d8;
+}
+
+.card-5 {
+    background-color: #dbd8f0;
+}
+
+.card-6 {
+    background-color: #c1fba4;
+}
+
+.card-7 {
+    background-color: #fff07c;
+}
+
+.card-8 {
+    background-color: #7ee8fa;
+}
+
+.card-9 {
+    background-color: #56cbf9;
+}
+
+.card-10 {
+    background-color: #d9bbf9;
+}
+
+.card-11 {
+    background-color: #c1fba4;
+}
+
+.card-12 {
+    background-color: #e58c8a;
+}
+
+.card-13 {
+    background-color: #d9bbf9;
+}
+
+.card-14 {
+    background-color: #d9d9d9;
+}
+
+.card-15 {
+    background-color: #fff07c;
+}
+
+.card-16 {
+    background-color: #d9bbf9;
+}
 
 /* Footer */
 .footer {
-    width: 100%;
-    box-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+    width: 95%;
+
     border-radius: 10px;
     background-color: #d9d9d9;
-    padding: 10
+    padding: 10;
+    border-radius: 0.75rem;
+    margin: 0 auto;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25);
 }
 
- /* Custom toast background color */
+/* Custom toast background color */
 .custom-toast {
-    background-color: #28a745; /* Bootstrap's 'success' green color */
+    background-color: #28a745;
+    /* Bootstrap's 'success' green color */
 }
 
 /* Ensure text is visible */
 .custom-toast .toast-body {
     color: #fff;
 }
+
 /* Text highlight custom classes */
-.highlight-yellow { 
+.highlight-yellow {
     background-color: yellow;
     color: black;
 }
 
-.highlight-green { 
+.highlight-green {
     background-color: lightgreen;
     color: black;
 }
 
-.highlight-gray { 
+.highlight-gray {
     background-color: lightgray;
     color: black;
 }
 
-.highlight-orange { 
+.highlight-orange {
     background-color: orange;
     color: black;
 }
+
 /*login button */
 .login-btn {
     background-color: #7bf1a8;
     width: 60%;
 }
-.login-btn:hover{
+
+.login-btn:hover {
     background-color: #136733;
 }
-.custom_input{
+
+.custom_input {
     background-color: #d9bbf9;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    /* Subtle shadow */
 }
-.custom_input:active{
+
+.custom_input:active {
     background-color: hsl(123, 84%, 85%);
-    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2); /* Slightly larger shadow on active */
+    box-shadow: 0 6px 8px rgba(0, 0, 0, 0.2);
+    /* Slightly larger shadow on active */
 }
+
 /*----------------------------------------------------------------
 /* List view styles for crtageroy html (activated when toggle view is clikced)*/
 /* List view styling */
@@ -188,7 +259,7 @@ a {
     justify-content: space-between;
 }
 
-.my-card-box.list-view .content-item .card-body h5, 
+.my-card-box.list-view .content-item .card-body h5,
 .my-card-box.list-view .content-item .card-body p {
     text-align: left;
 }
@@ -198,23 +269,30 @@ a {
     align-items: center;
     justify-content: flex-end;
 }
+
 /* =================================================================
 styling of the pop up modal :*/
-.modal-header .modal-footer{
+.modal-header .modal-footer {
 
     background-color: #e3e2eb;
     color: white;
 }
+
 .modal-body {
-    padding: 6px; /* Remove padding around the iframe */
-    max-height: 70vh; /* Set a maximum height */
-    overflow-y: auto; /* Enable vertical scrolling */
+    padding: 6px;
+    /* Remove padding around the iframe */
+    max-height: 70vh;
+    /* Set a maximum height */
+    overflow-y: auto;
+    /* Enable vertical scrolling */
 
 }
 
 .modal-content {
-    border-radius: 20px; /* Optional: Remove modal border radius if you want it flush */
-    z-index: 1050; /* Ensure this is higher than other elements */
+    border-radius: 20px;
+    /* Optional: Remove modal border radius if you want it flush */
+    z-index: 1050;
+    /* Ensure this is higher than other elements */
 }
 
 
@@ -222,33 +300,39 @@ styling of the pop up modal :*/
 .video-screen {
     background-color: #000;
     border-radius: 30px;
-    box-shadow:8px 5px 5px 8px #bab9b2;
-    color:white;
+    box-shadow: 8px 5px 5px 8px #bab9b2;
+    color: white;
 }
 
 .modal-dialog {
     max-width: 100%;
     width: auto;
-    
+
 }
 
 .modal-body iframe {
     width: 100%;
-    max-height: 70vh; /* Set a maximum height */
-    overflow-y: auto; /* Enable vertical scrolling */
-    
+    max-height: 70vh;
+    /* Set a maximum height */
+    overflow-y: auto;
+    /* Enable vertical scrolling */
+
 }
+
 #webpageIframe {
-    height: 100%; /* Set to 100% of the parent */
+    height: 100%;
+    /* Set to 100% of the parent */
 }
+
 /* iOS specific fix */
 .modal-body {
-    -webkit-overflow-scrolling: touch; /* Ensure smooth scrolling on iOS devices */
+    -webkit-overflow-scrolling: touch;
+    /* Ensure smooth scrolling on iOS devices */
 }
 
 /* =================================================================*/
 /* CSS to style carousel cards on smaller */
- /* Closing brace for the media query */
+/* Closing brace for the media query */
 
 /*----------------------------------------------------------------
 /* Style document viewer   */
@@ -256,7 +340,8 @@ styling of the pop up modal :*/
 .document-viewer-container {
     display: flex;
     flex-direction: column;
-    height: calc(100vh - 180px); /* Adjust this value according to the height of your navbar and footer */
+    height: calc(100vh - 180px);
+    /* Adjust this value according to the height of your navbar and footer */
 }
 
 /* Flexbox setup for the document viewer */
@@ -268,7 +353,8 @@ styling of the pop up modal :*/
 
 /* Sidebar positioned on the left */
 .side-controls {
-    width: 80px; /* Adjust width as needed */
+    width: 80px;
+    /* Adjust width as needed */
     background-color: #080808;
     padding: 10px;
     flex-shrink: 0;
@@ -287,7 +373,8 @@ styling of the pop up modal :*/
 
 /* Top control bar */
 .top-controls {
-    height: 50px; /* Fixed height for top controls */
+    height: 50px;
+    /* Fixed height for top controls */
     background-color: #e9ecef;
     padding: 10px;
     flex-shrink: 0;
@@ -304,123 +391,169 @@ styling of the pop up modal :*/
 /* Responsive adjustments */
 @media (max-width: 768px) {
     .side-controls {
-        display: none; /* Hide sidebar on smaller screens */
-    };
+        display: none;
+        /* Hide sidebar on smaller screens */
+    }
+
+    ;
+
     .document-viewer {
-        flex-direction: column; /* Stack top controls on top */
-    };
-    
+        flex-direction: column;
+        /* Stack top controls on top */
+    }
+
+    ;
+
 }
 
 /* Customise pdf viewer container  */
 #adobe-dc-view {
     width: 100%;
-    height: 100vh; /* Full viewport height */
-    margin: 0; /* No margins */
-    padding: 0; /* No padding */
-    display: flex; /* Use flex to center content */
-    justify-content: center; /* Center horizontally */
-    align-items: center; /* Center vertically */
+    height: 100vh;
+    /* Full viewport height */
+    margin: 0;
+    /* No margins */
+    padding: 0;
+    /* No padding */
+    display: flex;
+    /* Use flex to center content */
+    justify-content: center;
+    /* Center horizontally */
+    align-items: center;
+    /* Center vertically */
 }
 
 /* Responsive adjustments for user account /profile page (user_managment.html) */
 /* Custom CSS for better responsiveness */
 .card {
-    border-radius: 8px; /* Slight rounding for cards */
+    border-radius: 8px;
+    /* Slight rounding for cards */
 }
 
 .img-thumbnail {
     max-width: 100%;
     height: auto;
 }
+
 .watermark-card {
-    background-size:contain; /* Ensure the background covers the entire card */
-    background-position: center; /* Center the background */
-    background-repeat: no-repeat; /* Avoid repeating the background */
-    position: relative; /* Ensures z-indexing works properly */
-    background-color: rgba(255, 255, 255, 0.9); /* Optional white overlay */
-    background-size: 40%; /* Make the image smaller */
-    background-position: center center; /* Position it in the center */
-    background-repeat: no-repeat; /* Prevent the image from repeating */
-    position: relative; 
+    background-size: contain;
+    /* Ensure the background covers the entire card */
+    background-position: center;
+    /* Center the background */
+    background-repeat: no-repeat;
+    /* Avoid repeating the background */
+    position: relative;
+    /* Ensures z-indexing works properly */
+    background-color: rgba(255, 255, 255, 0.9);
+    /* Optional white overlay */
+    background-size: 40%;
+    /* Make the image smaller */
+    background-position: center center;
+    /* Position it in the center */
+    background-repeat: no-repeat;
+    /* Prevent the image from repeating */
+    position: relative;
 }
-.my-card-title{
+
+.my-card-title {
     font-weight: 800;
     color: #28a745;
 
 }
+
 .decorative-line {
     border: 0;
     height: 2px;
     background: linear-gradient(to right, #ccc, #000, #ccc);
     margin: 20px 0;
 }
+
 .my-card-body {
-    z-index: 2; /* Ensure the text and buttons are above the background */
-    background-color: rgba(223, 236, 211, 0.5); /* Optional: Adds a slight white background behind text */
+    z-index: 2;
+    /* Ensure the text and buttons are above the background */
+    background-color: rgba(223, 236, 211, 0.5);
+    /* Optional: Adds a slight white background behind text */
 }
 
 .my-card:hover {
     transform: scale(1.05);
     transition: all 0.3s ease-in-out;
 }
+
 .card-title {
-    font-size: 1.25rem; /* Increase font size on desktop */
+    font-size: 1.25rem;
+    /* Increase font size on desktop */
 }
 
 @media (max-width: 576px) {
     .card-title {
-        font-size: 1rem; /* Adjust for mobile */
-    };
+        font-size: 1rem;
+        /* Adjust for mobile */
+    }
+
+    ;
 }
 
 /* Adjust form elements on small screens */
 @media (max-width: 576px) {
     .form-control {
-        font-size: 14px; /* Slightly smaller font size for inputs */
-    };
+        font-size: 14px;
+        /* Slightly smaller font size for inputs */
+    }
+
+    ;
+
     .btn {
-        width: 100%; /* Buttons take full width on small screens */
+        width: 100%;
+        /* Buttons take full width on small screens */
         margin-top: 10px;
-    };
+    }
+
+    ;
 }
+
 /* Hover effect */
 .btn:hover {
     box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
-    transform: translateY(-2px); /* Slightly lifts the button */
+    transform: translateY(-2px);
+    /* Slightly lifts the button */
 }
 
 /* Active (click) effect */
 .btn:active {
-    transform: scale(0.95); /* Slightly shrinks the button on click */
+    transform: scale(0.95);
+    /* Slightly shrinks the button on click */
     box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 /* Custom CSS for user_managment.html (Profile page) */
-hr{
-    color:hsl(197, 92%, 31%);   
-}  
+hr {
+    color: hsl(197, 92%, 31%);
+}
+
 /*------------------------------------------------
 /* Style toast container for flash messages */
 .toast-container {
-    border-radius:8px;
-    padding:8px;
+    border-radius: 8px;
+    padding: 8px;
 }
-.toast{
+
+.toast {
     border-radius: 10px;
 }
 
 /*------------------------------------------------
 /* Custom styles for reset_user.html */
-.bottom-container{
+.bottom-container {
     width: 50vw;
     background-color: hsl(60, 50%, 98%);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     border-radius: 15px;
     padding: 20px;
 }
+
 .card-custom {
-    background-color:#feffff;
+    background-color: #feffff;
     border-radius: 15px;
     padding: 20px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -445,7 +578,7 @@ hr{
 .btn-blue {
     background-color: #b2ebf2;
     color: black;
-    border:none;
+    border: none;
     border-radius: 5px;
 
 }
@@ -454,8 +587,11 @@ hr{
 
 @media (max-width: 768px) {
     .card-custom {
-        margin-bottom: 20px; /* Adds spacing for smaller screens */
-    };
+        margin-bottom: 20px;
+        /* Adds spacing for smaller screens */
+    }
+
+    ;
 }
 
 /********************************
@@ -466,61 +602,90 @@ hr{
 
 /* Adjusted to fit Bootstrap color palette */
 .pastel-light {
-    background-color: #F8F9FA; /* Bootstrap light grey */
+    background-color: #F8F9FA;
+    /* Bootstrap light grey */
 }
 
 .pastel-light-blue {
-    background-color: #E9F7FD; /* Lightened Bootstrap primary */
+    background-color: #E9F7FD;
+    /* Lightened Bootstrap primary */
 }
 
 .pastel-light-peach {
-    background-color: #FFF8E1; /* Lightened and softened peach closer to Bootstrap */
+    background-color: #FFF8E1;
+    /* Lightened and softened peach closer to Bootstrap */
 }
 
 .pastel-light-green {
-    background-color: #DFF6DD; /* Very soft green, matching Bootstrap success */
+    background-color: #DFF6DD;
+    /* Very soft green, matching Bootstrap success */
 }
 
 .pastel-pink {
-    background-color: #FDE2E2; /* Soft, warm pink */
+    background-color: #FDE2E2;
+    /* Soft, warm pink */
 }
 
 .pastel-light-orange {
-    background-color: #FFEFD5; /* Lightened pastel orange */
+    background-color: #FFEFD5;
+    /* Lightened pastel orange */
 }
 
 .pastel-light-yellow {
-    background-color: #FFFBEA; /* Light yellow, softer than Bootstrap warning */
+    background-color: #FFFBEA;
+    /* Light yellow, softer than Bootstrap warning */
 }
 
 /* Custom shade for Subscription Status */
 .pastel-status-paid {
-    background-color: #D4EDDA; /* Bootstrap success green for paid status */
+    background-color: #D4EDDA;
+    /* Bootstrap success green for paid status */
 }
 
 .pastel-status-free {
-    background-color: #FFF3CD; /* Bootstrap yellow for free status */
+    background-color: #FFF3CD;
+    /* Bootstrap yellow for free status */
 }
+
 /* Custom background colours flash messages */
-.pastel-bg-success { background-color: #d1f7d6; color: #065f46; }
-.pastel-bg-danger  { background-color: #fde2e2; color: #7f1d1d; }
-.pastel-bg-info    { background-color: #e0f7fa; color: #004d40; }
-.pastel-bg-warning { background-color: #fff8e1; color: #7c4700; }
+.pastel-bg-success {
+    background-color: #d1f7d6;
+    color: #065f46;
+}
+
+.pastel-bg-danger {
+    background-color: #fde2e2;
+    color: #7f1d1d;
+}
+
+.pastel-bg-info {
+    background-color: #e0f7fa;
+    color: #004d40;
+}
+
+.pastel-bg-warning {
+    background-color: #fff8e1;
+    color: #7c4700;
+}
 
 /* Customized Report Templates Section */
 .pastel-grey {
-    background-color: #E2E3E5; /* Bootstrap grey */
+    background-color: #E2E3E5;
+    /* Bootstrap grey */
 }
+
 /* Custom Classes for Mobile Text Sizing */
 .text-header-mobile {
     font-size: 0.9em;
-    color:green;
+    color: green;
 }
 
 .text-para-mobile {
     font-size: 0.8em;
-    white-space: normal;    /* Allows text to wrap */
-    overflow-wrap: break-word; /* Prevents long words from overflowing */
+    white-space: normal;
+    /* Allows text to wrap */
+    overflow-wrap: break-word;
+    /* Prevents long words from overflowing */
 }
 
 /* Additional spacing for better readability between sections */
@@ -530,7 +695,8 @@ hr{
 
 /* Adjust text color for better readability */
 .text-primary {
-    color: #007BFF !important; /* Ensure text remains clear and visible */
+    color: #007BFF !important;
+    /* Ensure text remains clear and visible */
 }
 
 /* Button styles */
@@ -548,14 +714,18 @@ hr{
 
 .btn-custom-yellow {
     background-color: white;
-    color: black; /* Optional: Set the text color */
-    border: 1px solid #ddd; /* Optional: Add border for better contrast */
+    color: black;
+    /* Optional: Set the text color */
+    border: 1px solid #ddd;
+    /* Optional: Add border for better contrast */
 }
 
 .btn-custom-yellow:hover {
-    background-color: #FFF8E1; /* Pastel yellow */
+    background-color: #FFF8E1;
+    /* Pastel yellow */
     cursor: pointer;
 }
+
 /* Nvabar ansd hero continae styles */
 /* General Styling Adjustments */
 .navbar-brand {
@@ -570,110 +740,159 @@ hr{
 /* Adjustments for Smaller Screens */
 @media (max-width: 576px) {
     .navbar-brand {
-        font-size: 1.2rem; /* Smaller navbar brand font size for mobile */
-    };
-    .sm_navbar_items{
+        font-size: 1.2rem;
+        /* Smaller navbar brand font size for mobile */
+    }
+
+    ;
+
+    .sm_navbar_items {
         font-size: 0.9em;
-    };
+    }
+
+    ;
+
     .bi-shield-fill-check {
-        font-size: 1.5em; /* Smaller shield icon */
-    };
-    .hero-container{
+        font-size: 1.5em;
+        /* Smaller shield icon */
+    }
+
+    ;
+
+    .hero-container {
         padding: 18px !important;
-    };
+    }
+
+    ;
+
     .hero-container h1 {
-        font-size: 1.3rem; /* Reduced font size for mobile headings */
-    };
+        font-size: 1.3rem;
+        /* Reduced font size for mobile headings */
+    }
+
+    ;
+
     .hero-container p {
-        font-size: 0.9rem; /* Reduced font size for mobile subheadings */
-    };
-    .btn-primary{
-        width:40vw !important;
-    };
-    .table-responsive{
+        font-size: 0.9rem;
+        /* Reduced font size for mobile subheadings */
+    }
+
+    ;
+
+    .btn-primary {
+        width: 40vw !important;
+    }
+
+    ;
+
+    .table-responsive {
         font-size: 0.8rem;
-    };
-    .delete-observation-btn{
+    }
+
+    ;
+
+    .delete-observation-btn {
         font-size: 0.5 rem;
-    };
+    }
+
+    ;
 }
 
 
 .greeting-text {
-        font-family: 'Brush Script MT', cursive; /* Cursive handwriting effect */
-        font-size: 1.2rem; /* Slightly larger font size */
-        @keyframes animtext { 
-            from {
-                width: 0;
+    font-family: 'Brush Script MT', cursive;
+    /* Cursive handwriting effect */
+    font-size: 1.2rem;
+
+    /* Slightly larger font size */
+    @keyframes animtext {
+        from {
+            width: 0;
             transition: all 2s ease-in-out;
-            } 
         }
     }
-        
+}
+
 /* Full-screen reader view */
 .reader-view {
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    overflow-y: auto; /* Enable scrolling for long content */
+    overflow-y: auto;
+    /* Enable scrolling for long content */
     z-index: 1000;
     padding: 1.5rem;
 }
 
 .reader-view .content {
-    max-width: 800px; /* Limits width for readability on larger screens */
+    max-width: 800px;
+    /* Limits width for readability on larger screens */
     width: 100%;
     margin: 0 auto;
 }
 
 @media (max-width: 768px) {
+
     /* Adjust font and padding for mobile devices */
     .reader-view {
         font-size: 16px;
         line-height: 1.4;
         padding: 1rem;
     }
-};
+}
+
+;
 
 @media (max-width: 576px) {
+
     /* Further adjust for very small screens */
     .reader-view {
         font-size: 15px;
         line-height: 1.3;
         padding: 0.8rem;
     }
-};
+}
+
+;
+
 /* Reusable classes for different types of anatomical terms */
-.nerve { 
-    background-color: rgb(229, 229, 168); 
-    font-weight: bold; 
-}
-
-.nucleus { 
-    background-color: rgb(239, 187, 147); 
-    font-weight: bold; 
-}
-
-.artery { 
-    background-color: rgb(227, 159, 168); 
-    font-weight: bold; 
-} 
-.vein{
-    background-color: rgb(139, 155, 227); 
+.nerve {
+    background-color: rgb(229, 229, 168);
     font-weight: bold;
-}/* Artery and vein use the same color */
-
-.foramina { 
-    background-color: #e4d6c4; /* Pastel brown */
-    font-weight: bold; 
 }
+
+.nucleus {
+    background-color: rgb(239, 187, 147);
+    font-weight: bold;
+}
+
+.artery {
+    background-color: rgb(227, 159, 168);
+    font-weight: bold;
+}
+
+.vein {
+    background-color: rgb(139, 155, 227);
+    font-weight: bold;
+}
+
+/* Artery and vein use the same color */
+
+.foramina {
+    background-color: #e4d6c4;
+    /* Pastel brown */
+    font-weight: bold;
+}
+
 .reference {
     font-style: italic;
-    color: #007BFF !important; /* Link color */
+    color: #007BFF !important;
+    /* Link color */
     text-decoration: underline !important;
 }
-.article-headers{
+
+.article-headers {
     font-weight: bold;
     font-size: 1.1rem;
     background-color: rgb(221, 221, 146);
@@ -683,6 +902,82 @@ hr{
     font-size: 0.75rem;
     padding: 0.4em 0.6em;
 }
-.table td, .table th {
+
+.table td,
+.table th {
     vertical-align: middle;
+}
+
+/* universal styling and bsase html classes */
+/* Applies to the entire hero container (paper feel background) */
+.paper-background {
+    background-color: #0c68e9;
+    background-image: url('/static/assets/images/paper-fibers.png');
+    background-repeat: repeat;
+    background-size: auto;
+    border-radius: 0.5rem;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.25);
+}
+
+/* Hero banner retains its vibrant gradient + texture */
+.hero-banner {
+    background-image: url('/static/assets/images/paper-fibers.png');
+    background-blend-mode: overlay;
+    color: white;
+    padding: 1.25rem 1.5rem;
+    border-radius: 0.75rem;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+.section-header {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #fefefe;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.dashboard-card {
+    border-radius: 1rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+    transition: transform 0.2s ease-in-out;
+    background-color: #fff;
+}
+
+.dashboard-card:hover {
+    transform: scale(1.015);
+}
+
+body {
+    background-color: #e3eaf3;
+    background: linear-gradient(135deg, #4f83cc, #256d9b);
+    background-image: url('/static/assets/images/paper-fibers.png');
+    background-repeat: repeat;
+    background-size: auto;
+}
+
+/* Wrapper that applies the paper texture site-wide */
+.paper-background-wrapper {
+    background-color: #f9f9f9;
+    background-image: url('/static/assets/images/paper-fibers.png');
+    background-repeat: repeat;
+    min-height: 100vh;
+    padding-top: 1rem;
+    padding-bottom: 2rem;
+}
+
+/* Content container inside textured bg */
+.main-container {
+    background: rgba(255, 255, 255, 0.96);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    margin: 0 auto;
+    max-width: 95%;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+body {
+    font-family: 'Inter', 'Segoe UI', sans-serif;
+    line-height: 1.6;
+    font-size: 1rem;
+    color: #333;
 }

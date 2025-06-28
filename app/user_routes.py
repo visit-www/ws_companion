@@ -1,4 +1,4 @@
-# * Imports
+#
 from flask import Blueprint, request, render_template, redirect, url_for, flash, session, jsonify, send_file, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -14,7 +14,7 @@ from config import Config, basedir, userdir
 from app.models import (
     User, UserContentState, CategoryNames, ModuleNames,
     UserData, UserProfile, UserFeedback, UserReportTemplate,
-    CPDLog, CPDActivityType, UserCPDState
+    CPDLog, CPDActivityType, UserCPDState, InteractionTypeEnum
 )
 from app.forms import LoginForm, AddCPDLogForm
 from app.util import (
@@ -142,7 +142,7 @@ def login():
                 if user_data.login_count is None:
                     user_data.login_count = 0
                 user_data.login_count += 1
-                user_data.interaction_type = "logged_in"  # Ensure this value aligns with your enum or model definition
+                user_data.interaction_type = InteractionTypeEnum.LOGGED_IN  # Ensure this value aligns with your enum or model definition
                 user_data.last_interaction=datetime.now(timezone.utc)
                 user.status = "active"
                 db.session.commit()  # Save changes to the database
@@ -191,7 +191,7 @@ def logout():
 
         # Update user data
         user_data.last_interaction = datetime.now(timezone.utc)
-        user_data.interaction_type = "logged_out"  # Corrected typo from 'loged_out' to 'logged_out'
+        user_data.interaction_type = InteractionTypeEnum.LOGGED_OUT  # Corrected typo from 'loged_out' to 'logged_out'
         user.status = "inactive"  # Set user status to inactive
 
         # Commit the changes to the database
@@ -266,7 +266,7 @@ def register():
                 # Initialize UserData with baseline information
                 user_data = UserData(
                     user_id=new_user.id,
-                    interaction_type='registered',
+                    interaction_type=InteractionTypeEnum.REGISTERED,
                     feedback=None,
                     content_rating=None,
                     time_spent=0,
@@ -583,7 +583,7 @@ def profile_manager():
                     # Update the user data
                     user_data = db.session.query(UserData).filter_by(user_id=current_user.id).first()
                     if user_data:
-                        user_data.interaction_type = "updated_profile_pic"
+                        user_data.interaction_type = InteractionTypeEnum.UPDATED_PROFILE_PIC
                         user_data.last_interaction = datetime.now(timezone.utc)
 
                     db.session.commit()  # Commit the changes to the database
@@ -615,7 +615,7 @@ def profile_manager():
                             current_user.username = requested_username.lower()
                             user_data = db.session.query(UserData).filter_by(user_id=current_user.id).first()
                             user_data.last_interaction = datetime.now(timezone.utc)
-                            user_data.interaction_type = "updated_username"
+                            user_data.interaction_type = InteractionTypeEnum.UPDATED_USERNAME
                             db.session.commit()  # Commit the changes to the database
                             flash('Username updated successfully!', 'info')
                             return redirect(url_for('app_user.user_management'))
@@ -1534,3 +1534,148 @@ def export_full_appraisal_log():
 
     flash("❌ Invalid export format selected.", "danger")
     return redirect(url_for("app_user.cpd_dashboard"))
+
+
+
+# -------------------------
+# Productivity Dashboard
+# -------------------------
+
+# Mock productivity dashboard route
+from datetime import datetime, timedelta
+from sqlalchemy import and_
+
+@app_user_bp.route("/productivity/dashboard", methods=["GET"])
+@login_required
+def productivity_dashboard():
+    from app.models import UserProfile, UserData
+
+    user_profile = db.session.query(UserProfile).filter_by(user_id=current_user.id).first()
+
+    # Date boundaries
+    today = datetime.utcnow().date()
+    today_start = datetime.combine(today, datetime.min.time())
+    today_end = datetime.combine(today, datetime.max.time())
+    yesterday_start = today_start - timedelta(days=1)
+    yesterday_end = today_end - timedelta(days=1)
+
+    # Yesterday's logs
+    yesterday_logs = (
+        db.session.query(UserData)
+        .filter(
+            UserData.user_id == current_user.id,
+            UserData.is_productivity_log == True,
+            UserData.session_start_time >= yesterday_start,
+            UserData.session_start_time <= yesterday_end,
+        ).all()
+    )
+
+    # Today's logs
+    today_logs = (
+        db.session.query(UserData)
+        .filter(
+            UserData.user_id == current_user.id,
+            UserData.is_productivity_log == True,
+            UserData.session_start_time >= today_start,
+            UserData.session_start_time <= today_end,
+        ).all()
+    )
+
+    return render_template(
+        "productivity_dashboard.html",
+        user_profile=user_profile,
+        yesterday_logs=yesterday_logs,
+        today_logs=today_logs
+    )
+
+#Save user productivty dashboard preferences :
+@app_user_bp.route("/save_productivity_preferences", methods=["POST"])
+@login_required
+def save_productivity_preferences():
+    try:
+        # Fetch or create user profile
+        profile = db.session.query(UserProfile).filter_by(user_id=current_user.id).first()
+        if not profile:
+            profile = UserProfile(user_id=current_user.id)
+
+        # Get selected subspecialties (as strings) from form
+        raw_subspecialties = request.form.getlist("preferred_subspecialties")
+        enum_subspecialties = [ModuleNames(sub) for sub in raw_subspecialties]
+
+        # Get workplaces string and convert to list
+        raw_workplaces = request.form.get("preferred_workplaces", "")
+        workplace_list = [w.strip() for w in raw_workplaces.split(",") if w.strip()]
+
+        # Update profile fields
+        profile.preferred_subspecialties = enum_subspecialties
+        profile.preferred_workplaces = workplace_list
+        profile.updated_at = datetime.now(timezone.utc)
+
+        # Add and commit
+        db.session.add(profile)
+        db.session.commit()
+        flash("Preferences updated successfully!", "success")
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error saving preferences: {str(e)}", "danger")
+
+    return redirect(url_for("app_user.productivity_dashboard"))
+
+#captures submitted batch info and stores them in UserData.
+# Save work session route
+from app.models import UserData, InteractionTypeEnum
+
+@app_user_bp.route('/save_session_log', methods=['POST'])
+@login_required
+def save_session_log():
+    try:
+        # Grab form data
+        case_counts = request.form.getlist('cases[]')
+        modalities = request.form.getlist('modalities[]')
+        workplaces = request.form.getlist('workplaces[]')
+        notes_list = request.form.getlist('notes[]')
+
+        now = datetime.utcnow()
+
+        # Mapping workplace input to DB enum values
+        session_map = {
+            "nhs": "onsite-government/NHS",
+            "private": "onsite-private",
+            "teleradiology": "tele"
+        }
+
+        for i in range(len(case_counts)):
+            if not case_counts[i]:
+                continue  # Skip empty entries
+
+            raw_session_type = workplaces[i].strip().lower()
+            normalized_session_type = session_map.get(raw_session_type)
+
+            if not normalized_session_type:
+                flash(f"❌ Unknown workplace: {raw_session_type}", "danger")
+                continue  # Skip this log entry
+
+            log = UserData(
+                id=str(uuid.uuid4()),
+                user_id=current_user.id,
+                last_interaction=now,
+                is_productivity_log=True,
+                num_cases_reported=int(case_counts[i]),
+                session_type=normalized_session_type,
+                modalities_handled=[
+                    modalities[i].strip().upper().replace("-", "_")
+                ],
+                notes=notes_list[i] if i < len(notes_list) else None,
+                interaction_type=InteractionTypeEnum.STARTED_SESSION.name,
+                time_spent=0  # Set to 0 minutes as a default - temporary willl add proepr logic to add time stamps next
+            )
+            db.session.add(log)
+
+        db.session.commit()
+        flash("✅ Session log saved successfully.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash(f"❌ Error saving log: {str(e)}", "danger")
+
+    return redirect(url_for("app_user.productivity_dashboard"))
