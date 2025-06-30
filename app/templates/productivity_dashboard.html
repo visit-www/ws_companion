@@ -46,8 +46,8 @@
                 'gastrointestinal', 'abdominal', 'genitourinary', 'musculoskeletal', 'vascular',
                 'pediatric', 'oncologic', 'emergency', 'interventional', 'nuclear_medicine',
                 'radiographers', 'others'] %}
-                <option value="{{ subspecialty }}" {% if subspecialty in (user_profile.preferred_subspecialties or [])
-                  %}selected{% endif %}>
+                <option value="{{ subspecialty }}" {% if user_profile.preferred_subspecialties and subspecialty in
+                  user_profile.preferred_subspecialties %}selected{% endif %}>
                   {{ subspecialty.replace('_', ' ').title() }}
                 </option>
                 {% endfor %}
@@ -58,7 +58,7 @@
             <div class="mb-3">
               <label for="preferred_workplaces" class="form-label">Preferred Workplaces</label>
               <input type="text" id="preferred_workplaces" name="preferred_workplaces" class="form-control"
-                value="{{ ', '.join(user_profile.preferred_workplaces or []) }}"
+                value="{{ ', '.join(user_profile.preferred_workplaces) if user_profile.preferred_workplaces else '' }}"
                 placeholder="e.g., NHS, Everlight, TMC">
               <small class="form-text text-muted">Comma-separated values</small>
             </div>
@@ -84,116 +84,90 @@
         </div>
       </div>
       <div class="card shadow-sm mt-4">
-  <div class="card-header bg-light">
-    <h5 class="mb-0 text-info">📊 Yesterday’s Output</h5>
-  </div>
-  <div class="card-body">
-    {% if yesterday_logs %}
-      <table class="table table-sm table-bordered">
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Modality</th>
-            <th>Workplace</th>
-            <th>Cases</th>
-            <th>Notes</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for log in yesterday_logs %}
-          <tr>
-            <td>{{ log.session_start_time.strftime('%H:%M') }}</td>
-            <td>{{ log.modalities_handled[0].value if log.modalities_handled else '—' }}</td>
-            <td>{{ log.session_type.title() }}</td>
-            <td>{{ log.num_cases_reported }}</td>
-            <td>{{ log.notes or '—' }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <p class="text-muted">No productivity logs found for yesterday.</p>
-    {% endif %}
-  </div>
-</div>
-{% if yesterday_logs %}
-  <canvas id="modalityChart" width="400" height="200" class="mt-4"></canvas>
-  <script>
-    const counts = {};
-
-    {% for log in yesterday_logs %}
-      {% if log.modalities_handled %}
-        const mod = "{{ log.modalities_handled[0].value }}";
-        counts[mod] = (counts[mod] || 0) + {{ log.num_cases_reported }};
+        <div class="card-header bg-light">
+          <h5 class="mb-0 text-info">📊 Yesterday’s Output</h5>
+        </div>
+        <div class="card-body">
+          {% if yesterday_logs %}
+          <table class="table table-sm table-bordered">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Modality</th>
+                <th>Workplace</th>
+                <th>Cases</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for log in yesterday_logs %}
+              <tr>
+                <td>{{ log.session_start_time.strftime('%H:%M') }}</td>
+                <td>{{ log.modalities_handled[0].value if log.modalities_handled else '—' }}</td>
+                <td>{{ log.session_type.title() }}</td>
+                <td>{{ log.num_cases_reported }}</td>
+                <td>{{ log.notes or '—' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="text-muted">No productivity logs found for yesterday.</p>
+          {% endif %}
+        </div>
+      </div>
+      {% if yesterday_logs %}
+      <canvas id="modalityChart" width="400" height="200" class="mt-4"></canvas>
       {% endif %}
-    {% endfor %}
-
-    const labels = Object.keys(counts);
-    const data = Object.values(counts);
-
-    new Chart(document.getElementById('modalityChart'), {
-      type: 'bar',
-      data: {
-        labels: labels,
-        datasets: [{
-          label: 'Cases by Modality',
-          data: data,
-          backgroundColor: '#4f83cc'
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true } }
-      }
-    });
-  </script>
-{% endif %}
-<div class="card shadow-sm mt-4">
-  <div class="card-header bg-light">
-    <h5 class="mb-0 text-success">📅 Today’s Output</h5>
-  </div>
-  <div class="card-body">
-    {% if today_logs %}
-      <table class="table table-sm table-bordered">
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Modality</th>
-            <th>Workplace</th>
-            <th>Cases</th>
-            <th>Notes</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for log in today_logs %}
-          <tr>
-            <td>{{ log.session_start_time.strftime('%H:%M') }}</td>
-            <td>{{ log.modalities_handled[0].value if log.modalities_handled else '—' }}</td>
-            <td>{{ log.session_type.title() }}</td>
-            <td>{{ log.num_cases_reported }}</td>
-            <td>{{ log.notes or '—' }}</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <p class="text-muted">No productivity logs submitted today.</p>
-    {% endif %}
-  </div>
-</div>
+      <div class="card shadow-sm mt-4">
+        <div class="card-header bg-light">
+          <h5 class="mb-0 text-success">📅 Today’s Output</h5>
+        </div>
+        <div class="card-body">
+          {% if today_logs %}
+          <table class="table table-sm table-bordered">
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Modality</th>
+                <th>Workplace</th>
+                <th>Cases</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for log in today_logs %}
+              <tr>
+                <td>{{ log.session_start_time.strftime('%H:%M') }}</td>
+                <td>{{ log.modalities_handled[0].value if log.modalities_handled else '—' }}</td>
+                <td>{{ log.session_type.title() }}</td>
+                <td>{{ log.num_cases_reported }}</td>
+                <td>{{ log.notes or '—' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+          {% else %}
+          <p class="text-muted">No productivity logs submitted today.</p>
+          {% endif %}
+        </div>
+      </div>
 
       <!-- Session Details Form (Hidden Initially) -->
       <div class="card shadow-sm mb-4 d-none" id="sessionDetailsCard">
+        <input type="hidden" name="session_start_time" id="sessionStartTime">
+        <input type="hidden" name="session_end_time" id="sessionEndTime">
+        <input type="hidden" name="time_spent" id="timeSpent">
         <div class="card-header bg-light">
           <h6 class="mb-0 text-secondary">📋 Session Summary & Case Logging</h6>
         </div>
         <div class="card-body">
           <form method="POST" action="{{ url_for('app_user.save_session_log') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <div id="caseBatchContainer">
-              <!-- Batch forms will be inserted here dynamically -->
-            </div>
+            <input type="hidden" id="sessionStartTime" name="session_start_time">
+            <input type="hidden" id="sessionEndTime" name="session_end_time">
+            <input type="hidden" id="timeSpent" name="time_spent">
+            <div id="caseBatchContainer"></div>
             <button type="button" class="btn btn-outline-secondary mt-3" id="addBatchBtn">➕ Add Another Batch</button>
             <button type="submit" class="btn btn-primary mt-3">✅ Submit Log</button>
           </form>
@@ -202,64 +176,62 @@
     </div>
   </div>
 </div>
-{% if today_logs %}
-  <canvas id="todayChart" width="400" height="200" class="mt-4"></canvas>
-  <script>
-    const todayCounts = {};
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    let isSessionRunning = localStorage.getItem("isSessionRunning") === "true";
+    let startTime = localStorage.getItem("sessionStartTime") ? new Date(localStorage.getItem("sessionStartTime")) : null;
 
-    {% for log in today_logs %}
-      {% if log.modalities_handled %}
-        const mod = "{{ log.modalities_handled[0].value }}";
-        todayCounts[mod] = (todayCounts[mod] || 0) + {{ log.num_cases_reported }};
-      {% endif %}
-    {% endfor %}
+    const toggleBtn = document.getElementById('sessionToggleBtn');
+    const timerDisplay = document.getElementById('sessionTimer');
+    const detailsCard = document.getElementById('sessionDetailsCard');
+    const batchContainer = document.getElementById('caseBatchContainer');
+    const inputStart = document.getElementById('sessionStartTime');
+    const inputEnd = document.getElementById('sessionEndTime');
+    const inputDuration = document.getElementById('timeSpent');
+    const submitBtn = document.querySelector('form button[type="submit"]');
+    submitBtn.disabled = true;
+    function updateTimerUI() {
+      if (isSessionRunning && startTime) {
+        toggleBtn.classList.replace('btn-success', 'btn-danger');
+        toggleBtn.innerHTML = '⏹️ End Session';
+        timerDisplay.innerText = `Session started at: ${startTime.toLocaleTimeString()}`;
+        inputStart.value = startTime.toISOString();
+      } else {
+        toggleBtn.classList.replace('btn-danger', 'btn-success');
+        toggleBtn.innerHTML = '▶️ Start Session';
+        timerDisplay.innerText = "No session running";
+      }
+    }
 
-    new Chart(document.getElementById('todayChart'), {
-      type: 'bar',
-      data: {
-        labels: Object.keys(todayCounts),
-        datasets: [{
-          label: 'Today\'s Cases',
-          data: Object.values(todayCounts),
-          backgroundColor: '#198754'  // green
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: { y: { beginAtZero: true } }
+    toggleBtn.addEventListener('click', () => {
+      isSessionRunning = !isSessionRunning;
+      localStorage.setItem("isSessionRunning", isSessionRunning);
+
+      if (isSessionRunning) {
+        // Enable form when session ends
+        submitBtn.disabled = false;
+        startTime = new Date();
+        localStorage.setItem("sessionStartTime", startTime.toISOString());
+        inputStart.value = startTime.toISOString();
+        updateTimerUI();
+      } else {
+        const endTime = new Date();
+        const duration = Math.floor((endTime - startTime) / 60000);
+
+        inputEnd.value = endTime.toISOString();
+        inputDuration.value = duration;
+
+        localStorage.removeItem("isSessionRunning");
+        localStorage.removeItem("sessionStartTime");
+
+        timerDisplay.innerText = `Session ended at: ${endTime.toLocaleTimeString()}`;
+        detailsCard.classList.remove('d-none');
+        addCaseBatchForm();
       }
     });
-  </script>
-{% endif %}
 
-<script>
-  let isSessionRunning = false;
-  let startTime;
-  const toggleBtn = document.getElementById('sessionToggleBtn');
-  const timerDisplay = document.getElementById('sessionTimer');
-  const detailsCard = document.getElementById('sessionDetailsCard');
-  const batchContainer = document.getElementById('caseBatchContainer');
-
-  toggleBtn.addEventListener('click', () => {
-    isSessionRunning = !isSessionRunning;
-    if (isSessionRunning) {
-      startTime = new Date();
-      toggleBtn.classList.replace('btn-success', 'btn-danger');
-      toggleBtn.innerHTML = '⏹️ End Session';
-      timerDisplay.innerText = `Session started at: ${startTime.toLocaleTimeString()}`;
-    } else {
-      const endTime = new Date();
-      toggleBtn.classList.replace('btn-danger', 'btn-success');
-      toggleBtn.innerHTML = '▶️ Start Session';
-      timerDisplay.innerText = `Session ended at: ${endTime.toLocaleTimeString()}`;
-      detailsCard.classList.remove('d-none');
-      addCaseBatchForm();
-    }
-  });
-
-  function addCaseBatchForm() {
-    const batchHTML = `
+    function addCaseBatchForm() {
+      const batchHTML = `
       <div class="border rounded p-3 mb-3">
         <div class="mb-2">
           <label class="form-label">Number of Cases</label>
@@ -278,10 +250,10 @@
         <div class="mb-2">
           <label class="form-label">Workplace</label>
           <select name="workplaces[]" class="form-select">
-            <option>NHS</option>
-            <option>Teleradiology</option>
-            <option>Private</option>
-          </select>
+  <option value="onsite-government/NHS">NHS</option>
+  <option value="tele">Teleradiology</option>
+  <option value="onsite-private">Private</option>
+</select>
         </div>
         <div class="mb-2">
           <label class="form-label">Notes (optional)</label>
@@ -289,13 +261,16 @@
         </div>
       </div>
     `;
-    batchContainer.insertAdjacentHTML('beforeend', batchHTML);
-  }
+      batchContainer.insertAdjacentHTML('beforeend', batchHTML);
+    }
 
-  document.getElementById('addBatchBtn').addEventListener('click', () => {
-    addCaseBatchForm();
+    document.getElementById('addBatchBtn')?.addEventListener('click', addCaseBatchForm);
+
+    // Set correct button + timer on page load
+    updateTimerUI();
   });
 </script>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 {% endblock %}

@@ -40,11 +40,50 @@ a {
 
 /* Hero Container */
 .hero-container {
-    width: 100%;
-    margin: 20px 0;
-    font-size: 24px;
-    font-weight: bold;
-    color: #000;
+  background: linear-gradient(135deg, #1e1b45, #2a2f70, #3c77ff);
+  color: #f8f9fa;
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+}
+
+.hero-container .navbar-brand img {
+  height: 180px;
+}
+
+.hero-container .text-container h1 {
+  font-family: 'Inter', sans-serif;
+  font-size: 2.75rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, #00f0ff, #ff00c8);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.hero-container .text-container p {
+  font-size: 1.25rem;
+  color: #e0e6f0;
+}
+
+.hero-container .text-container span.fst-italic {
+  color: #00f087;
+}
+
+.hero-container .btn-info {
+  background: linear-gradient(90deg, #00f0ff, #ff00c8);
+  border: none;
+  color: white;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s;
+}
+
+.hero-container .btn-info:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(0, 240, 255, 0.4);
+  color: white;
 }
 
 /* Content (Cards) */
@@ -947,13 +986,7 @@ hr {
     transform: scale(1.015);
 }
 
-body {
-    background-color: #e3eaf3;
-    background: linear-gradient(135deg, #4f83cc, #256d9b);
-    background-image: url('/static/assets/images/paper-fibers.png');
-    background-repeat: repeat;
-    background-size: auto;
-}
+
 
 /* Wrapper that applies the paper texture site-wide */
 .paper-background-wrapper {

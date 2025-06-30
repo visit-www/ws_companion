@@ -286,6 +286,7 @@ class UserData(Base):
     last_login: so.Mapped[Optional[datetime]] = sa.Column(sa.DateTime, nullable=True)
     current_login: so.Mapped[Optional[datetime]] = sa.Column(sa.DateTime, nullable=True)
     session_start_time: so.Mapped[Optional[datetime]] = sa.Column(sa.DateTime, nullable=True)
+    session_end_time: so.Mapped[Optional[datetime]] = sa.Column(sa.DateTime, nullable=True)
     login_count: so.Mapped[Optional[int]] = sa.Column(sa.Integer, nullable=True, default=0)
 
     # WorkSession-related fields

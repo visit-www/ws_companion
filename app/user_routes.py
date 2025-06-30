@@ -1627,55 +1627,32 @@ def save_productivity_preferences():
 from app.models import UserData, InteractionTypeEnum
 
 @app_user_bp.route('/save_session_log', methods=['POST'])
-@login_required
 def save_session_log():
-    try:
-        # Grab form data
-        case_counts = request.form.getlist('cases[]')
-        modalities = request.form.getlist('modalities[]')
-        workplaces = request.form.getlist('workplaces[]')
-        notes_list = request.form.getlist('notes[]')
+    session_start_time_str = request.form.get("session_start_time")
+    session_end_time_str = request.form.get("session_end_time")
+    time_spent = request.form.get("time_spent")
 
-        now = datetime.utcnow()
+    session_start_time = datetime.fromisoformat(session_start_time_str) if session_start_time_str else None
+    session_end_time = datetime.fromisoformat(session_end_time_str) if session_end_time_str else None
 
-        # Mapping workplace input to DB enum values
-        session_map = {
-            "nhs": "onsite-government/NHS",
-            "private": "onsite-private",
-            "teleradiology": "tele"
-        }
+    cases = request.form.getlist("cases[]")
+    modalities = request.form.getlist("modalities[]")
+    workplaces = request.form.getlist("workplaces[]")
+    notes_list = request.form.getlist("notes[]")
+    user_id = current_user.id if current_user.is_authenticated else get_anonymous_user_id()
 
-        for i in range(len(case_counts)):
-            if not case_counts[i]:
-                continue  # Skip empty entries
+    for i in range(len(cases)):
+        log = UserData(
+            session_start_time=session_start_time,
+            session_end_time=session_end_time,
+            time_spent=int(time_spent) if time_spent else None,
+            num_cases_reported=int(cases[i]) if cases[i] else 0,
+            modalities_handled=[modalities[i]] if modalities[i] else [],
+            session_type=workplaces[i],
+            notes=notes_list[i],
+            user_id=user_id
+        )
+        db.session.add(log)
+    db.session.commit()
 
-            raw_session_type = workplaces[i].strip().lower()
-            normalized_session_type = session_map.get(raw_session_type)
-
-            if not normalized_session_type:
-                flash(f"❌ Unknown workplace: {raw_session_type}", "danger")
-                continue  # Skip this log entry
-
-            log = UserData(
-                id=str(uuid.uuid4()),
-                user_id=current_user.id,
-                last_interaction=now,
-                is_productivity_log=True,
-                num_cases_reported=int(case_counts[i]),
-                session_type=normalized_session_type,
-                modalities_handled=[
-                    modalities[i].strip().upper().replace("-", "_")
-                ],
-                notes=notes_list[i] if i < len(notes_list) else None,
-                interaction_type=InteractionTypeEnum.STARTED_SESSION.name,
-                time_spent=0  # Set to 0 minutes as a default - temporary willl add proepr logic to add time stamps next
-            )
-            db.session.add(log)
-
-        db.session.commit()
-        flash("✅ Session log saved successfully.", "success")
-    except Exception as e:
-        db.session.rollback()
-        flash(f"❌ Error saving log: {str(e)}", "danger")
-
-    return redirect(url_for("app_user.productivity_dashboard"))
+    return redirect(url_for('app_user.productivity_dashboard'))
