@@ -139,7 +139,7 @@
               {% for log in today_logs %}
               <tr>
                 <td>{{ log.session_start_time.strftime('%H:%M') }}</td>
-                <td>{{ log.modalities_handled[0].value if log.modalities_handled else '—' }}</td>
+                <td>{{ log.modalities_handled[0] if log.modalities_handled else '—' }}</td>
                 <td>{{ log.session_type.title() }}</td>
                 <td>{{ log.num_cases_reported }}</td>
                 <td>{{ log.notes or '—' }}</td>
@@ -154,13 +154,7 @@
       </div>
 
       <!-- Session Details Form (Hidden Initially) -->
-      <div class="card shadow-sm mb-4 d-none" id="sessionDetailsCard">
-        <input type="hidden" name="session_start_time" id="sessionStartTime">
-        <input type="hidden" name="session_end_time" id="sessionEndTime">
-        <input type="hidden" name="time_spent" id="timeSpent">
-        <div class="card-header bg-light">
-          <h6 class="mb-0 text-secondary">📋 Session Summary & Case Logging</h6>
-        </div>
+      <div id="sessionDetailsCard" class="d-none">
         <div class="card-body">
           <form method="POST" action="{{ url_for('app_user.save_session_log') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -173,8 +167,10 @@
           </form>
         </div>
       </div>
+
     </div>
   </div>
+</div>
 </div>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
@@ -240,12 +236,15 @@
         <div class="mb-2">
           <label class="form-label">Modality</label>
           <select name="modalities[]" class="form-select">
-            <option>CT</option>
-            <option>MRI</option>
-            <option>X-ray</option>
-            <option>Ultrasound</option>
-            <option>Others</option>
+            <option value="ct">CT</option>
+            <option value="x-ray">X-ray</option>
+            <option value="mri">MRI</option>
+            <option value="ultrasound">Ultrasound</option>
+            <option value="nuclear medicine">Nuclear Medicine</option>
+            <option value="mammography">Mammography</option>
+            <option value="others">Others</option>
           </select>
+
         </div>
         <div class="mb-2">
           <label class="form-label">Workplace</label>

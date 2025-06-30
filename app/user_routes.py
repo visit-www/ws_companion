@@ -1541,7 +1541,6 @@ def export_full_appraisal_log():
 # Productivity Dashboard
 # -------------------------
 
-# Mock productivity dashboard route
 from datetime import datetime, timedelta
 from sqlalchemy import and_
 
@@ -1625,6 +1624,8 @@ def save_productivity_preferences():
 #captures submitted batch info and stores them in UserData.
 # Save work session route
 from app.models import UserData, InteractionTypeEnum
+from datetime import datetime, date
+from sqlalchemy import func, cast, Date
 
 @app_user_bp.route('/save_session_log', methods=['POST'])
 def save_session_log():
@@ -1643,6 +1644,7 @@ def save_session_log():
 
     for i in range(len(cases)):
         log = UserData(
+            is_productivity_log=True,
             session_start_time=session_start_time,
             session_end_time=session_end_time,
             time_spent=int(time_spent) if time_spent else None,
@@ -1654,5 +1656,6 @@ def save_session_log():
         )
         db.session.add(log)
     db.session.commit()
+    flash('Session log saved successfully', 'success')
 
     return redirect(url_for('app_user.productivity_dashboard'))
