@@ -102,32 +102,37 @@
                     </div>
                 </nav>
                 {% endblock %}
-
                 {% block hero_container %}
-                <div class="container-fluid paper-background py-5 px-3">
-                    <div class="d-flex flex-column flex-md-row align-items-center justify-content-center gap-4">
-                        <!-- Logo -->
-                        <a class="navbar-brand" href="{{ url_for('main_routes.index') }}">
-                            <img src="{{ url_for('static', filename='assets/images/wsc-vertical-trans.png') }}"
-                                alt="WSC Logo" style="max-height: 120px; width: auto;">
-                        </a>
+<div class="container-fluid my-4">
+  <div class="hero-container d-flex align-items-center justify-content-center py-5 px-4 rounded shadow-sm"
+       style="background: linear-gradient(135deg, #1e1b45, #2a2f70, #3c77ff); color: #f8f9fa; position: relative; overflow: hidden;">
 
-                        <!-- Text Content -->
-                        <div class="text-center text-md-start">
-                            <div class="hero-banner">
-                                <h1>
-                                    <span style="margin-right: 0.5rem;">Welcome to</span>
-                                    <span class="text-success" style="margin-right: 0.5rem;">WSC</span>
-                                    <span>— Your Radiology Workflow Companion</span>
-                                </h1>
-                            </div>
-                            <p class="text-light fst-italic mt-2">
-                                Empowering radiologists with smart tools for productivity, learning, and growth.
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                {% endblock %}
+    <!-- Optional Glow Overlay (Can be a blurred div or SVG if needed later) -->
+
+    <!-- Logo -->
+    <a class="navbar-brand me-5" href="{{ url_for('main_routes.index') }}">
+      <img src="{{ url_for('static', filename='assets/images/wsc-vertical-trans.png') }}" alt="Logo" style="height: 180px;">
+    </a>
+
+    <!-- Hero Text Container -->
+    <div class="text-container text-center">
+      <h1 class="display-5 fw-bold mb-3" style="font-family: 'Inter', sans-serif;">
+        <span style="background: linear-gradient(90deg, #00f0ff, #ff00c8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+          WSC
+        </span> – A Workstation Companion App
+      </h1>
+      <p class="lead mb-4" style="color: #e0e6f0;">
+        Simplify your radiology workflow with our intuitive and comprehensive tools.<br>
+        <span class="fst-italic" style="color: #00f087;">Because every hero needs a trusty companion.</span>
+      </p>
+
+
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
 
                 <!-- Code to displace flash message -->
 
