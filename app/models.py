@@ -24,73 +24,76 @@ Base: Type[so.DeclarativeMeta] = app_registry.generate_base()
 
 # Default values for categories
 class CategoryNames(PyEnum):
-    GUIDELINES = 'guidelines'
-    CLASSIFICATIONS = 'classifications'
-    DIFFERENTIAL_DIAGNOSIS = 'differential_diagnosis'
-    VETTING_TOOLS = 'vetting_tools'
-    ANATOMY = 'anatomy'
-    CURATED_CONTENTS = 'curated_contents'
-    REPORT_CHECKER = 'report_checker'
-    RAD_CALCULATORS = 'rad_calculators'
-    TNM_STAGING = 'tnm_staging'
-    IMAGE_SEARCH = 'image_search'
-    PHYSICS = 'physics'
-    GOVERNANCE_AUDITS = 'governance_audits'
-    COURSES = 'courses'
-    RESEARCH_TOOLS = 'research_tools'
-    MUSIC = 'music'
-    REPORT_TEMPLATE = 'report_template'  # Default category for report templates
+    GUIDELINES = 'GUIDELINES'
+    CLASSIFICATIONS = 'CLASSIFICATIONS'
+    DIFFERENTIAL_DIAGNOSIS = 'DIFFERENTIAL_DIAGNOSIS'
+    VETTING_TOOLS = 'VETTING_TOOLS'
+    ANATOMY = 'ANATOMY'
+    CURATED_CONTENTS = 'CURATED_CONTENTS'
+    REPORT_CHECKER = 'REPORT_CHECKER'
+    RAD_CALCULATORS = 'RAD_CALCULATORS'
+    TNM_STAGING = 'TNM_STAGING'
+    IMAGE_SEARCH = 'IMAGE_SEARCH'
+    PHYSICS = 'PHYSICS'
+    GOVERNANCE_AUDITS = 'GOVERNANCE_AUDITS'
+    COURSES = 'COURSES'
+    RESEARCH_TOOLS = 'RESEARCH_TOOLS'
+    MUSIC = 'MUSIC'
+    REPORT_TEMPLATE = 'REPORT_TEMPLATE'
+
 
 # Default values for modules
 class ModuleNames(PyEnum):
-    HEAD_AND_NECK = "head_and_neck"
-    NEURORADIOLOGY = "neuroradiology"
-    CHEST = "chest"
-    CARDIOVASCULAR = "cardiovascular"
-    BREAST = "breast"
-    GASTROINTESTINAL = "gastrointestinal"
-    ABDOMINAL = "abdominal"
-    GENITOURINARY = "genitourinary"
-    MUSCULOSKELETAL = "musculoskeletal"
-    VASCULAR = "vascular"
-    PEDIATRIC = "pediatric"
-    ONCOLOGIC = "oncologic"
-    EMERGENCY = "emergency"
-    INTERVENTIONAL = "interventional"
-    NUCLEAR_MEDICINE = "nuclear_medicine"
-    RADIOGRAPHERS = "radiographers"
-    OTHERS = "others"
+    HEAD_AND_NECK = 'HEAD_AND_NECK'
+    NEURORADIOLOGY = 'NEURORADIOLOGY'
+    CHEST = 'CHEST'
+    CARDIOVASCULAR = 'CARDIOVASCULAR'
+    BREAST = 'BREAST'
+    GASTROINTESTINAL = 'GASTROINTESTINAL'
+    ABDOMINAL = 'ABDOMINAL'
+    GENITOURINARY = 'GENITOURINARY'
+    MUSCULOSKELETAL = 'MUSCULOSKELETAL'
+    VASCULAR = 'VASCULAR'
+    PEDIATRIC = 'PEDIATRIC'
+    ONCOLOGIC = 'ONCOLOGIC'
+    EMERGENCY = 'EMERGENCY'
+    INTERVENTIONAL = 'INTERVENTIONAL'
+    NUCLEAR_MEDICINE = 'NUCLEAR_MEDICINE'
+    RADIOGRAPHERS = 'RADIOGRAPHERS'
+    OTHERS = 'OTHERS'
+
 
 # Enum for body parts
 class BodyPartEnum(PyEnum):
-    NEURO = 'neuro'
-    HEAD_AND_NECK = 'head and neck'
-    ENT = 'ent'
-    PEDIATRICS = 'pediatrics'
-    MSK = 'msk'
-    LUNG = 'lung'
-    CARDIAC = 'cardiac'
-    ENDOCRINE = 'endocrine'
-    HEPATOBILIARY = 'hepatobiliary'
-    UROLOGY = 'urology'
-    GYNAECOLOGY = 'gynaecology'
-    UPPER_GI = 'upper gi'
-    VASCULAR = 'vascular'
-    ONCOLOGY = 'oncology'
-    MISCELLANEOUS = 'miscellaneous'
-    BREAST = 'breast'
-    OTHERS = 'others'
+    NEURO = 'NEURO'
+    HEAD_AND_NECK = 'HEAD_AND_NECK'
+    ENT = 'ENT'
+    PEDIATRICS = 'PEDIATRICS'
+    MSK = 'MSK'
+    LUNG = 'LUNG'
+    CARDIAC = 'CARDIAC'
+    ENDOCRINE = 'ENDOCRINE'
+    HEPATOBILIARY = 'HEPATOBILIARY'
+    UROLOGY = 'UROLOGY'
+    GYNAECOLOGY = 'GYNAECOLOGY'
+    UPPER_GI = 'UPPER_GI'
+    VASCULAR = 'VASCULAR'
+    ONCOLOGY = 'ONCOLOGY'
+    MISCELLANEOUS = 'MISCELLANEOUS'
+    BREAST = 'BREAST'
+    OTHERS = 'OTHERS'
+
 
 # Enum for modalities
 class ModalityEnum(PyEnum):
-    CT = 'ct'
-    X_RAY = 'x-ray'
-    MRI = 'mri'
-    ULTRASOUND = 'ultrasound'
-    NUCLEAR_MEDICINE = 'nuclear medicine'
-    MAMMOGRAPHY = 'mammography'
-    OTHERS = 'others'
-    
+    CT = 'CT'
+    X_RAY = 'X-RAY'
+    MRI = 'MRI'
+    ULTRASOUND = 'ULTRASOUND'
+    NUCLEAR_MEDICINE = 'NUCLEAR MEDICINE'
+    MAMMOGRAPHY = 'MAMMOGRAPHY'
+    OTHERS = 'OTHERS'
+
 class InteractionTypeEnum(PyEnum):
     VIEWED = "viewed"
     BOOKMARKED = "bookmarked"
