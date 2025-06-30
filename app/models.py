@@ -253,6 +253,11 @@ interaction_type: so.Mapped[InteractionTypeEnum] = mapped_column(
     nullable=False,
     default=InteractionTypeEnum.VIEWED
 )
+from sqlalchemy import Text
+from sqlalchemy.dialects.postgresql import ARRAY
+from typing import List
+
+
 class UserData(Base):
     __tablename__ = 'user_data'
 
@@ -297,10 +302,7 @@ class UserData(Base):
         nullable=True
     )
 
-    modalities_handled: so.Mapped[Optional[list[ModalityEnum]]] = sa.Column(
-        sa.ARRAY(sa.Enum(ModalityEnum, name='modality_enum')),
-        nullable=True
-    )
+    modalities_handled: so.Mapped[List[str]] = mapped_column(ARRAY(Text))
 
     subspecialty_tags: so.Mapped[Optional[list[ModuleNames]]] = sa.Column(
         sa.ARRAY(sa.Enum(ModuleNames, name='module_name')),
