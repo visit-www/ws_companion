@@ -9,6 +9,8 @@ import os
 import shutil
 import json
 
+
+
 from app import db, mail
 from config import Config, basedir, userdir
 from app.models import (
@@ -1585,7 +1587,8 @@ def productivity_dashboard():
         "productivity_dashboard.html",
         user_profile=user_profile,
         yesterday_logs=yesterday_logs,
-        today_logs=today_logs
+        today_logs=today_logs,
+        modules=ModuleNames
     )
 
 #Save user productivty dashboard preferences :
@@ -1625,34 +1628,51 @@ def save_productivity_preferences():
 #captures submitted batch info and stores them in UserData.
 # Save work session route
 from app.models import UserData, InteractionTypeEnum
+from flask import request, redirect, url_for
+from flask_login import current_user
+from datetime import datetime
+from app.util import get_anonymous_user_id
+from app import db
 
 @app_user_bp.route('/save_session_log', methods=['POST'])
 def save_session_log():
-    session_start_time_str = request.form.get("session_start_time")
-    session_end_time_str = request.form.get("session_end_time")
-    time_spent = request.form.get("time_spent")
+    try:
+        session_start_time_str = request.form.get("session_start_time")
+        session_end_time_str = request.form.get("session_end_time")
+        time_spent_str = request.form.get("time_spent")
 
-    session_start_time = datetime.fromisoformat(session_start_time_str) if session_start_time_str else None
-    session_end_time = datetime.fromisoformat(session_end_time_str) if session_end_time_str else None
+        # Guard: Convert only if valid
+        if not (session_start_time_str and session_end_time_str and time_spent_str):
+            flash("Missing session data. Please try again.", "danger")
+            return redirect(url_for('app_user.productivity_dashboard'))
 
-    cases = request.form.getlist("cases[]")
-    modalities = request.form.getlist("modalities[]")
-    workplaces = request.form.getlist("workplaces[]")
-    notes_list = request.form.getlist("notes[]")
-    user_id = current_user.id if current_user.is_authenticated else get_anonymous_user_id()
+        session_start_time = datetime.fromisoformat(session_start_time_str)
+        session_end_time = datetime.fromisoformat(session_end_time_str)
+        time_spent = int(time_spent_str)
 
-    for i in range(len(cases)):
-        log = UserData(
-            session_start_time=session_start_time,
-            session_end_time=session_end_time,
-            time_spent=int(time_spent) if time_spent else None,
-            num_cases_reported=int(cases[i]) if cases[i] else 0,
-            modalities_handled=[modalities[i]] if modalities[i] else [],
-            session_type=workplaces[i],
-            notes=notes_list[i],
-            user_id=user_id
-        )
-        db.session.add(log)
-    db.session.commit()
+        cases = request.form.getlist("cases[]")
+        modalities = request.form.getlist("modalities[]")
+        workplaces = request.form.getlist("workplaces[]")
+        notes_list = request.form.getlist("notes[]")
+        user_id = current_user.id if current_user.is_authenticated else get_anonymous_user_id()
+
+        for i in range(len(cases)):
+            log = UserData(
+                session_start_time=session_start_time,
+                session_end_time=session_end_time,
+                time_spent=time_spent,
+                num_cases_reported=int(cases[i]) if cases[i] else 0,
+                modalities_handled=[modalities[i].upper()] if modalities[i] else [],
+                session_type=workplaces[i],
+                notes=notes_list[i],
+                user_id=user_id
+            )
+            db.session.add(log)
+        db.session.commit()
+        flash("Session log saved successfully.", "success")
+    except Exception as e:
+        db.session.rollback()
+        flash("Error saving session log. Please try again.", "danger")
+        print(f"[save_session_log] ERROR: {e}")
 
     return redirect(url_for('app_user.productivity_dashboard'))

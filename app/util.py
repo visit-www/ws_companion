@@ -178,3 +178,12 @@ def inline_references(content, references):
 
     return Markup(content)  # Return content as HTML-safe string
 
+def get_anonymous_user_id():
+    """Returns the ID of the anonymous user, creating one if necessary."""
+    user = db.session.query(User).filter_by(username="anonymous").first()
+    if user:
+        return user.id
+    else:
+        add_anonymous_user()
+        user = db.session.query(User).filter_by(username="anonymous").first()
+        return user.id if user else None
