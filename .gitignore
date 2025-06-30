@@ -40,4 +40,6 @@ Thumbs.db
 # Jupyter notebook checkpoints (if applicable)
 .ipynb_checkpoints/
 .strategies/
-.mermaid_diagrams/
+.mermaid_diagrams/__pycache__/
+*.pyc
+radiology.db
