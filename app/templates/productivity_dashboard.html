@@ -75,157 +75,157 @@
         <div class="card-body text-center">
           <p class="text-muted">Click the button to start or end your session. Sessions will auto-end after 8 hours.</p>
           <div class="mb-3">
-            <button class="btn btn-success" id="sessionToggleBtn">▶️ Start Session</button>
+            <button class="btn btn-outline-success" id="sessionToggleBtn">▶️ Start Session</button>
           </div>
           <div id="sessionTimer" class="fw-bold text-secondary">No session running</div>
         </div>
       </div>
       <!-- Row for Yesterday + Today side by side -->
-<div class="row">
+      <div class="row">
 
-  <!-- Yesterday’s Output -->
-  <div class="col-12">
-    <div class="card shadow-sm mt-4">
-      <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap">
-        <h5 class="mb-0 text-info">📊 Yesterday’s Output</h5>
-        <div class="d-flex flex-wrap gap-3 mt-2 mt-md-0">
-          <div class="card bg-light text-dark p-2 small border-0">
-            <div><strong>Total Cases:</strong> {{ yesterday_total_cases }}</div>
-          </div>
-          <div class="card bg-light text-dark p-2 small border-0">
-            <div><strong>Total Duration:</strong> {{ yesterday_total_time }}</div>
-          </div>
-          <div class="card bg-light text-dark p-2 small border-0">
-            <div><strong>Avg Time per Case:</strong> {{ yesterday_avg_time_per_case }}</div>
+        <!-- Yesterday’s Output -->
+        <div class="col-12">
+          <div class="card shadow-sm mt-4">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap">
+              <h5 class="mb-0 text-info">📊 Yesterday’s Output</h5>
+              <div class="d-flex flex-wrap gap-3 mt-2 mt-md-0">
+                <div class="card bg-light text-dark p-2 small border-0">
+                  <div><strong>Total Cases:</strong> {{ yesterday_total_cases }}</div>
+                </div>
+                <div class="card bg-light text-dark p-2 small border-0">
+                  <div><strong>Total Duration:</strong> {{ yesterday_total_time }}</div>
+                </div>
+                <div class="card bg-light text-dark p-2 small border-0">
+                  <div><strong>Avg Time per Case:</strong> {{ yesterday_avg_time_per_case }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card-body table-responsive">
+              {% if yesterday_logs %}
+              <table class="table table-sm table-bordered align-middle text-nowrap">
+                <thead class="table-light">
+                  <tr>
+                    <th>Session Start</th>
+                    <th>Session End</th>
+                    <th>Duration</th>
+                    <th>Modality</th>
+                    <th>Workplace</th>
+                    <th>Cases</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for log in yesterday_logs %}
+                  <tr>
+                    <td>{{ log.session_start_time.strftime('%H:%M') }}</td>
+                    <td>{{ log.session_end_time.strftime('%H:%M') }}</td>
+                    <td>
+                      {% set hrs = log.time_spent // 60 %}
+                      {% set mins = log.time_spent % 60 %}
+                      {{ hrs ~ 'h ' if hrs else '' }}{{ mins }}m
+                    </td>
+                    <td>{{ log.modalities_handled[0] if log.modalities_handled else '—' }}</td>
+                    <td>{{ log.session_type.title() }}</td>
+                    <td>{{ log.num_cases_reported }}</td>
+                    <td>{{ log.notes or '—' }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+                <tfoot>
+                  <tr class="table-success fw-bold">
+                    <td colspan="2" class="text-end">Total</td>
+                    <td>{{ yesterday_total_time }}</td>
+                    <td colspan="2"></td>
+                    <td>{{ yesterday_total_cases }}</td>
+                    <td></td>
+                  </tr>
+                  <tr class="table-secondary fw-bold">
+                    <td colspan="2" class="text-end">Avg Time per Case</td>
+                    <td>{{ yesterday_avg_time_per_case }}</td>
+                    <td colspan="4"></td>
+                  </tr>
+                </tfoot>
+              </table>
+              {% else %}
+              <p class="text-muted">No productivity logs found for yesterday.</p>
+              {% endif %}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="card-body table-responsive">
-        {% if yesterday_logs %}
-        <table class="table table-sm table-bordered align-middle text-nowrap">
-          <thead class="table-light">
-            <tr>
-              <th>Session Start</th>
-              <th>Session End</th>
-              <th>Duration</th>
-              <th>Modality</th>
-              <th>Workplace</th>
-              <th>Cases</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for log in yesterday_logs %}
-            <tr>
-              <td>{{ log.session_start_time.strftime('%H:%M') }}</td>
-              <td>{{ log.session_end_time.strftime('%H:%M') }}</td>
-              <td>
-                {% set hrs = log.time_spent // 60 %}
-                {% set mins = log.time_spent % 60 %}
-                {{ hrs ~ 'h ' if hrs else '' }}{{ mins }}m
-              </td>
-              <td>{{ log.modalities_handled[0] if log.modalities_handled else '—' }}</td>
-              <td>{{ log.session_type.title() }}</td>
-              <td>{{ log.num_cases_reported }}</td>
-              <td>{{ log.notes or '—' }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-          <tfoot>
-            <tr class="table-success fw-bold">
-              <td colspan="2" class="text-end">Total</td>
-              <td>{{ yesterday_total_time }}</td>
-              <td colspan="2"></td>
-              <td>{{ yesterday_total_cases }}</td>
-              <td></td>
-            </tr>
-            <tr class="table-secondary fw-bold">
-              <td colspan="2" class="text-end">Avg Time per Case</td>
-              <td>{{ yesterday_avg_time_per_case }}</td>
-              <td colspan="4"></td>
-            </tr>
-          </tfoot>
-        </table>
-        {% else %}
-        <p class="text-muted">No productivity logs found for yesterday.</p>
-        {% endif %}
-      </div>
-    </div>
-  </div>
+        <!-- Today’s Output -->
+        <div class="col-12">
+          <div class="card shadow-sm mt-4">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap">
+              <h5 class="mb-0 text-success">📅 Today’s Output</h5>
+              <div class="d-flex flex-wrap gap-3 mt-2 mt-md-0">
+                <div class="card bg-light text-dark p-2 small border-0">
+                  <div><strong>Total Cases:</strong> {{ total_cases }}</div>
+                </div>
+                <div class="card bg-light text-dark p-2 small border-0">
+                  <div><strong>Total Duration:</strong> {{ total_time }}</div>
+                </div>
+                <div class="card bg-light text-dark p-2 small border-0">
+                  <div><strong>Avg Time per Case:</strong> {{ avg_time_per_case }}</div>
+                </div>
+              </div>
+            </div>
 
-  <!-- Today’s Output -->
-  <div class="col-12">
-    <div class="card shadow-sm mt-4">
-      <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap">
-        <h5 class="mb-0 text-success">📅 Today’s Output</h5>
-        <div class="d-flex flex-wrap gap-3 mt-2 mt-md-0">
-          <div class="card bg-light text-dark p-2 small border-0">
-            <div><strong>Total Cases:</strong> {{ total_cases }}</div>
-          </div>
-          <div class="card bg-light text-dark p-2 small border-0">
-            <div><strong>Total Duration:</strong> {{ total_time }}</div>
-          </div>
-          <div class="card bg-light text-dark p-2 small border-0">
-            <div><strong>Avg Time per Case:</strong> {{ avg_time_per_case }}</div>
+            <div class="card-body table-responsive">
+              {% if today_logs %}
+              <table class="table table-sm table-bordered align-middle text-nowrap">
+                <thead class="table-light">
+                  <tr>
+                    <th>Session Start</th>
+                    <th>Session End</th>
+                    <th>Duration</th>
+                    <th>Modality</th>
+                    <th>Workplace</th>
+                    <th>Cases</th>
+                    <th>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for log in today_logs %}
+                  <tr>
+                    <td>{{ log.session_start_time.strftime('%H:%M') }}</td>
+                    <td>{{ log.session_end_time.strftime('%H:%M') }}</td>
+                    <td>
+                      {% set hrs = log.time_spent // 60 %}
+                      {% set mins = log.time_spent % 60 %}
+                      {{ hrs ~ 'h ' if hrs else '' }}{{ mins }}m
+                    </td>
+                    <td>{{ log.modalities_handled[0] if log.modalities_handled else '—' }}</td>
+                    <td>{{ log.session_type.title() }}</td>
+                    <td>{{ log.num_cases_reported }}</td>
+                    <td>{{ log.notes or '—' }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+                <tfoot>
+                  <tr class="table-success fw-bold">
+                    <td colspan="2" class="text-end">Total</td>
+                    <td>{{ total_time }}</td>
+                    <td colspan="2"></td>
+                    <td>{{ total_cases }}</td>
+                    <td></td>
+                  </tr>
+                  <tr class="table-secondary fw-bold">
+                    <td colspan="2" class="text-end">Avg Time per Case</td>
+                    <td>{{ avg_time_per_case }}</td>
+                    <td colspan="4"></td>
+                  </tr>
+                </tfoot>
+              </table>
+              {% else %}
+              <p class="text-muted">No productivity logs submitted today.</p>
+              {% endif %}
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="card-body table-responsive">
-        {% if today_logs %}
-        <table class="table table-sm table-bordered align-middle text-nowrap">
-          <thead class="table-light">
-            <tr>
-              <th>Session Start</th>
-              <th>Session End</th>
-              <th>Duration</th>
-              <th>Modality</th>
-              <th>Workplace</th>
-              <th>Cases</th>
-              <th>Notes</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for log in today_logs %}
-            <tr>
-              <td>{{ log.session_start_time.strftime('%H:%M') }}</td>
-              <td>{{ log.session_end_time.strftime('%H:%M') }}</td>
-              <td>
-                {% set hrs = log.time_spent // 60 %}
-                {% set mins = log.time_spent % 60 %}
-                {{ hrs ~ 'h ' if hrs else '' }}{{ mins }}m
-              </td>
-              <td>{{ log.modalities_handled[0] if log.modalities_handled else '—' }}</td>
-              <td>{{ log.session_type.title() }}</td>
-              <td>{{ log.num_cases_reported }}</td>
-              <td>{{ log.notes or '—' }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-          <tfoot>
-            <tr class="table-success fw-bold">
-              <td colspan="2" class="text-end">Total</td>
-              <td>{{ total_time }}</td>
-              <td colspan="2"></td>
-              <td>{{ total_cases }}</td>
-              <td></td>
-            </tr>
-            <tr class="table-secondary fw-bold">
-              <td colspan="2" class="text-end">Avg Time per Case</td>
-              <td>{{ avg_time_per_case }}</td>
-              <td colspan="4"></td>
-            </tr>
-          </tfoot>
-        </table>
-        {% else %}
-        <p class="text-muted">No productivity logs submitted today.</p>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-
-</div> <!-- ends the .row -->
+      </div> <!-- ends the .row -->
 
       <!-- Session Details Form (Hidden Initially) -->
       <div id="sessionDetailsCard" class="d-none">
@@ -250,115 +250,119 @@
   document.addEventListener("DOMContentLoaded", function () {
     let isSessionRunning = localStorage.getItem("isSessionRunning") === "true";
     let startTime = localStorage.getItem("sessionStartTime") ? new Date(localStorage.getItem("sessionStartTime")) : null;
+    let liveTimerInterval = null;
 
     const toggleBtn = document.getElementById('sessionToggleBtn');
     const timerDisplay = document.getElementById('sessionTimer');
-    const detailsCard = document.getElementById('sessionDetailsCard');
-    const batchContainer = document.getElementById('caseBatchContainer');
     const inputStart = document.getElementById('sessionStartTime');
     const inputEnd = document.getElementById('sessionEndTime');
     const inputDuration = document.getElementById('timeSpent');
     const submitBtn = document.querySelector('form button[type="submit"]');
 
-    if (submitBtn) submitBtn.disabled = true;
-
     function updateTimerUI() {
       if (!toggleBtn || !timerDisplay) return;
 
       if (isSessionRunning && startTime) {
-        toggleBtn.classList.remove('btn-success');
-        toggleBtn.classList.add('btn-danger');
+        toggleBtn.classList.remove('btn-outline-success');
+        toggleBtn.classList.add('btn-outline-danger');
         toggleBtn.innerHTML = '⏹️ End Session';
-        timerDisplay.innerText = `Session started at: ${startTime.toLocaleTimeString()}`;
-        if (inputStart) inputStart.value = startTime.toISOString();
+
+        const now = new Date();
+        const duration = Math.floor((now - startTime) / 1000);
+        const hrs = Math.floor(duration / 3600);
+        const mins = Math.floor((duration % 3600) / 60);
+        const secs = duration % 60;
+        timerDisplay.innerText = `⏱️ Session Live: ${hrs > 0 ? hrs + 'h ' : ''}${mins}m ${secs}s`;
       } else {
-        toggleBtn.classList.replace('btn-outline-primary', 'btn-success');
+        toggleBtn.classList.remove('btn-outline-danger');
+        toggleBtn.classList.add('btn-outline-success');
         toggleBtn.innerHTML = '▶️ Start Session';
         timerDisplay.innerText = "No session running";
       }
     }
 
-    if (toggleBtn) {
-      toggleBtn.addEventListener('click', () => {
-        isSessionRunning = !isSessionRunning;
-        localStorage.setItem("isSessionRunning", isSessionRunning);
-
-        if (isSessionRunning) {
-          if (submitBtn) submitBtn.disabled = false;
-          startTime = new Date();
-          localStorage.setItem("sessionStartTime", startTime.toISOString());
-          if (inputStart) inputStart.value = startTime.toISOString();
-          updateTimerUI();
-        } else {
-          const endTime = new Date();
-          const duration = Math.floor((endTime - startTime) / 60000);
-
-          if (inputEnd) inputEnd.value = endTime.toISOString();
-          if (inputDuration) inputDuration.value = duration;
-
-          localStorage.removeItem("isSessionRunning");
-          localStorage.removeItem("sessionStartTime");
-
-          if (timerDisplay) timerDisplay.innerText = `Session ended at: ${endTime.toLocaleTimeString()}`;
-          if (detailsCard) detailsCard.classList.remove('d-none');
-
-          addCaseBatchForm();
-
-          const form = document.querySelector('form');
-          if (form) {
-            form.addEventListener('submit', function () {
-              const finalEndTime = new Date();
-              if (inputEnd) inputEnd.value = finalEndTime.toISOString();
-              if (inputDuration) inputDuration.value = Math.floor((finalEndTime - startTime) / 60000);
-            });
-          }
-        }
-      });
+    function startLiveClock() {
+      clearInterval(liveTimerInterval);
+      liveTimerInterval = setInterval(updateTimerUI, 1000);
     }
-
     function addCaseBatchForm() {
       if (!batchContainer) return;
 
       const batchHTML = `
-      <div class="border rounded p-3 mb-3">
-        <div class="mb-2">
-          <label class="form-label">Number of Cases</label>
-          <input type="number" name="cases[]" class="form-control" required />
-        </div>
-        <div class="mb-2">
-          <label class="form-label">Modality</label>
-          <select name="modalities[]" class="form-select">
-            <option value="ct">CT</option>
-            <option value="x-ray">X-ray</option>
-            <option value="mri">MRI</option>
-            <option value="ultrasound">Ultrasound</option>
-            <option value="nuclear medicine">Nuclear Medicine</option>
-            <option value="mammography">Mammography</option>
-            <option value="others">Others</option>
-          </select>
-
-        </div>
-        <div class="mb-2">
-          <label class="form-label">Workplace</label>
-          <select name="workplaces[]" class="form-select">
-            <option value="onsite-government/NHS">NHS</option>
-            <option value="tele">Teleradiology</option>
-            <option value="onsite-private">Private</option>
-          </select>
-        </div>
-        <div class="mb-2">
-          <label class="form-label">Notes (optional)</label>
-          <textarea name="notes[]" class="form-control" rows="2"></textarea>
-        </div>
+    <div class="border rounded p-3 mb-3">
+      <div class="mb-2">
+        <label class="form-label">Number of Cases</label>
+        <input type="number" name="cases[]" class="form-control" required />
       </div>
-    `;
+      <div class="mb-2">
+        <label class="form-label">Modality</label>
+        <select name="modalities[]" class="form-select">
+          <option value="ct">CT</option>
+          <option value="x-ray">X-ray</option>
+          <option value="mri">MRI</option>
+          <option value="ultrasound">Ultrasound</option>
+          <option value="nuclear medicine">Nuclear Medicine</option>
+          <option value="mammography">Mammography</option>
+          <option value="others">Others</option>
+        </select>
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Workplace</label>
+        <select name="workplaces[]" class="form-select">
+          <option value="onsite-government/NHS">NHS</option>
+          <option value="tele">Teleradiology</option>
+          <option value="onsite-private">Private</option>
+        </select>
+      </div>
+      <div class="mb-2">
+        <label class="form-label">Notes (optional)</label>
+        <textarea name="notes[]" class="form-control" rows="2"></textarea>
+      </div>
+    </div>
+  `;
+  const batchContainer = document.getElementById("caseBatchContainer");
       batchContainer.insertAdjacentHTML('beforeend', batchHTML);
     }
+    function stopLiveClock() {
+      clearInterval(liveTimerInterval);
+    }
 
-    const addBatchBtn = document.getElementById('addBatchBtn');
-    if (addBatchBtn) addBatchBtn.addEventListener('click', addCaseBatchForm);
+    toggleBtn.addEventListener('click', () => {
+      isSessionRunning = !isSessionRunning;
+      localStorage.setItem("isSessionRunning", isSessionRunning);
 
-    updateTimerUI(); // Ensure correct UI on load
+      if (isSessionRunning) {
+        startTime = new Date();
+        localStorage.setItem("sessionStartTime", startTime.toISOString());
+        inputStart.value = startTime.toISOString();
+        startLiveClock();
+        updateTimerUI();
+        showToast('✅ Session started successfully!', 'bg-success');
+      } else {
+        const endTime = new Date();
+        const duration = Math.floor((endTime - startTime) / 60000);
+        inputEnd.value = endTime.toISOString();
+        inputDuration.value = duration;
+
+        localStorage.removeItem("isSessionRunning");
+        localStorage.removeItem("sessionStartTime");
+        stopLiveClock();
+
+        timerDisplay.innerText = `Session ended at: ${endTime.toLocaleTimeString()}`;
+        document.getElementById('sessionDetailsCard').classList.remove('d-none');
+        submitBtn.disabled = false;
+        addCaseBatchForm();
+        updateTimerUI();
+        showToast('📋 Session ended. Log your cases.', 'bg-warning');
+      }
+    });
+
+    if (isSessionRunning && startTime) {
+      inputStart.value = startTime.toISOString();
+      startLiveClock();
+    }
+
+    updateTimerUI();
   });
 </script>
 
