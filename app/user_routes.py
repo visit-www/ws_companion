@@ -1550,7 +1550,13 @@ def productivity_dashboard():
     from app.models import UserProfile, UserData
 
     user_profile = db.session.query(UserProfile).filter_by(user_id=current_user.id).first()
-
+    def format_minutes(minutes):
+        hrs = int(minutes // 60)
+        mins = minutes % 60  # this can be a float now
+        if hrs:
+            return f"{hrs}h {mins:.1f}m"
+        else:
+            return f"{mins:.1f}m"
     # Date boundaries
     today = datetime.utcnow().date()
     today_start = datetime.combine(today, datetime.min.time())
@@ -1568,7 +1574,14 @@ def productivity_dashboard():
             UserData.session_start_time <= yesterday_end,
         ).all()
     )
-
+    print (f"debug statement : yesterday log is : {yesterday_logs}")
+    # 🔽 COMPUTE FOOTER VALUES FOR YESTERDAY
+    yesterday_total_cases = sum(log.num_cases_reported or 0 for log in yesterday_logs)
+    yesterday_total_minutes = sum(log.time_spent or 0 for log in yesterday_logs)
+    yesterday_avg_minutes = (yesterday_total_minutes / yesterday_total_cases if yesterday_total_cases else 0)
+    yesterday_total_time = format_minutes(yesterday_total_minutes)
+    yesterday_avg_time_per_case = (format_minutes(yesterday_avg_minutes) if yesterday_total_cases else "—")
+    
     # Today's logs
     today_logs = (
         db.session.query(UserData)
@@ -1579,13 +1592,26 @@ def productivity_dashboard():
             UserData.session_start_time <= today_end,
         ).all()
     )
+    print (f"debug statement : todays log is : {today_logs}")
+    # 🔽 COMPUTE FOOTER VALUES
+    total_cases = sum(log.num_cases_reported or 0 for log in today_logs)
+    total_minutes = sum(log.time_spent or 0 for log in today_logs)
+
+    total_time = format_minutes(total_minutes)
+    avg_minutes = total_minutes / total_cases if total_cases else 0
+    avg_time_per_case = format_minutes(avg_minutes) if total_cases else "—"
 
     return render_template(
-        "productivity_dashboard.html",
-        user_profile=user_profile,
-        yesterday_logs=yesterday_logs,
-        today_logs=today_logs
-    )
+    "productivity_dashboard.html",
+    today_logs=today_logs,
+    total_cases=total_cases,
+    total_time=total_time,
+    avg_time_per_case=avg_time_per_case,
+    user_profile=user_profile,
+    yesterday_logs=yesterday_logs,
+    yesterday_total_cases=yesterday_total_cases,
+    yesterday_total_time=yesterday_total_time,
+    yesterday_avg_time_per_case=yesterday_avg_time_per_case,)
 
 #Save user productivty dashboard preferences :
 @app_user_bp.route("/save_productivity_preferences", methods=["POST"])
