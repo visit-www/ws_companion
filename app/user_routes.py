@@ -1543,7 +1543,6 @@ def export_full_appraisal_log():
 # Productivity Dashboard
 # -------------------------
 
-# Mock productivity dashboard route
 from datetime import datetime, timedelta
 from sqlalchemy import and_
 
@@ -1553,7 +1552,13 @@ def productivity_dashboard():
     from app.models import UserProfile, UserData
 
     user_profile = db.session.query(UserProfile).filter_by(user_id=current_user.id).first()
-
+    def format_minutes(minutes):
+        hrs = int(minutes // 60)
+        mins = minutes % 60  # this can be a float now
+        if hrs:
+            return f"{hrs}h {mins:.1f}m"
+        else:
+            return f"{mins:.1f}m"
     # Date boundaries
     today = datetime.utcnow().date()
     today_start = datetime.combine(today, datetime.min.time())
@@ -1571,7 +1576,14 @@ def productivity_dashboard():
             UserData.session_start_time <= yesterday_end,
         ).all()
     )
-
+    print (f"debug statement : yesterday log is : {yesterday_logs}")
+    # 🔽 COMPUTE FOOTER VALUES FOR YESTERDAY
+    yesterday_total_cases = sum(log.num_cases_reported or 0 for log in yesterday_logs)
+    yesterday_total_minutes = sum(log.time_spent or 0 for log in yesterday_logs)
+    yesterday_avg_minutes = (yesterday_total_minutes / yesterday_total_cases if yesterday_total_cases else 0)
+    yesterday_total_time = format_minutes(yesterday_total_minutes)
+    yesterday_avg_time_per_case = (format_minutes(yesterday_avg_minutes) if yesterday_total_cases else "—")
+    
     # Today's logs
     today_logs = (
         db.session.query(UserData)
@@ -1582,14 +1594,26 @@ def productivity_dashboard():
             UserData.session_start_time <= today_end,
         ).all()
     )
+    print (f"debug statement : todays log is : {today_logs}")
+    # 🔽 COMPUTE FOOTER VALUES
+    total_cases = sum(log.num_cases_reported or 0 for log in today_logs)
+    total_minutes = sum(log.time_spent or 0 for log in today_logs)
+
+    total_time = format_minutes(total_minutes)
+    avg_minutes = total_minutes / total_cases if total_cases else 0
+    avg_time_per_case = format_minutes(avg_minutes) if total_cases else "—"
 
     return render_template(
-        "productivity_dashboard.html",
-        user_profile=user_profile,
-        yesterday_logs=yesterday_logs,
-        today_logs=today_logs,
-        modules=ModuleNames
-    )
+    "productivity_dashboard.html",
+    today_logs=today_logs,
+    total_cases=total_cases,
+    total_time=total_time,
+    avg_time_per_case=avg_time_per_case,
+    user_profile=user_profile,
+    yesterday_logs=yesterday_logs,
+    yesterday_total_cases=yesterday_total_cases,
+    yesterday_total_time=yesterday_total_time,
+    yesterday_avg_time_per_case=yesterday_avg_time_per_case,)
 
 #Save user productivty dashboard preferences :
 @app_user_bp.route("/save_productivity_preferences", methods=["POST"])
@@ -1628,11 +1652,6 @@ def save_productivity_preferences():
 #captures submitted batch info and stores them in UserData.
 # Save work session route
 from app.models import UserData, InteractionTypeEnum
-from flask import request, redirect, url_for
-from flask_login import current_user
-from datetime import datetime
-from app.util import get_anonymous_user_id
-from app import db
 
 @app_user_bp.route('/save_session_log', methods=['POST'])
 def save_session_log():
@@ -1656,23 +1675,18 @@ def save_session_log():
         notes_list = request.form.getlist("notes[]")
         user_id = current_user.id if current_user.is_authenticated else get_anonymous_user_id()
 
-        for i in range(len(cases)):
-            log = UserData(
-                session_start_time=session_start_time,
-                session_end_time=session_end_time,
-                time_spent=time_spent,
-                num_cases_reported=int(cases[i]) if cases[i] else 0,
-                modalities_handled=[modalities[i].upper()] if modalities[i] else [],
-                session_type=workplaces[i],
-                notes=notes_list[i],
-                user_id=user_id
-            )
-            db.session.add(log)
-        db.session.commit()
-        flash("Session log saved successfully.", "success")
-    except Exception as e:
-        db.session.rollback()
-        flash("Error saving session log. Please try again.", "danger")
-        print(f"[save_session_log] ERROR: {e}")
+    for i in range(len(cases)):
+        log = UserData(
+            session_start_time=session_start_time,
+            session_end_time=session_end_time,
+            time_spent=int(time_spent) if time_spent else None,
+            num_cases_reported=int(cases[i]) if cases[i] else 0,
+            modalities_handled=[modalities[i]] if modalities[i] else [],
+            session_type=workplaces[i],
+            notes=notes_list[i],
+            user_id=user_id
+        )
+        db.session.add(log)
+    db.session.commit()
 
     return redirect(url_for('app_user.productivity_dashboard'))
