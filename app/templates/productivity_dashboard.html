@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="container mt-5">
+
   <div class="row">
     <!-- Saved Preferences Summary -->
     <div class="card dashboard-card mb-4">
@@ -42,11 +43,11 @@
               <label for="preferred_subspecialties" class="form-label">Preferred Subspecialties</label>
               <select class="form-select" id="preferred_subspecialties" name="preferred_subspecialties" multiple>
                 {% for subspecialty in modules %}
-                    <option value="{{ subspecialty.name }}"
-                      {% if user_profile.preferred_subspecialties and subspecialty in user_profile.preferred_subspecialties %}selected{% endif %}>
-                      {{ subspecialty.value.replace('_', ' ').title() }}
-                    </option>
-              {% endfor %}
+                <option value="{{ subspecialty.name }}" {% if user_profile.preferred_subspecialties and subspecialty in
+                  user_profile.preferred_subspecialties %}selected{% endif %}>
+                  {{ subspecialty.value.replace('_', ' ').title() }}
+                </option>
+                {% endfor %}
 
               </select>
               <small class="form-text text-muted">Hold Ctrl (Windows) or Cmd (Mac) to select multiple.</small>
@@ -118,8 +119,12 @@
                 <tbody>
                   {% for log in yesterday_logs %}
                   <tr>
-                    <td>{{ log.session_start_time.strftime('%H:%M') }}</td>
-                    <td>{{ log.session_end_time.strftime('%H:%M') }}</td>
+                    <td>
+                      <span class="local-time" data-dt="{{ log.session_start_time.isoformat() }}Z"></span>
+                    </td>
+                    <td>
+                      <span class="local-time" data-dt="{{ log.session_end_time.isoformat() }}Z"></span>
+                    </td>
                     <td>
                       {% set hrs = log.time_spent // 60 %}
                       {% set mins = log.time_spent % 60 %}
@@ -189,8 +194,8 @@
                 <tbody>
                   {% for log in today_logs %}
                   <tr>
-                    <td>{{ log.session_start_time.strftime('%H:%M') }}</td>
-                    <td>{{ log.session_end_time.strftime('%H:%M') }}</td>
+                    <td><span class="local-time" data-dt="{{ log.session_start_time.isoformat() }}Z"></span></td>
+                    <td><span class="local-time" data-dt="{{ log.session_end_time.isoformat() }}Z"></span></td>
                     <td>
                       {% set hrs = log.time_spent // 60 %}
                       {% set mins = log.time_spent % 60 %}
@@ -248,90 +253,108 @@
 </div>
 <script>
   document.addEventListener("DOMContentLoaded", function () {
+    console.log("✅ productivity_dashboard.html loaded and script is running.");
+
     let isSessionRunning = localStorage.getItem("isSessionRunning") === "true";
     let startTime = localStorage.getItem("sessionStartTime") ? new Date(localStorage.getItem("sessionStartTime")) : null;
     let liveTimerInterval = null;
 
+    const batchContainer = document.getElementById("caseBatchContainer");
     const toggleBtn = document.getElementById('sessionToggleBtn');
     const timerDisplay = document.getElementById('sessionTimer');
     const inputStart = document.getElementById('sessionStartTime');
     const inputEnd = document.getElementById('sessionEndTime');
     const inputDuration = document.getElementById('timeSpent');
-    const submitBtn = document.querySelector('form button[type="submit"]');
+    const submitBtn = document.querySelector('#sessionDetailsCard button[type="submit"]');
+    const sessionCard = document.getElementById('sessionDetailsCard');
 
     function updateTimerUI() {
-      if (!toggleBtn || !timerDisplay) return;
+      if (!toggleBtn || !timerDisplay) {
+        console.log("⛔ toggleBtn or timerDisplay not found in DOM.");
+        return;
+      }
 
       if (isSessionRunning && startTime) {
         toggleBtn.classList.remove('btn-outline-success');
         toggleBtn.classList.add('btn-outline-danger');
         toggleBtn.innerHTML = '⏹️ End Session';
+        console.log("🔁 UI updated to End Session");
 
         const now = new Date();
-        const duration = Math.floor((now - startTime) / 1000);
-        const hrs = Math.floor(duration / 3600);
-        const mins = Math.floor((duration % 3600) / 60);
-        const secs = duration % 60;
+        const seconds = Math.floor((now - startTime) / 1000);
+        const hrs = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
         timerDisplay.innerText = `⏱️ Session Live: ${hrs > 0 ? hrs + 'h ' : ''}${mins}m ${secs}s`;
       } else {
         toggleBtn.classList.remove('btn-outline-danger');
         toggleBtn.classList.add('btn-outline-success');
         toggleBtn.innerHTML = '▶️ Start Session';
         timerDisplay.innerText = "No session running";
+        console.log("🔁 UI updated to Start Session");
       }
     }
 
     function startLiveClock() {
       clearInterval(liveTimerInterval);
       liveTimerInterval = setInterval(updateTimerUI, 1000);
+      console.log("⏰ Live clock started.");
     }
-    function addCaseBatchForm() {
-      if (!batchContainer) return;
 
-      const batchHTML = `
-    <div class="border rounded p-3 mb-3">
-      <div class="mb-2">
-        <label class="form-label">Number of Cases</label>
-        <input type="number" name="cases[]" class="form-control" required />
-      </div>
-      <div class="mb-2">
-        <label class="form-label">Modality</label>
-        <select name="modalities[]" class="form-select">
-          <option value="ct">CT</option>
-          <option value="x-ray">X-ray</option>
-          <option value="mri">MRI</option>
-          <option value="ultrasound">Ultrasound</option>
-          <option value="nuclear medicine">Nuclear Medicine</option>
-          <option value="mammography">Mammography</option>
-          <option value="others">Others</option>
-        </select>
-      </div>
-      <div class="mb-2">
-        <label class="form-label">Workplace</label>
-        <select name="workplaces[]" class="form-select">
-          <option value="onsite-government/NHS">NHS</option>
-          <option value="tele">Teleradiology</option>
-          <option value="onsite-private">Private</option>
-        </select>
-      </div>
-      <div class="mb-2">
-        <label class="form-label">Notes (optional)</label>
-        <textarea name="notes[]" class="form-control" rows="2"></textarea>
-      </div>
-    </div>
-  `;
-  const batchContainer = document.getElementById("caseBatchContainer");
-      batchContainer.insertAdjacentHTML('beforeend', batchHTML);
-    }
     function stopLiveClock() {
       clearInterval(liveTimerInterval);
+      console.log("🛑 Live clock stopped.");
+    }
+
+    function addCaseBatchForm() {
+      console.log("➕ Adding case batch form");
+      const batchHTML = `
+        <div class="border rounded p-3 mb-3">
+          <div class="mb-2">
+            <label class="form-label">Number of Cases</label>
+            <input type="number" name="cases[]" class="form-control" required />
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Modality</label>
+            <select name="modalities[]" class="form-select">
+              <option value="ct">CT</option>
+              <option value="x-ray">X-ray</option>
+              <option value="mri">MRI</option>
+              <option value="ultrasound">Ultrasound</option>
+              <option value="nuclear medicine">Nuclear Medicine</option>
+              <option value="mammography">Mammography</option>
+              <option value="others">Others</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Workplace</label>
+            <select name="workplaces[]" class="form-select">
+              <option value="onsite-government/NHS">NHS</option>
+              <option value="tele">Teleradiology</option>
+              <option value="onsite-private">Private</option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Notes (optional)</label>
+            <textarea name="notes[]" class="form-control" rows="2"></textarea>
+          </div>
+        </div>
+      `;
+      batchContainer.insertAdjacentHTML('beforeend', batchHTML);
     }
 
     toggleBtn.addEventListener('click', () => {
+      if (!toggleBtn) {
+        console.error("❌ toggleBtn not found in DOM.");
+        return;
+      }
+
+      console.log('🟢 Toggle button clicked');
       isSessionRunning = !isSessionRunning;
       localStorage.setItem("isSessionRunning", isSessionRunning);
 
       if (isSessionRunning) {
+        console.log("▶️ Session started");
         startTime = new Date();
         localStorage.setItem("sessionStartTime", startTime.toISOString());
         inputStart.value = startTime.toISOString();
@@ -341,6 +364,19 @@
       } else {
         const endTime = new Date();
         const duration = Math.floor((endTime - startTime) / 60000);
+        console.log(`⏹️ Session ended. Duration: ${duration} minutes`);
+
+        if (duration < 1) {
+          console.warn("⚠️ Session too short to log");
+          showToast("⛔ Session was too short to log.", "bg-danger", "top-0 start-50 translate-middle-x");
+
+          isSessionRunning = false;
+          localStorage.removeItem("isSessionRunning");
+          localStorage.removeItem("sessionStartTime");
+          stopLiveClock();
+          updateTimerUI();
+          return;
+        }
         inputEnd.value = endTime.toISOString();
         inputDuration.value = duration;
 
@@ -349,7 +385,7 @@
         stopLiveClock();
 
         timerDisplay.innerText = `Session ended at: ${endTime.toLocaleTimeString()}`;
-        document.getElementById('sessionDetailsCard').classList.remove('d-none');
+        sessionCard.classList.remove('d-none');
         submitBtn.disabled = false;
         addCaseBatchForm();
         updateTimerUI();
@@ -358,6 +394,7 @@
     });
 
     if (isSessionRunning && startTime) {
+      console.log("🔄 Resuming previous session...");
       inputStart.value = startTime.toISOString();
       startLiveClock();
     }
@@ -365,7 +402,11 @@
     updateTimerUI();
   });
 </script>
-
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    showToast("✅ Welcome to your productivity console!", "bg-info");
+  });
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
