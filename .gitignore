@@ -44,3 +44,6 @@ Thumbs.db
 *.pyc
 __pycache__/
 radiology.db
+__pycache__/
+__pycache__/
+__pycache__/
