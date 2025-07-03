@@ -1654,7 +1654,7 @@ from pytz import UTC
 from datetime import datetime
 from flask import request, redirect, url_for, flash
 from flask_login import current_user
-
+from dateutil import parser
 @app_user_bp.route('/save_session_log', methods=['POST'])
 def save_session_log():
     print("save session route reached")
@@ -1668,19 +1668,13 @@ def save_session_log():
             return redirect(url_for('app_user.productivity_dashboard'))
 
         # Parse ISO strings (may or may not have tzinfo)
-        start_dt = datetime.fromisoformat(session_start_time_str)
-        end_dt = datetime.fromisoformat(session_end_time_str)
+        
+        start_dt = parser.isoparse(session_start_time_str)
+        end_dt = parser.isoparse(session_end_time_str)
 
-        # Ensure datetime objects are timezone-aware
-        if start_dt.tzinfo is None:
-            start_dt = start_dt.replace(tzinfo=UTC)
-        else:
-            start_dt = start_dt.astimezone(UTC)
-
-        if end_dt.tzinfo is None:
-            end_dt = end_dt.replace(tzinfo=UTC)
-        else:
-            end_dt = end_dt.astimezone(UTC)
+        # Force conversion to UTC
+        start_dt = start_dt.astimezone(UTC)
+        end_dt = end_dt.astimezone(UTC)
 
         session_start_time = start_dt
         session_end_time = end_dt
