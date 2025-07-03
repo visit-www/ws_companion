@@ -2,22 +2,24 @@
 <div class="mb-3">
     <label for="{{ field.id }}" class="form-label">{{ field.label.text }}</label>
     {% if field.type == 'FileField' %}
-        {{ field(class="form-control custom_input") }}
+    {{ field(class="form-control custom_input") }}
     {% elif field.type == 'SelectField' %}
-        {{ field(class="form-select custom_input") }}
+    {{ field(class="form-select custom_input") }}
     {% else %}
-        {{ field(class="form-control custom_input " + ("is-valid" if field.data and field.validate() else "is-invalid" if field.errors else "")) }}
+    {{ field(class="form-control custom_input " + ("is-valid" if field.data and field.validate() else "is-invalid" if
+    field.errors else "")) }}
     {% endif %}
     {% if field.errors %}
-        <div class="invalid-feedback">
-            {{ field.errors[0] }}
-        </div>
+    <div class="invalid-feedback">
+        {{ field.errors[0] }}
+    </div>
     {% endif %}
 </div>
 {% endmacro %}
 
 {% macro collapse_btn (target_id, btn_text) %}
-<button class="btn-yellow-main btn p-0" data-bs-toggle="collapse" data-bs-target="#{{ target_id }}" aria-expanded="false" aria-controls="{{ target_id }}">
+<button class="btn-yellow-main btn p-0" data-bs-toggle="collapse" data-bs-target="#{{ target_id }}"
+    aria-expanded="false" aria-controls="{{ target_id }}">
     {{ button_text }}
 </button>
 {% endmacro %}
@@ -36,13 +38,16 @@
 {% endmacro %}
 
 {% macro images_from_folder(article_name, folder_name) %}
-    {% set images = [] %}
-    {% for filename in os.listdir("creatives_folder/" + article_name + "/images/image_stacks/" + folder_name) %}
-        {% if filename.endswith(('.jpg', '.jpeg', '.png')) and filename.startswith('img_') %}
-            {% set images = images + ["/creatives_folder/" + article_name + "/images/image_stacks/" + folder_name + "/" + filename] %}
-        {% endif %}
-    {% endfor %}
-    {% set sorted_images = images | sort %}
-    {{ sorted_images }}
+{% set images = [] %}
+{% for filename in os.listdir("creatives_folder/" + article_name + "/images/image_stacks/" + folder_name) %}
+{% if filename.endswith(('.jpg', '.jpeg', '.png')) and filename.startswith('img_') %}
+{% set images = images + ["/creatives_folder/" + article_name + "/images/image_stacks/" + folder_name + "/" + filename]
+%}
+{% endif %}
+{% endfor %}
+{% set sorted_images = images | sort %}
+{{ sorted_images }}
 {% endmacro %}
-
+{% macro render_iso(dt) %}
+{{ dt.isoformat() if dt else '' }}
+{% endmacro %}

@@ -4,10 +4,13 @@ from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from flask_mail import Message
-from datetime import timedelta, datetime, timezone
 import os
 import shutil
 import json
+from datetime import datetime, timedelta
+from pytz import timezone, UTC
+IST = timezone('Asia/Kolkata')
+
 
 
 
@@ -135,17 +138,17 @@ def login():
             # Update UserData fields
             user_data = db.session.query(UserData).filter_by(user_id=user.id).first()
             if user_data:
-                user_data.last_interaction = datetime.now(timezone.utc)
+                user_data.last_interaction =datetime.now(UTC)
                 # Copy current login to last login
                 if user_data.current_login:
                     user_data.last_login = user_data.current_login
                 # Update current login to the new login time
-                user_data.current_login = datetime.now(timezone.utc)
+                user_data.current_login = datetime.now(UTC)
                 if user_data.login_count is None:
                     user_data.login_count = 0
                 user_data.login_count += 1
                 user_data.interaction_type = InteractionTypeEnum.LOGGED_IN  # Ensure this value aligns with your enum or model definition
-                user_data.last_interaction=datetime.now(timezone.utc)
+                user_data.last_interaction=datetime.now(UTC)
                 user.status = "active"
                 db.session.commit()  # Save changes to the database
             
@@ -174,12 +177,12 @@ def logout():
         # Ensure last_login is not None
         if user_data.last_login and user_data.session_start_time is not None:
             # Ensure last_login is timezone-aware
-            if user_data.last_login.tzinfo is None:
-                user_data.last_login = user_data.last_login.replace(tzinfo=timezone.utc)
-            elif user_data.current_login is None:
-                user_data.current_login=user_data.current_login.replace(tzinfo=timezone.utc)
+            if user_data.last_login and user_data.last_login.tzinfo is None:
+                user_data.last_login = UTC.localize(user_data.last_login)
+            if user_data.current_login and user_data.current_login.tzinfo is None:
+                user_data.current_login = UTC.localize(user_data.current_login)
             # Calculate the time spent since last login
-            time_spent = datetime.now(timezone.utco) - user_data.current_login
+            time_spent = datetime.now(UTC) - user_data.current_login
             time_spent_in_minutes = time_spent.total_seconds()/60
             # Prevent negative time_spent
             if time_spent_in_minutes < 0:
@@ -192,7 +195,7 @@ def logout():
             user_data.time_spent += 0
 
         # Update user data
-        user_data.last_interaction = datetime.now(timezone.utc)
+        user_data.last_interaction = datetime.now(UTC)
         user_data.interaction_type = InteractionTypeEnum.LOGGED_OUT  # Corrected typo from 'loged_out' to 'logged_out'
         user.status = "inactive"  # Set user status to inactive
 
@@ -260,8 +263,8 @@ def register():
                     profile_pic_path=profile_pic_path,  # This is the full path to where the file is stored
                     preferred_categories=','.join([category.value for category in CategoryNames]),  # Store as comma-separated string
                     preferred_modules=','.join([module.value for module in ModuleNames]),  # Store as comma-separated string
-                    created_at=datetime.now(timezone.utc),
-                    updated_at=datetime.now(timezone.utc)
+                    created_at=datetime.now(UTC),
+                    updated_at=datetime.now(UTC)
                 )
                 db.session.add(profile)
 
@@ -272,8 +275,8 @@ def register():
                     feedback=None,
                     content_rating=None,
                     time_spent=0,
-                    last_interaction=datetime.now(timezone.utc),
-                    current_login=datetime.now(timezone.utc),  # Assume the user has just logged in
+                    last_interaction=datetime.now(UTC),
+                    current_login=datetime.now(UTC),  # Assume the user has just logged in
                     last_login=None,
                     session_start_time=None,
                     login_count=0
@@ -285,8 +288,8 @@ def register():
                     user_id=new_user.id,
                     modified_filepath=None,
                     annotations=None,
-                    created_at=datetime.now(timezone.utc),
-                    updated_at=datetime.now(timezone.utc)
+                    created_at=datetime.now(UTC),
+                    updated_at=datetime.now(UTC)
                 )
                 db.session.add(user_content_state)
 
@@ -580,13 +583,13 @@ def profile_manager():
                     # Update the profile picture path in the user's profile
                     user.profile_pic = filename
                     user.profile_pic_path = profile_pic_path
-                    user.updated_at = datetime.now(timezone.utc)
+                    user.updated_at = datetime.now(UTC)
 
                     # Update the user data
                     user_data = db.session.query(UserData).filter_by(user_id=current_user.id).first()
                     if user_data:
                         user_data.interaction_type = InteractionTypeEnum.UPDATED_PROFILE_PIC
-                        user_data.last_interaction = datetime.now(timezone.utc)
+                        user_data.last_interaction = datetime.now(UTC)
 
                     db.session.commit()  # Commit the changes to the database
                     flash('Profile picture uploaded successfully!', 'info')
@@ -616,7 +619,7 @@ def profile_manager():
                         try:
                             current_user.username = requested_username.lower()
                             user_data = db.session.query(UserData).filter_by(user_id=current_user.id).first()
-                            user_data.last_interaction = datetime.now(timezone.utc)
+                            user_data.last_interaction = datetime.now(UTC)
                             user_data.interaction_type = InteractionTypeEnum.UPDATED_USERNAME
                             db.session.commit()  # Commit the changes to the database
                             flash('Username updated successfully!', 'info')
@@ -1395,8 +1398,6 @@ def export_single_year_log():
 #================
 from flask import request, render_template, send_file, redirect, url_for, flash, session
 from flask_login import login_required, current_user
-from io import BytesIO
-from datetime import datetime
 from docx import Document
 from weasyprint import HTML
 
@@ -1542,27 +1543,26 @@ def export_full_appraisal_log():
 # -------------------------
 # Productivity Dashboard
 # -------------------------
-
 from datetime import datetime, timedelta
-from sqlalchemy import and_
+from pytz import UTC
+from flask import render_template
+from flask_login import login_required, current_user
 
 @app_user_bp.route("/productivity/dashboard", methods=["GET"])
 @login_required
 def productivity_dashboard():
-    from app.models import UserProfile, UserData
-
     user_profile = db.session.query(UserProfile).filter_by(user_id=current_user.id).first()
+
     def format_minutes(minutes):
         hrs = int(minutes // 60)
-        mins = minutes % 60  # this can be a float now
-        if hrs:
-            return f"{hrs}h {mins:.1f}m"
-        else:
-            return f"{mins:.1f}m"
-    # Date boundaries
-    today = datetime.utcnow().date()
-    today_start = datetime.combine(today, datetime.min.time())
-    today_end = datetime.combine(today, datetime.max.time())
+        mins = minutes % 60
+        return f"{hrs}h {mins:.1f}m" if hrs else f"{mins:.1f}m"
+
+    now_utc = datetime.now(UTC)
+    today = now_utc.date()
+    today_start = datetime.combine(today, datetime.min.time()).replace(tzinfo=UTC)
+    today_end = datetime.combine(today, datetime.max.time()).replace(tzinfo=UTC)
+    
     yesterday_start = today_start - timedelta(days=1)
     yesterday_end = today_end - timedelta(days=1)
 
@@ -1576,14 +1576,13 @@ def productivity_dashboard():
             UserData.session_start_time <= yesterday_end,
         ).all()
     )
-    print (f"debug statement : yesterday log is : {yesterday_logs}")
-    # 🔽 COMPUTE FOOTER VALUES FOR YESTERDAY
+
     yesterday_total_cases = sum(log.num_cases_reported or 0 for log in yesterday_logs)
     yesterday_total_minutes = sum(log.time_spent or 0 for log in yesterday_logs)
     yesterday_avg_minutes = (yesterday_total_minutes / yesterday_total_cases if yesterday_total_cases else 0)
     yesterday_total_time = format_minutes(yesterday_total_minutes)
-    yesterday_avg_time_per_case = (format_minutes(yesterday_avg_minutes) if yesterday_total_cases else "—")
-    
+    yesterday_avg_time_per_case = format_minutes(yesterday_avg_minutes) if yesterday_total_cases else "—"
+
     # Today's logs
     today_logs = (
         db.session.query(UserData)
@@ -1594,27 +1593,28 @@ def productivity_dashboard():
             UserData.session_start_time <= today_end,
         ).all()
     )
-    print (f"debug statement : todays log is : {today_logs}")
-    # 🔽 COMPUTE FOOTER VALUES
+
     total_cases = sum(log.num_cases_reported or 0 for log in today_logs)
     total_minutes = sum(log.time_spent or 0 for log in today_logs)
-
-    total_time = format_minutes(total_minutes)
     avg_minutes = total_minutes / total_cases if total_cases else 0
+    total_time = format_minutes(total_minutes)
     avg_time_per_case = format_minutes(avg_minutes) if total_cases else "—"
-
+    
     return render_template(
-    "productivity_dashboard.html",
-    today_logs=today_logs,
-    total_cases=total_cases,
-    total_time=total_time,
-    avg_time_per_case=avg_time_per_case,
-    user_profile=user_profile,
-    yesterday_logs=yesterday_logs,
-    yesterday_total_cases=yesterday_total_cases,
-    yesterday_total_time=yesterday_total_time,
-    yesterday_avg_time_per_case=yesterday_avg_time_per_case,)
-
+        "productivity_dashboard.html",
+        modules=list(ModuleNames),
+        today_logs=today_logs,
+        total_cases=total_cases,
+        total_time=total_time,
+        avg_time_per_case=avg_time_per_case,
+        user_profile=user_profile,
+        yesterday_logs=yesterday_logs,
+        yesterday_total_cases=yesterday_total_cases,
+        yesterday_total_time=yesterday_total_time,
+        yesterday_avg_time_per_case=yesterday_avg_time_per_case,
+        today_start=today_start,
+        today_end=today_end
+    )
 #Save user productivty dashboard preferences :
 @app_user_bp.route("/save_productivity_preferences", methods=["POST"])
 @login_required
@@ -1636,7 +1636,7 @@ def save_productivity_preferences():
         # Update profile fields
         profile.preferred_subspecialties = enum_subspecialties
         profile.preferred_workplaces = workplace_list
-        profile.updated_at = datetime.now(timezone.utc)
+        profile.updated_at = datetime.now(UTC)
 
         # Add and commit
         db.session.add(profile)
@@ -1650,43 +1650,68 @@ def save_productivity_preferences():
     return redirect(url_for("app_user.productivity_dashboard"))
 
 #captures submitted batch info and stores them in UserData.
-# Save work session route
-from app.models import UserData, InteractionTypeEnum
+from pytz import UTC
+from datetime import datetime
+from flask import request, redirect, url_for, flash
+from flask_login import current_user
 
 @app_user_bp.route('/save_session_log', methods=['POST'])
 def save_session_log():
+    print("save session route reached")
     try:
         session_start_time_str = request.form.get("session_start_time")
         session_end_time_str = request.form.get("session_end_time")
         time_spent_str = request.form.get("time_spent")
 
-        # Guard: Convert only if valid
         if not (session_start_time_str and session_end_time_str and time_spent_str):
             flash("Missing session data. Please try again.", "danger")
             return redirect(url_for('app_user.productivity_dashboard'))
 
-        session_start_time = datetime.fromisoformat(session_start_time_str)
-        session_end_time = datetime.fromisoformat(session_end_time_str)
+        # Parse ISO strings (may or may not have tzinfo)
+        start_dt = datetime.fromisoformat(session_start_time_str)
+        end_dt = datetime.fromisoformat(session_end_time_str)
+
+        # Ensure datetime objects are timezone-aware
+        if start_dt.tzinfo is None:
+            start_dt = start_dt.replace(tzinfo=UTC)
+        else:
+            start_dt = start_dt.astimezone(UTC)
+
+        if end_dt.tzinfo is None:
+            end_dt = end_dt.replace(tzinfo=UTC)
+        else:
+            end_dt = end_dt.astimezone(UTC)
+
+        session_start_time = start_dt
+        session_end_time = end_dt
         time_spent = int(time_spent_str)
 
         cases = request.form.getlist("cases[]")
         modalities = request.form.getlist("modalities[]")
         workplaces = request.form.getlist("workplaces[]")
         notes_list = request.form.getlist("notes[]")
-        user_id = current_user.id if current_user.is_authenticated else get_anonymous_user_id()
 
-    for i in range(len(cases)):
-        log = UserData(
-            session_start_time=session_start_time,
-            session_end_time=session_end_time,
-            time_spent=int(time_spent) if time_spent else None,
-            num_cases_reported=int(cases[i]) if cases[i] else 0,
-            modalities_handled=[modalities[i]] if modalities[i] else [],
-            session_type=workplaces[i],
-            notes=notes_list[i],
-            user_id=user_id
-        )
-        db.session.add(log)
-    db.session.commit()
+        user_id = current_user.id if current_user.is_authenticated else add_anonymous_user()
+
+        for i in range(len(cases)):
+            log = UserData(
+                session_start_time=session_start_time,
+                session_end_time=session_end_time,
+                time_spent=time_spent if time_spent else None,
+                num_cases_reported=int(cases[i]) if cases[i] else 0,
+                modalities_handled=[modalities[i]] if modalities[i] else [],
+                session_type=workplaces[i],
+                notes=notes_list[i],
+                user_id=user_id,
+                is_productivity_log=True
+            )
+            db.session.add(log)
+
+        db.session.commit()
+        flash("✅ Session log saved successfully!", "success")
+
+    except Exception as e:
+        db.session.rollback()
+        flash(f"Error saving session log: {str(e)}", "danger")
 
     return redirect(url_for('app_user.productivity_dashboard'))

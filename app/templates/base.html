@@ -103,41 +103,46 @@
                 </nav>
                 {% endblock %}
                 {% block hero_container %}
-<div class="container-fluid my-4">
-  <div class="hero-container d-flex align-items-center justify-content-center py-5 px-4 rounded shadow-sm"
-       style="background: linear-gradient(135deg, #1e1b45, #2a2f70, #3c77ff); color: #f8f9fa; position: relative; overflow: hidden;">
+                <div class="container-fluid my-4">
+                    <div class="hero-container d-flex align-items-center justify-content-center py-5 px-4 rounded shadow-sm"
+                        style="background: linear-gradient(135deg, #1e1b45, #2a2f70, #3c77ff); color: #f8f9fa; position: relative; overflow: hidden;">
 
-    <!-- Optional Glow Overlay (Can be a blurred div or SVG if needed later) -->
+                        <!-- Optional Glow Overlay (Can be a blurred div or SVG if needed later) -->
 
-    <!-- Logo -->
-    <a class="navbar-brand me-5" href="{{ url_for('main_routes.index') }}">
-      <img src="{{ url_for('static', filename='assets/images/wsc-vertical-trans.png') }}" alt="Logo" style="height: 180px;">
-    </a>
+                        <!-- Logo -->
+                        <a class="navbar-brand me-5" href="{{ url_for('main_routes.index') }}">
+                            <img src="{{ url_for('static', filename='assets/images/wsc-vertical-trans.png') }}"
+                                alt="Logo" style="height: 180px;">
+                        </a>
 
-    <!-- Hero Text Container -->
-    <div class="text-container text-center">
-      <h1 class="display-5 fw-bold mb-3" style="font-family: 'Inter', sans-serif;">
-        <span style="background: linear-gradient(90deg, #00f0ff, #ff00c8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-          WSC
-        </span> – A Workstation Companion App
-      </h1>
-      <p class="lead mb-4" style="color: #e0e6f0;">
-        Simplify your radiology workflow with our intuitive and comprehensive tools.<br>
-        <span class="fst-italic" style="color: #00f087;">Because every hero needs a trusty companion.</span>
-      </p>
+                        <!-- Hero Text Container -->
+                        <div class="text-container text-center">
+                            <h1 class="display-5 fw-bold mb-3" style="font-family: 'Inter', sans-serif;">
+                                <span
+                                    style="background: linear-gradient(90deg, #00f0ff, #ff00c8); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                                    WSC
+                                </span> – A Workstation Companion App
+                            </h1>
+                            <p class="lead mb-4" style="color: #e0e6f0;">
+                                Simplify your radiology workflow with our intuitive and comprehensive tools.<br>
+                                <span class="fst-italic" style="color: #00f087;">Because every hero needs a trusty
+                                    companion.</span>
+                            </p>
 
 
-    </div>
+                        </div>
 
-  </div>
-</div>
-{% endblock %}
+                    </div>
+                </div>
+                {% endblock %}
 
 
                 <!-- Code to displace flash message -->
 
+                <!-- 🔔 Toast Message Container (always present) -->
                 <div aria-live="polite" aria-atomic="true" class="position-relative z-3">
-                    <div class="toast-container position-fixed top-0 start-50 translate-middle-x p-3">
+                    <div class="toast-container position-fixed p-3" id="dynamic-toast-container" style="z-index: 9999;">
+                        {# Render Flask flash messages if present #}
                         {% with messages = get_flashed_messages(with_categories=true) %}
                         {% if messages %}
                         {% for category, message in messages %}
@@ -145,9 +150,7 @@
                             role="alert" aria-live="assertive" aria-atomic="true"
                             data-bs-delay="{{ '999999' if category == 'danger' else '4000' }}">
                             <div class="d-flex">
-                                <div class="toast-body">
-                                    {{ message|safe }}
-                                </div>
+                                <div class="toast-body">{{ message|safe }}</div>
                                 <button type="button" class="btn-close btn-close-white me-2 m-auto"
                                     data-bs-dismiss="toast" aria-label="Close"></button>
                             </div>
@@ -229,7 +232,30 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
         <script src="{{ url_for('main_routes.static', filename='js/script.js') }}"></script>
         <script>
-            // Bootstrap Toast Initialization
+            function showToast(message, bgClass = 'bg-success', positionClass = 'bottom-0 end-0') {
+                const toastContainer = document.getElementById('dynamic-toast-container');
+                toastContainer.className = `toast-container position-fixed ${positionClass} p-3`;
+
+                const toastEl = document.createElement('div');
+                toastEl.className = `toast align-items-center text-white ${bgClass} border-0 show`;
+                toastEl.setAttribute('role', 'alert');
+                toastEl.setAttribute('aria-live', 'assertive');
+                toastEl.setAttribute('aria-atomic', 'true');
+                toastEl.setAttribute('data-bs-delay', '4000');
+
+                toastEl.innerHTML = `
+                        <div class="d-flex">
+                            <div class="toast-body">${message}</div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>`;
+                toastContainer.appendChild(toastEl);
+                const bsToast = new bootstrap.Toast(toastEl);
+                bsToast.show();
+                toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+            }
+        </script>
+        <script>
+            // Bootstrap Toast Initialization for flash messages from flask routes.
             document.addEventListener('DOMContentLoaded', function () {
                 // Select the toast container
                 var messageContainer = document.querySelector('.toast-container');
@@ -396,6 +422,23 @@
                 if (user_name) {
                     greeting.style.display = "block";
                 }
+            });
+        </script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const timeElements = document.querySelectorAll('.local-time');
+
+                timeElements.forEach(el => {
+                    const isoString = el.getAttribute('data-dt');
+                    if (isoString) {
+                        const localDate = new Date(isoString);
+                        const formatted = localDate.toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        el.textContent = formatted;
+                    }
+                });
             });
         </script>
         {% endblock %}

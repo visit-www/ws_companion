@@ -38,6 +38,7 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     
+    
     # Initialize extensions with the app
     db.init_app(app)
     migrate.init_app(app, db)
@@ -49,6 +50,10 @@ def create_app():
     mail.init_app(app)
     #import secret key ofr pyotp
     app.secret_key =Config.SECRET_KEY
+    # Add custom Jinja filter to output ISO datetime
+    def render_iso(dt):
+        return dt.isoformat() if dt else ""
+    app.jinja_env.globals['render_iso'] = render_iso
     
     # User loader function
     from .models import User
