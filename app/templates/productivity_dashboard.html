@@ -120,10 +120,10 @@
                   {% for log in yesterday_logs %}
                   <tr>
                     <td>
-                      <span class="local-time" data-dt="{{ log.session_start_time.isoformat() }}Z"></span>
+                      <span class="session-start" data-utc="{{ log.session_start_time.isoformat() }}Z"></span>
                     </td>
                     <td>
-                      <span class="local-time" data-dt="{{ log.session_end_time.isoformat() }}Z"></span>
+                      <span class="session-end" data-utc="{{ log.session_end_time.isoformat() }}Z"></span>
                     </td>
                     <td>
                       {% set hrs = log.time_spent // 60 %}
@@ -194,8 +194,8 @@
                 <tbody>
                   {% for log in today_logs %}
                   <tr>
-                    <td><span class="local-time" data-dt="{{ log.session_start_time.isoformat() }}Z"></span></td>
-                    <td><span class="local-time" data-dt="{{ log.session_end_time.isoformat() }}Z"></span></td>
+                    <td><span class="session-start" data-utc="{{ log.session_start_time.isoformat() }}Z"></span></td>
+                    <td><span class="session-end" data-utc="{{ log.session_end_time.isoformat() }}Z"></span></td>
                     <td>
                       {% set hrs = log.time_spent // 60 %}
                       {% set mins = log.time_spent % 60 %}
@@ -355,20 +355,29 @@
 
       if (isSessionRunning) {
         console.log("▶️ Session started");
-        startTime = new Date();
-        localStorage.setItem("sessionStartTime", startTime.toISOString());
-        inputStart.value = startTime.toISOString();
+        const startTimeIsoString = new Date().toISOString();
+        startTime = new Date(startTimeIsoString); // ✅ set as Date object
+        console.log("session start time sent from jsto backend:",startTimeIsoString);
+        localStorage.setItem("sessionStartTime", startTimeIsoString);
+        inputStart.value = startTimeIsoString;
         startLiveClock();
         updateTimerUI();
         showToast('✅ Session started successfully!', 'bg-success');
       } else {
-        const endTime = new Date();
+        
+        console.log("▶️ Session ended");
+        const endTimeIsoString = new Date().toISOString();
+        console.log("session end time sent from jsto backend:",endTimeIsoString);
+        const endTime = new Date(endTimeIsoString); // ✅ set as Date object
+        localStorage.setItem("sessionEndTime", endTimeIsoString);
+        inputEnd.value = endTimeIsoString;
+        console.log("session end time sent from jsto backend:",endTimeIsoString);
         const duration = Math.floor((endTime - startTime) / 60000);
         console.log(`⏹️ Session ended. Duration: ${duration} minutes`);
 
         if (duration < 1) {
-          console.warn("⚠️ Session too short to log");
-          showToast("⛔ Session was too short to log.", "bg-danger", "top-0 start-50 translate-middle-x");
+          alert("⚠️ Session too short to log");
+          showToast("⛔ SESSION TOO SHORT AND SO NOT LOOGED ! Your session should be atleast 1 minute in order to be eligible for being logged.", "bg-danger");
 
           isSessionRunning = false;
           localStorage.removeItem("isSessionRunning");
@@ -377,14 +386,14 @@
           updateTimerUI();
           return;
         }
-        inputEnd.value = endTime.toISOString();
+        inputEnd.value = endTimeIsoString; // ✅ Use ISO string
         inputDuration.value = duration;
 
         localStorage.removeItem("isSessionRunning");
         localStorage.removeItem("sessionStartTime");
         stopLiveClock();
 
-        timerDisplay.innerText = `Session ended at: ${endTime.toLocaleTimeString()}`;
+        timerDisplay.innerText = `Session ended at: ${endTime}`;
         sessionCard.classList.remove('d-none');
         submitBtn.disabled = false;
         addCaseBatchForm();
@@ -395,7 +404,7 @@
 
     if (isSessionRunning && startTime) {
       console.log("🔄 Resuming previous session...");
-      inputStart.value = startTime.toISOString();
+      inputStart.value = startTimeIsoString;
       startLiveClock();
     }
 

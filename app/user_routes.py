@@ -7,9 +7,9 @@ from flask_mail import Message
 import os
 import shutil
 import json
+from dateutil import parser
 from datetime import datetime, timedelta
-from pytz import timezone, UTC
-IST = timezone('Asia/Kolkata')
+from pytz import UTC
 
 
 
@@ -731,13 +731,7 @@ def security_manager():
 # CPD dashboard mangment ROUTES
 # =======
 from app.models import UserCPDState, CPDLog
-from dateutil.parser import parse as parse_date  # Add at the top
 
-def safe_parse_date(text: str):
-    try:
-        return parse_date(text, fuzzy=True).date()
-    except Exception:
-        return None
 
 import sqlalchemy as sa
 @app_user_bp.route('/cpd/dashboard', methods=['GET', 'POST'])
@@ -1650,11 +1644,8 @@ def save_productivity_preferences():
     return redirect(url_for("app_user.productivity_dashboard"))
 
 #captures submitted batch info and stores them in UserData.
-from pytz import UTC
-from datetime import datetime
-from flask import request, redirect, url_for, flash
-from flask_login import current_user
-from dateutil import parser
+
+
 @app_user_bp.route('/save_session_log', methods=['POST'])
 def save_session_log():
     print("save session route reached")
@@ -1662,7 +1653,7 @@ def save_session_log():
         session_start_time_str = request.form.get("session_start_time")
         session_end_time_str = request.form.get("session_end_time")
         time_spent_str = request.form.get("time_spent")
-
+        print (f"the start tiem recevied by flask route from JS is :{session_start_time_str} and the session end time received to backend is : {session_end_time_str}")
         if not (session_start_time_str and session_end_time_str and time_spent_str):
             flash("Missing session data. Please try again.", "danger")
             return redirect(url_for('app_user.productivity_dashboard'))
@@ -1676,9 +1667,9 @@ def save_session_log():
         start_dt = start_dt.astimezone(UTC)
         end_dt = end_dt.astimezone(UTC)
 
-        session_start_time = start_dt
-        session_end_time = end_dt
-        time_spent = int(time_spent_str)
+        save_session_start_time = start_dt
+        save_session_end_time = end_dt
+        save_time_spent = int(time_spent_str)
 
         cases = request.form.getlist("cases[]")
         modalities = request.form.getlist("modalities[]")
@@ -1689,9 +1680,9 @@ def save_session_log():
 
         for i in range(len(cases)):
             log = UserData(
-                session_start_time=session_start_time,
-                session_end_time=session_end_time,
-                time_spent=time_spent if time_spent else None,
+                session_start_time=save_session_start_time,
+                session_end_time=save_session_end_time,
+                time_spent=save_time_spent if save_time_spent else None,
                 num_cases_reported=int(cases[i]) if cases[i] else 0,
                 modalities_handled=[modalities[i]] if modalities[i] else [],
                 session_type=workplaces[i],
