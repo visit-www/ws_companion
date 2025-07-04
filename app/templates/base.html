@@ -55,8 +55,8 @@
                             <div class="navbar-nav ml-auto col-12">
                                 <div class="nav-item">
                                     <span class="navbar-text greeting-text text-success fw-bold animate-pulse"
-                                        style="display:none" user_name={{current_user.username}}>
-                                        Hello, {{ current_user.username }} ! Your last login was on :{{last_login}}
+                                        style="display:none" user_name="{{ current_user.username }}">
+                                        Hello, {{ current_user.username }}! Your last login was on: {{ last_login }}
                                     </span>
                                 </div>
                             </div>
@@ -227,10 +227,152 @@
 
 
         </div>
-
         {% block script %}
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
         <script src="{{ url_for('main_routes.static', filename='js/script.js') }}"></script>
+
+        <!-- ✅ Flash Message Handler -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const messageContainer = document.querySelector('.toast-container');
+                const toastElList = [].slice.call(document.querySelectorAll('.toast'));
+                let hasMessage = false;
+
+                toastElList.forEach(function (toastEl) {
+                    const messageBody = toastEl.querySelector('.toast-body');
+                    if (messageBody && messageBody.textContent.trim() !== '') {
+                        hasMessage = true;
+                        const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 5000 });
+                        toast.show();
+                        toastEl.addEventListener('hidden.bs.toast', function () {
+                            if (!document.querySelector('.toast.show')) {
+                                messageContainer.style.display = 'none';
+                            }
+                        });
+                    }
+                });
+
+                if (hasMessage) {
+                    messageContainer.style.display = 'block';
+                } else {
+                    messageContainer.style.display = 'none';
+                }
+
+                document.querySelectorAll('.toast-body').forEach(function (messageBody) {
+                    const text = messageBody.textContent || messageBody.innerText;
+                    messageBody.classList.add("text-dark");
+                    if (text.includes('LOGIN FAILED')) {
+                        messageBody.classList.remove("text-dark");
+                        messageBody.classList.add("text-warning");
+                    } else if (text.includes('LOGIN SUCCESSFUL')) {
+                        messageBody.classList.remove("text-warning");
+                        messageBody.classList.add("text-dark");
+                    }
+                });
+            });
+        </script>
+
+        <!-- ✅ Idle Logout -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const idleWarningTime = 33 * 60 * 1000;
+                const logoutTime = 38 * 60 * 1000;
+
+                let warningTimeout, logoutTimeout;
+
+                function resetTimers() {
+                    clearTimeout(warningTimeout);
+                    clearTimeout(logoutTimeout);
+                    warningTimeout = setTimeout(showIdleWarning, idleWarningTime);
+                    logoutTimeout = setTimeout(logoutUser, logoutTime);
+                }
+
+                function showIdleWarning() {
+                    let countdown = 5 * 60;
+                    const modal = document.createElement('div');
+                    modal.id = 'idle-warning-modal';
+                    modal.innerHTML = `
+                    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;">
+                        <div style="background: white; padding: 20px; border-radius: 5px; text-align: center;">
+                        <h4>Inactivity Warning</h4>
+                        <p>You will be logged out in <span id="countdown">${countdown}</span> seconds due to inactivity.</p>
+                        <button id="continue-session-btn" class="btn btn-primary">Continue Session</button>
+                        </div>
+                    </div>`;
+                    document.body.appendChild(modal);
+
+                    const countdownEl = document.getElementById('countdown');
+                    const interval = setInterval(() => {
+                        countdown--;
+                        countdownEl.textContent = countdown;
+                        if (countdown <= 0) {
+                            clearInterval(interval);
+                            logoutUser();
+                        }
+                    }, 1000);
+
+                    document.getElementById('continue-session-btn').addEventListener('click', function () {
+                        clearInterval(interval);
+                        resetTimers();
+                        modal.remove();
+                    });
+                }
+
+                function logoutUser() {
+                    const modal = document.getElementById('idle-warning-modal');
+                    if (modal) modal.remove();
+                    window.location.href = "{{ url_for('app_user.logout') }}";
+                }
+
+                function stopTimers() {
+                    clearTimeout(warningTimeout);
+                    clearTimeout(logoutTimeout);
+                }
+
+                document.getElementById('embedCodeModal')?.addEventListener('shown.bs.modal', stopTimers);
+                document.getElementById('embedCodeModal')?.addEventListener('hidden.bs.modal', resetTimers);
+
+                ['click', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(event =>
+                    window.addEventListener(event, () => {
+                        if (!document.getElementById('embedCodeModal')?.classList.contains('show')) {
+                            resetTimers();
+                        }
+                    })
+                );
+
+                resetTimers();
+            });
+        </script>
+
+        <!-- ✅ Greeting Display -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const greeting = document.querySelector('.greeting-text');
+                const userName = greeting?.getAttribute('user_name');
+                if (userName) {
+                    greeting.style.display = "block";
+                }
+            });
+        </script>
+
+        <!-- ✅ Timezone Conversion for UTC session timestamps -->
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+                const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                const formatOptions = {
+                    timeZone: userTimeZone,
+                    year: 'numeric', month: 'short', day: 'numeric',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit'
+                };
+                document.querySelectorAll(".session-start, .session-end").forEach(function (el) {
+                    const utc = el.dataset.utc;
+                    if (utc) {
+                        el.textContent = new Date(utc).toLocaleString('en-IN', formatOptions);
+                    }
+                });
+            });
+        </script>
+        <!-- ✅ Define showToast as standalone function -->
         <script>
             function showToast(message, bgClass = 'bg-success', positionClass = 'bottom-0 end-0') {
                 const toastContainer = document.getElementById('dynamic-toast-container');
@@ -244,202 +386,16 @@
                 toastEl.setAttribute('data-bs-delay', '4000');
 
                 toastEl.innerHTML = `
-                        <div class="d-flex">
-                            <div class="toast-body">${message}</div>
-                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                        </div>`;
+                    <div class="d-flex">
+                        <div class="toast-body">${message}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>`;
+
                 toastContainer.appendChild(toastEl);
                 const bsToast = new bootstrap.Toast(toastEl);
                 bsToast.show();
                 toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
             }
-        </script>
-        <script>
-            // Bootstrap Toast Initialization for flash messages from flask routes.
-            document.addEventListener('DOMContentLoaded', function () {
-                // Select the toast container
-                var messageContainer = document.querySelector('.toast-container');
-
-                // Initialize all toast elements
-                var toastElList = [].slice.call(document.querySelectorAll('.toast'));
-                var hasMessage = false; // Flag to check if there are any messages
-
-                // Iterate over each toast element and initialize only if it has a message
-                toastElList.forEach(function (toastEl) {
-                    var messageBody = toastEl.querySelector('.toast-body');
-
-                    // Check if messageBody exists and contains a message
-                    if (messageBody && messageBody.textContent.trim() !== '') {
-                        hasMessage = true; // Set flag to true if there's a message
-                        var toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 5000 });
-                        toast.show();
-
-                        // Listen for the hidden event to hide the container when all toasts are hidden
-                        toastEl.addEventListener('hidden.bs.toast', function () {
-                            // Check if there are any visible toasts left
-                            if (!document.querySelector('.toast.show')) {
-                                messageContainer.style.display = 'none';
-                            }
-                        });
-                    }
-                });
-
-                // Show the toast container if there are messages
-                if (hasMessage) {
-                    messageContainer.style.display = 'block';
-                } else {
-                    messageContainer.style.display = 'none'; // Ensure it's hidden if there are no messages
-                }
-
-                // Select all elements with the class 'toast-body'
-                var messageBodies = document.querySelectorAll('.toast-body');
-
-                // Iterate over all toast bodies to check their content
-                messageBodies.forEach(function (messageBody) {
-                    var messageText = messageBody.textContent || messageBody.innerText;
-
-                    // Set default text color to black
-                    messageBody.classList.add("text-dark");
-
-                    // Check if the message contains "Login failed" or "Login successful"
-                    if (messageText.includes('LOGIN FAILED')) { // Adjust to match the uppercase message
-                        messageBody.classList.remove("text-dark");
-                        messageBody.classList.add("text-warning");
-                    } else if (messageText.includes('LOGIN SUCCESSFUL')) {
-                        messageBody.classList.remove("text-warning");
-                        messageBody.classList.add("text-dark");
-                    } else {
-                        // Default styling: ensure the text is black if no other conditions match
-                        messageBody.classList.remove("text-warning");
-                        messageBody.classList.add("text-dark");
-                    }
-                });
-            });
-        </script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                const idleWarningTime = 33 * 60 * 1000; // 33 minutes for warning
-                const logoutTime = 38 * 60 * 1000; // 30 seconds for logout
-
-                let warningTimeout;
-                let logoutTimeout;
-
-                function resetTimers() {
-                    console.log('Timers reset');
-                    clearTimeout(warningTimeout);
-                    clearTimeout(logoutTimeout);
-
-                    warningTimeout = setTimeout(showIdleWarning, idleWarningTime);
-                    logoutTimeout = setTimeout(logoutUser, logoutTime);
-                }
-
-                function showIdleWarning() {
-                    console.log('Showing idle warning');
-                    let countdown = 5 * 60; // 5 minutes countdown for testing
-                    const warningModal = document.createElement('div');
-                    warningModal.id = 'idle-warning-modal';
-                    warningModal.innerHTML = `
-                    <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;">
-                        <div style="background: white; padding: 20px; border-radius: 5px; text-align: center;">
-                            <h4>Inactivity Warning</h4>
-                            <p>You will be logged out in <span id="countdown">${countdown}</span> seconds due to inactivity.</p>
-                            <button id="continue-session-btn" class="btn btn-primary">Continue Session</button>
-                        </div>
-                    </div>
-                `;
-                    document.body.appendChild(warningModal);
-
-                    const countdownElement = document.getElementById('countdown');
-                    const countdownInterval = setInterval(() => {
-                        countdown--;
-                        countdownElement.textContent = countdown;
-
-                        if (countdown <= 0) {
-                            clearInterval(countdownInterval);
-                            logoutUser(); // Log out the user when the countdown reaches 0
-                        }
-                    }, 1000);
-
-                    // Attach event listener to the "Continue Session" button after it exists in the DOM
-                    document.getElementById('continue-session-btn').addEventListener('click', function () {
-                        clearInterval(countdownInterval); // Stop the countdown
-                        resetTimers(); // Reset the timers to start new countdowns for the next session
-                        closeWarningModal(); // Close the warning modal
-                    });
-                }
-
-                function closeWarningModal() {
-                    const modal = document.getElementById('idle-warning-modal');
-                    if (modal) {
-                        modal.remove();
-                        console.log('Warning modal closed');
-                    }
-                }
-
-                function logoutUser() {
-                    console.log('Logging out user');
-                    closeWarningModal(); // Ensure the modal is closed before redirecting
-                    window.location.href = "{{ url_for('app_user.logout') }}"; // Redirects to the logout URL
-                }
-
-                function stopTimers() {
-                    console.log('Stopping timers because the embed modal is open');
-                    clearTimeout(warningTimeout);
-                    clearTimeout(logoutTimeout);
-                }
-
-                // Event listener for when the modal opens
-                document.getElementById('embedCodeModal').addEventListener('shown.bs.modal', stopTimers);
-
-                // Event listener for when the modal closes
-                document.getElementById('embedCodeModal').addEventListener('hidden.bs.modal', resetTimers);
-
-                // Reset timers on user activity, but only if the modal is not shown
-                ['click', 'mousemove', 'keydown', 'scroll', 'touchstart'].forEach(event => {
-                    window.addEventListener(event, function () {
-                        if (!document.getElementById('embedCodeModal').classList.contains('show')) {
-                            resetTimers();
-                        } else {
-                            console.log('Modal is open; not resetting timers.');
-                        }
-                    });
-                });
-
-                // Initialize the timers when the page loads
-                resetTimers();
-            });
-        </script>
-        <!-- Corrected JavaScript code -->
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                // Select the greeting element
-                let greeting = document.querySelector('.greeting-text');
-
-                // Access the 'user_name' attribute
-                let user_name = greeting.getAttribute('user_name');
-
-                // Check if 'user_name' exists and show the greeting
-                if (user_name) {
-                    greeting.style.display = "block";
-                }
-            });
-        </script>
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-                const timeElements = document.querySelectorAll('.local-time');
-
-                timeElements.forEach(el => {
-                    const isoString = el.getAttribute('data-dt');
-                    if (isoString) {
-                        const localDate = new Date(isoString);
-                        const formatted = localDate.toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
-                        el.textContent = formatted;
-                    }
-                });
-            });
         </script>
         {% endblock %}
     </body>
