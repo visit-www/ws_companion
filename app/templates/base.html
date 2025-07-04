@@ -358,7 +358,23 @@
         <!-- ✅ Timezone Conversion for UTC session timestamps -->
         <script>
             document.addEventListener("DOMContentLoaded", function () {
+
                 const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                // Get today's date in local timezone
+                const localNow = new Date();
+                const sessionDate = localNow.toLocaleDateString("en-GB", {
+                    timeZone: userTimeZone,
+                    weekday: 'short',
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                });
+
+                // Inject into DOM
+                const todayDateElement = document.getElementById("today-date");
+                if (todayDateElement) {
+                    todayDateElement.innerText = sessionDate;
+                }
                 const formatOptions = {
                     timeZone: userTimeZone,
                     year: 'numeric', month: 'short', day: 'numeric',

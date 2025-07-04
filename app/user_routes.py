@@ -1597,6 +1597,7 @@ def productivity_dashboard():
     return render_template(
         "productivity_dashboard.html",
         modules=list(ModuleNames),
+        today=today,
         today_logs=today_logs,
         total_cases=total_cases,
         total_time=total_time,

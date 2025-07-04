@@ -107,8 +107,7 @@
               <table class="table table-sm table-bordered align-middle text-nowrap">
                 <thead class="table-light">
                   <tr>
-                    <th>Session Start</th>
-                    <th>Session End</th>
+                    <th> Session number </th>
                     <th>Duration</th>
                     <th>Modality</th>
                     <th>Workplace</th>
@@ -119,12 +118,7 @@
                 <tbody>
                   {% for log in yesterday_logs %}
                   <tr>
-                    <td>
-                      <span class="session-start" data-utc="{{ log.session_start_time.isoformat() }}Z"></span>
-                    </td>
-                    <td>
-                      <span class="session-end" data-utc="{{ log.session_end_time.isoformat() }}Z"></span>
-                    </td>
+                    <td>Session {{ loop.index}}</td>
                     <td>
                       {% set hrs = log.time_spent // 60 %}
                       {% set mins = log.time_spent % 60 %}
@@ -164,6 +158,7 @@
           <div class="card shadow-sm mt-4">
             <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap">
               <h5 class="mb-0 text-success">📅 Today’s Output</h5>
+              <h6 class="text-muted" id="today-date"></h6>
               <div class="d-flex flex-wrap gap-3 mt-2 mt-md-0">
                 <div class="card bg-light text-dark p-2 small border-0">
                   <div><strong>Total Cases:</strong> {{ total_cases }}</div>
@@ -182,8 +177,7 @@
               <table class="table table-sm table-bordered align-middle text-nowrap">
                 <thead class="table-light">
                   <tr>
-                    <th>Session Start</th>
-                    <th>Session End</th>
+                    <th>Session number</th>
                     <th>Duration</th>
                     <th>Modality</th>
                     <th>Workplace</th>
@@ -194,8 +188,7 @@
                 <tbody>
                   {% for log in today_logs %}
                   <tr>
-                    <td><span class="session-start" data-utc="{{ log.session_start_time.isoformat() }}Z"></span></td>
-                    <td><span class="session-end" data-utc="{{ log.session_end_time.isoformat() }}Z"></span></td>
+                    <td>Session {{ loop.index}}</td>
                     <td>
                       {% set hrs = log.time_spent // 60 %}
                       {% set mins = log.time_spent % 60 %}
