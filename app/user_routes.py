@@ -1593,6 +1593,11 @@ def productivity_dashboard():
     avg_minutes = total_minutes / total_cases if total_cases else 0
     total_time = format_minutes(total_minutes)
     avg_time_per_case = format_minutes(avg_minutes) if total_cases else "—"
+    case_volume_data = {
+            'labels': ['01 Jul', '02 Jul', '03 Jul', '04 Jul'],
+            'data': [10, 15, 12, 18]
+        }
+
     
     return render_template(
         "productivity_dashboard.html",
@@ -1608,7 +1613,8 @@ def productivity_dashboard():
         yesterday_total_time=yesterday_total_time,
         yesterday_avg_time_per_case=yesterday_avg_time_per_case,
         today_start=today_start,
-        today_end=today_end
+        today_end=today_end,
+        case_volume_data=case_volume_data
     )
 #Save user productivty dashboard preferences :
 @app_user_bp.route("/save_productivity_preferences", methods=["POST"])
