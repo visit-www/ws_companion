@@ -354,40 +354,6 @@
                 }
             });
         </script>
-
-        <!-- ✅ Timezone Conversion for UTC session timestamps -->
-        <script>
-            document.addEventListener("DOMContentLoaded", function () {
-
-                const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-                // Get today's date in local timezone
-                const localNow = new Date();
-                const sessionDate = localNow.toLocaleDateString("en-GB", {
-                    timeZone: userTimeZone,
-                    weekday: 'short',
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                });
-
-                // Inject into DOM
-                const todayDateElement = document.getElementById("today-date");
-                if (todayDateElement) {
-                    todayDateElement.innerText = sessionDate;
-                }
-                const formatOptions = {
-                    timeZone: userTimeZone,
-                    year: 'numeric', month: 'short', day: 'numeric',
-                    hour: '2-digit', minute: '2-digit', second: '2-digit'
-                };
-                document.querySelectorAll(".session-start, .session-end").forEach(function (el) {
-                    const utc = el.dataset.utc;
-                    if (utc) {
-                        el.textContent = new Date(utc).toLocaleString('en-IN', formatOptions);
-                    }
-                });
-            });
-        </script>
         <!-- ✅ Define showToast as standalone function -->
         <script>
             function showToast(message, bgClass = 'bg-success', positionClass = 'bottom-0 end-0') {
