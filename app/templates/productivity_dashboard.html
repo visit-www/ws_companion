@@ -66,11 +66,6 @@
         </div>
       </div>
     </div>
-    <canvas id="caseVolumeChart" height="120"></canvas>
-    <canvas id="caseVolumeChart"
-            data-labels='{{ case_volume_data.labels | tojson }}'
-            data-data='{{ case_volume_data.data | tojson }}'>
-    </canvas>
 
     <!-- Session Tracker -->
     <div class="col-md-6 ">
@@ -471,41 +466,4 @@
         });
         </script>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-      document.addEventListener("DOMContentLoaded", function () {
-          const ctx = document.getElementById('caseVolumeChart').getContext('2d');
-          
-          // Use Flask-passed data
-          const chartLabels = JSON.parse(document.getElementById('caseVolumeChart').dataset.labels);
-          const chartData = JSON.parse(document.getElementById('caseVolumeChart').dataset.data);
-
-          new Chart(ctx, {
-              type: 'line',
-              data: {
-                  labels: chartLabels,
-                  datasets: [{
-                      label: '📈 Cases Reported',
-                      data: chartData,
-                      borderColor: 'rgba(75, 192, 192, 1)',
-                      tension: 0.3,
-                      fill: true,
-                      backgroundColor: 'rgba(75, 192, 192, 0.1)'
-                  }]
-              },
-              options: {
-                  responsive: true,
-                  plugins: {
-                      title: {
-                          display: true,
-                          text: 'Daily Case Volume Trend'
-                      }
-                  },
-                  scales: {
-                      y: { beginAtZero: true }
-                  }
-              }
-          });
-      });
-</script>
 {% endblock %}
