@@ -1,3 +1,27 @@
+// ✅ Define showToast as standalone function -->
+            function showToast(message, bgClass = 'bg-success', positionClass = 'bottom-0 end-0') {
+                const toastContainer = document.getElementById('dynamic-toast-container');
+                toastContainer.className = `toast-container position-fixed ${positionClass} p-3`;
+
+                const toastEl = document.createElement('div');
+                toastEl.className = `toast align-items-center text-white ${bgClass} border-0 show`;
+                toastEl.setAttribute('role', 'alert');
+                toastEl.setAttribute('aria-live', 'assertive');
+                toastEl.setAttribute('aria-atomic', 'true');
+                toastEl.setAttribute('data-bs-delay', '4000');
+
+                toastEl.innerHTML = `
+                    <div class="d-flex">
+                        <div class="toast-body">${message}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>`;
+
+                toastContainer.appendChild(toastEl);
+                const bsToast = new bootstrap.Toast(toastEl);
+                bsToast.show();
+                toastEl.addEventListener('hidden.bs.toast', () => toastEl.remove());
+            }
+
 document.addEventListener('DOMContentLoaded', function () {
     var toastElList = [].slice.call(document.querySelectorAll('.toast'));
     var toastList = toastElList.map(function (toastEl) {
