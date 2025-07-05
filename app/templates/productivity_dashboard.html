@@ -158,7 +158,8 @@
           <div class="card shadow-sm mt-4">
             <div class="card-header bg-light d-flex justify-content-between align-items-center flex-wrap">
               <h5 class="mb-0 text-success">📅 Today’s Output</h5>
-              <h6 class="text-muted" id="today-date"></h6>
+              <span class="text-muted" id="today-date"></span>
+              <span class="text-muted" id="today-time"></span>
               <div class="d-flex flex-wrap gap-3 mt-2 mt-md-0">
                 <div class="card bg-light text-dark p-2 small border-0">
                   <div><strong>Total Cases:</strong> {{ total_cases }}</div>
@@ -409,6 +410,61 @@
     showToast("✅ Welcome to your productivity console!", "bg-info");
   });
 </script>
+<script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const userTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+            // Update the date once on load
+            const todayDateElement = document.getElementById("today-date");
+            if (todayDateElement) {
+            const localDate = new Date().toLocaleDateString("en-IN", {
+                timeZone: userTimeZone,
+                weekday: 'short',
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+            todayDateElement.innerText = localDate;
+            }
+
+            // Live clock: update time every second
+            const todayTimeElement = document.getElementById("today-time");
+            if (todayTimeElement) {
+            function updateLiveClock() {
+                const now = new Date();
+                const timeString = now.toLocaleString('en-IN', {
+                timeZone: userTimeZone,
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+                });
+                todayTimeElement.innerText = `🕒 Local time: ${timeString} (${userTimeZone})`;
+            }
+
+            // Run immediately and every 1 second
+            updateLiveClock();
+            setInterval(updateLiveClock, 1000);
+            }
+
+            // Localize all session timestamps (run once)
+            const formatOptions = {
+            timeZone: userTimeZone,
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+            };
+
+            document.querySelectorAll(".session-start, .session-end").forEach(function (el) {
+            const utc = el.dataset.utc;
+            if (utc) {
+                el.textContent = new Date(utc).toLocaleString('en-IN', formatOptions);
+            }
+            });
+        });
+        </script>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
