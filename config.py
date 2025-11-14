@@ -13,7 +13,7 @@ creativesfolder = os.path.join(basedir, 'creatives_folder')
 ANONYMOUS_USER_ID = uuid.UUID('123e4567-e89b-12d3-a456-426614174000')
 ANONYMOUS_EMAIL = os.getenv('ANONYMOUS_EMAIL', "anonymous_user@example.com")
 ANONYMOUS_PASSWORD = os.getenv('ANONYMOUS_PASSWORD', "defaultanonymouspassword")
-ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', "admin@example.com")
+ADMIN_EMAIL = os.getenv('ADMIN_EMAIL', "wscompanionapp@gmail.com")
 ADMIN_PASSWORD = os.getenv('ADMIN_PASSWORD', "defaultadminpassword")
 
 class Config:
@@ -46,7 +46,7 @@ class Config:
     PERMANENT_SESSION_LIFETIME = timedelta(days=1)
     SESSION_IDLE_TIMEOUT = timedelta(minutes=30)
     SESSION_WARNING_TIME = timedelta(minutes=5)
-
+    # Mail settings
     # Mail settings
     MAIL_SERVER = 'smtp-relay.brevo.com'
     MAIL_PORT = 587

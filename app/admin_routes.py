@@ -3,12 +3,14 @@ from flask import Blueprint, request, render_template, redirect, url_for, flash,
 from sqlalchemy import inspect, Table,MetaData
 from flask_login import login_required, current_user
 from .models import User, Content
-from . import db, Base
 from io import BytesIO
 from flask import send_file
 import os
 import tempfile
 import shutil
+import json
+from datetime import datetime, timezone
+from .models import User, Content, AdminReportTemplate, ClassificationSystem, ImagingProtocol, NormalMeasurement, UserAnalyticsEvent,db,Base
 
 
 # * Blueprint setup
@@ -51,6 +53,35 @@ def admin_dashboard():
     
     return render_template('admin_dashboard.html', users=users, contents=contents)
 
+# *-----------------------------------------------------------------------------------
+# dd a simple page where you can see counts of:
+    # Templates
+    # Classification systems
+    # Protocols
+    # Normal measurements
+    # Recent analytics
+# *-----------------------------------------------------------------------------------
+@app_admin_bp.route("/tools-overview", methods=["GET"])
+@login_required
+def tools_overview():
+    if not current_user.is_admin:
+        flash("Admin access required.", "danger")
+        return redirect(url_for("main_routes.index"))
+
+    templates_count = db.session.query(AdminReportTemplate).count()
+    classification_count = db.session.query(ClassificationSystem).count()
+    protocol_count = db.session.query(ImagingProtocol).count()
+    normal_measurements_count = db.session.query(NormalMeasurement).count()
+    events_count = db.session.query(UserAnalyticsEvent).count()
+
+    return render_template(
+        "admin/tools_overview.html",
+        templates_count=templates_count,
+        classification_count=classification_count,
+        protocol_count=protocol_count,
+        normal_measurements_count=normal_measurements_count,
+        events_count=events_count,
+    )
 #*----------------------------------------------------------------
 # View all the models/tables in one place :
 @app_admin_bp.route('/models')
@@ -134,549 +165,174 @@ def create_report_template():
     # Render the template with re-initialized forms
     return render_template('create_smart_report_template.html', mobile_form=mobile_form, desktop_form=desktop_form)
 
-# *----------------------------------------------------------------
-# create smart report templates
+# *-------------------------Route to save report, download report and preivew reports---------------------------------------
+from flask import request, render_template, redirect, url_for, flash, send_file
+from flask_login import login_required, current_user
+from datetime import datetime, timezone
 from io import BytesIO
-import zipfile
-import os
+import os, zipfile, json
+
+from app import db
+from app.models import UserReportTemplate
+from app.forms import AddReportTemplateMobile, AddReportTemplateDesktop
+from app.util import create_report_template_pdf, create_report_template_word, cleanup_old_previews
 
 @app_admin_bp.route('/save_report_template', methods=['POST'])
 @login_required
 def save_report_template():
-    # Instantiate both forms with different prefixes to avoid field name conflicts
     mobile_form = AddReportTemplateMobile(prefix='mobile')
     desktop_form = AddReportTemplateDesktop(prefix='desktop')
-    print(f"Request form data: {request.form}")
-    print('----------------------------------------------------------------')
+
+    # Determine submitted form
+    form_type = 'mobile' if 'mobile-template_name' in request.form else 'desktop'
+    submitted_form = mobile_form if form_type == 'mobile' else desktop_form
+
+    # Check user action
+    is_preview = 'preview_report' in request.form
+    is_save = 'save_report' in request.form
+    is_export = 'desktop-submit_desktop' in request.form or 'mobile-submit_mobile' in request.form
     
-    # Determine which form was submitted by checking the presence of unique submit button names
-    if 'mobile-submit_mobile' in request.form:
-        submitted_form = mobile_form
-        form_type = 'mobile'
-        print(f"form type is: {form_type}")
-        print(f'Form data:', {submitted_form})
-    elif 'desktop-submit_desktop' in request.form:
-        submitted_form = desktop_form
-        form_type = 'desktop'
-    else:
-        # No known submit button found
-        flash("Unknown form submission.", "error")
-        return render_template('create_smart_report_template.html', mobile_form=mobile_form, desktop_form=desktop_form)
-    
-    
-    # Validate the submitted form
-    if submitted_form.validate_on_submit():
+    if not submitted_form.validate_on_submit():
+        return render_template('create_smart_report_template.html',
+                        mobile_form=mobile_form,
+                        desktop_form=desktop_form)
+    # Gather form data
+    data = {
+        'template_name': submitted_form.template_name.data or "Untitled",
+        'name': submitted_form.name.data or "Unknown",
+        'gender': submitted_form.gender.data or "Unspecified",
+        'patient_id': submitted_form.patient_id.data or "N/A",
+        'age': submitted_form.age.data or "N/A",
+        'dob': submitted_form.dob.data or "N/A",
+        'location': submitted_form.location.data or "N/A",
+        'clinical_info': submitted_form.clinical_info.data or "None",
+        'technical_info': submitted_form.technical_info.data or "None",
+        'comparison': submitted_form.comparison.data or "None",
+        'observations': [
+            {
+                'section': obs.section.data or "Untitled Section",
+                'details': obs.details.data or "No details provided"
+            } for obs in submitted_form.observations
+        ],
+        'conclusions': submitted_form.conclusions.data or "None",
+        'recommendations': submitted_form.recommendations.data or "None"
+    }
+
+    # ✅ Save Report and Show Preview
+    if is_save:
+        template = UserReportTemplate(
+            template_name=data['template_name'],
+            user_id=current_user.id,
+            template_text=json.dumps(data),
+            is_public=False,
+            created_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(timezone.utc)
+        )
+        db.session.add(template)
+        db.session.commit()
+
+        # Generate preview
+        preview_folder = os.path.join('user_data', 'preview_reports')
+        os.makedirs(preview_folder, exist_ok=True)
+
+        filename = f"preview_saved_{template.id}_{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}.pdf"
+        filepath = os.path.join(preview_folder, filename)
+
+        pdf_stream = create_report_template_pdf(data)
+        with open(filepath, 'wb') as f:
+            f.write(pdf_stream.read())
+
+        cleanup_old_previews(preview_folder, age_minutes=30)
+        file_url = request.args.get("file_url")
+        # 🔗 Construct relative file URL (for iframe embedding)
+        file_url = url_for('main_routes.static_preview', filename=filename, _external=True)
+
+        # 🔁 Optional: switch viewer via query string (e.g. &viewer=pspdfkit)
+        viewer = request.args.get('viewer', 'mozilla')
+        template_name = 'mozilla_pdfjs_viewer.html' if viewer == 'mozilla' else 'pspdfkit_viewer.html'
+        print(f'template being used is :{template_name}')
+        return render_template(
+            template_name,
+            file_url=file_url,
+            file_name=filename,
+            back_url=request.referrer or url_for('main_routes.index')
+        )
+
+    # ✅ Preview Report as PDF
+    if is_preview:
+        preview_folder = os.path.join('user_data', 'preview_reports')
+        os.makedirs(preview_folder, exist_ok=True)
+
+        timestamp = datetime.utcnow().strftime("%Y%m%d%H%M%S%f")
+        filename = f"preview_{timestamp}.pdf"
+        filepath = os.path.join(preview_folder, filename)
+
+        # Save generated PDF
+        with open(filepath, 'wb') as f:
+            f.write(create_report_template_pdf(data).read())
+
+        # Cleanup old preview files
+        cleanup_old_previews(preview_folder, age_minutes=15)
+
+        # 🔗 Construct relative file URL (for iframe embedding)
+        file_url = url_for('main_routes.static_preview', filename=filename, _external=True)
+
+        # 🔁 Optional: switch viewer via query string (e.g. &viewer=pspdfkit)
+        viewer = request.args.get('viewer', 'mozilla')
+        template_name = 'mozilla_pdfjs_viewer.html' if viewer == 'mozilla' else 'pspdfkit_viewer.html'
+        print(f'template being used is :{template_name}')
+        return render_template(
+            template_name,
+            file_url=file_url,
+            file_name=filename,
+            back_url=request.referrer or url_for('main_routes.index')
+        )
+    # ✅ Export PDF/Word
+    if is_export:
+        print ('export requested-----------------')
         report_type = request.form.getlist('report_type')
-        print('Form validated')
-        
-        # Check if at least one report type is selected
         if not report_type:
             flash("Please select at least one report type (PDF or Word).", "error")
-            return render_template('create_smart_report_template.html', mobile_form=mobile_form, desktop_form=desktop_form)
+            return redirect(request.referrer or url_for('app_admin.smart_report_form'))
+        files, filenames = [], []
+        if not report_type:
+            flash("Please select at least one report type (PDF or Word).", "error")
+            return redirect(request.referrer or url_for('app_admin.smart_report_form'))
         
-        # Prepare data dictionary from form fields
-        data = {
-            'template_name': submitted_form.template_name.data or "No template name provided",
-            'name': submitted_form.name.data or "No name entered",
-            'gender': submitted_form.gender.data or "No gender provided",
-            'patient_id': submitted_form.patient_id.data or "No patient ID provided",
-            'age': submitted_form.age.data or "No age provided",
-            'dob': submitted_form.dob.data or "No date of birth provided",
-            'location': submitted_form.location.data or "No location provided",
-            'clinical_info': submitted_form.clinical_info.data or "No clinical information provided",
-            'technical_info': submitted_form.technical_info.data or "No technical information provided",
-            'comparison': submitted_form.comparison.data or "No comparison information provided",
-            'observations': [
-                {
-                    'section': obs.section.data or "Unnamed section",
-                    'details': obs.details.data or "No details provided"
-                } for obs in submitted_form.observations
-            ],
-            'conclusions': submitted_form.conclusions.data or "No conclusions provided",
-            'recommendations': submitted_form.recommendations.data or "No recommendations provided"
-        }
-        print(f"----------------------------------------------------------------")
-        print(data)
-        
-        # Lists to collect file streams and filenames for zipping if needed
-        files = []
-        filenames = []
-        
-        # Generate the requested report types
-        if 'word' in report_type:
-            word_file = create_report_template_word(data, 'word', return_path_only=False)
-            files.append(word_file)
-            filenames.append('report_template.docx')
-        
+
         if 'pdf' in report_type:
-            pdf_file = create_report_template_pdf(data, return_path_only=False)
+            pdf_file = create_report_template_pdf(data)
             files.append(pdf_file)
             filenames.append('report_template.pdf')
-        
-        # If both files were requested, zip them
-        if len(files) == 2:
-            zip_stream = BytesIO()
-            zipf = zipfile.ZipFile(zip_stream, 'w', compression=zipfile.ZIP_DEFLATED)
-            for file_stream, filename in zip(files, filenames):
-                file_stream.seek(0)
-                zipf.writestr(filename, file_stream.read())
-            zipf.close()  # Explicitly close the ZipFile
-            zip_stream.seek(0)
-            return send_file(
-                zip_stream,
-                as_attachment=True,
-                download_name='report_templates.zip',
-                mimetype='application/zip'
-            )
-        
-        # If only one file is requested, send it directly
-        elif len(files) == 1:
-            file_stream = files[0]
-            filename = filenames[0]
-            mime_type = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' if filename.endswith('.docx') else 'application/pdf'
+
+        if 'word' in report_type:
+            word_file = create_report_template_word(data, 'word')
+            files.append(word_file)
+            filenames.append('report_template.docx')
+
+        if not files:
+            print(f'No file generated. Please select at least one format.')
+            flash("No file generated. Please select at least one format.", "error")
+            return redirect(request.url)
+
+        if len(files) == 1:
+            file_stream, filename = files[0], filenames[0]
+            mime = 'application/pdf' if filename.endswith('.pdf') else 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
             file_stream.seek(0)
-            return send_file(file_stream, as_attachment=True, download_name=filename, mimetype=mime_type)
-        
-        else:
-            flash("No report type was selected.", "error")
-            return render_template('create_smart_report_template.html', mobile_form=mobile_form, desktop_form=desktop_form)
-    
-    # If form is not valid, re-render the form with errors
-    else:
-        print('----------------------------------------------------------------')
-        print(f"Request form data: {request.form}")
-        print(submitted_form.errors)  # Check for specific field errors
-        flash("Form validation failed. Please check the entered data.", "error")
-        return render_template('create_smart_report_template.html', mobile_form=mobile_form, desktop_form=desktop_form)
+            return send_file(file_stream, as_attachment=True, download_name=filename, mimetype=mime)
 
-    #----------------------------------------------------------------
-from docx import Document
-from docx.shared import Pt, RGBColor, Inches
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT, WD_ALIGN_PARAGRAPH
-from datetime import datetime
+        # Create zip for multiple files
+        zip_stream = BytesIO()
+        with zipfile.ZipFile(zip_stream, 'w', zipfile.ZIP_DEFLATED) as zf:
+            for f, fname in zip(files, filenames):
+                f.seek(0)
+                zf.writestr(fname, f.read())
+        zip_stream.seek(0)
+        return send_file(zip_stream, as_attachment=True, download_name='report_templates.zip', mimetype='application/zip')
 
-
-def create_report_template_word(data,report_type,return_path_only=False):
-    # Initialize document
-    doc = Document()
-    
-    # Hero container (unchanged)
-    title_paragraph = doc.add_paragraph()
-    title_paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    logo_run = title_paragraph.add_run()
-    logo = logo_run.add_picture('app/static/assets/images/logo-white-bg.png', height=Inches(0.5))
-    title_run = title_paragraph.add_run(" WSC - A Workstation Companion App")
-    title_run.bold = True
-    title_run.font.size = Pt(20)
-    title_run.font.color.rgb = RGBColor(52, 58, 64)
-    title_paragraph.space_after = Pt(6)
-    
-    subtitle = doc.add_paragraph()
-    subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    subtitle_run = subtitle.add_run("Simplify your radiology workflow with our intuitive and comprehensive tools.")
-    subtitle_run.font.size = Pt(14)
-    subtitle_run.font.color.rgb = RGBColor(108, 117, 125)
-    subtitle.space_after = Pt(2)
-    
-    italic_text = doc.add_paragraph()
-    italic_text.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    italic_run = italic_text.add_run("Because every hero needs a trusty companion.")
-    italic_run.italic = True
-    italic_run.font.size = Pt(14)
-    italic_run.font.color.rgb = RGBColor(40, 167, 69)
-    italic_text.space_after = Pt(2)
-    
-    # Document Title (unchanged)
-    title = doc.add_heading('Report Template', level=0)
-    title.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-    title_run = title.runs[0]
-    title_run.font.size = Pt(20)
-    title_run.font.bold = True
-    title_run.font.color.rgb = RGBColor(0, 100, 0)
-    template_name=data.get('template_name')
-    subtitle = doc.add_paragraph()
-    subtitle.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    subtitle_run = subtitle.add_run(f"{template_name}")
-    subtitle_run.font.size = Pt(14)
-    subtitle_run.font.color.rgb = RGBColor(108, 117, 125)
-    subtitle.space_after = Pt(1)
-    # Patient Information Table
-    patient_info = {
-        'Name': data.get('name', 'No name provided'),
-        'Gender': data.get('gender', 'Not specified'),
-        'ID': data.get('patient_id', 'No ID provided'),
-        'Age': data.get('age', 'Not specified'),
-        'DOB': data.get('dob', 'Not specified'),
-        'Location': data.get('location', 'No location provided')
-    }
-    
-    table = doc.add_table(rows=3, cols=2)
-    table.style = 'Table Grid'
-    for idx, (field, value) in enumerate(patient_info.items()):
-        row, col = divmod(idx, 2)
-        cell = table.cell(row, col)
-        cell.text = f"{field}: {value}"
-        for paragraph in cell.paragraphs:
-            paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
-            paragraph.runs[0].font.size = Pt(12)
-    
-    # Clinical information section
-    doc.add_heading('Clinical Context:', level=1)
-    clinical_info_text = data.get('clinical_info', 'No clinical information provided')
-    clinical_info_paragraph = doc.add_paragraph(clinical_info_text if clinical_info_text else 'No clinical information provided')
-    clinical_info_paragraph.runs[0].font.size = Pt(12)
-    clinical_info_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
-    clinical_info_paragraph.space_after = Pt(1)
-    # technical information section
-    doc.add_heading('Protocol/Technique:', level=1)
-    technical_info_text = data.get('technical_info', 'No technique related infomration provided')
-    technical_info_paragraph = doc.add_paragraph(technical_info_text if technical_info_text else 'No technique related infomration provided')
-    technical_info_paragraph.runs[0].font.size = Pt(12)
-    technical_info_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
-    technical_info_paragraph.space_after=Pt(1)
-    #Comparison section
-    doc.add_heading('Comparisons:', level=1)
-    comparison_text = data.get('comparison', 'No relevant priors available for comparison')
-    comparison_paragraph = doc.add_paragraph(comparison_text if comparison_text else 'No relevant priors available for comparison')
-    comparison_paragraph.runs[0].font.size = Pt(12)
-    comparison_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
-    comparison_paragraph
-    # Observations Section
-    doc.add_heading('Observations:', level=1)
-
-    # Ensure observations is always a list, with a default empty list if it's None
-    observations = data.get('observations', [])
-
-    for obs in observations:
-        # Skip any None observation
-        if obs is None:
-            continue
-    
-        # Initialize defaults for each observation
-        section_name = "Section"  # Default value for section
-        detail = "No details provided"  # Default value for details
-    
-        # Process each key-value pair within the observation
-        for key, value in obs.items():
-            if key == 'section':
-                section_name = value if value else 'Section'  # Replace empty or None with default
-            elif key == 'details':
-                detail = value if value else 'No details provided'  # Replace empty or None with default
-
-        # Create a new paragraph for each observation with section and details
-        obs_paragraph = doc.add_paragraph()
-
-        # Section name in bold
-        section_heading = obs_paragraph.add_run(f"{section_name}: ")
-        section_heading.bold = True
-        section_heading.font.size = Pt(13)
-        section_heading.font.color.rgb = RGBColor(0, 102, 204)  # Light Blue
-    
-        # Details in regular font
-        details_run = obs_paragraph.add_run(detail)
-        details_run.font.size = Pt(12)
-        obs_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
-
-
-    # Conclusions Section
-    doc.add_heading('Conclusions:', level=1)
-    conclusions_text = data.get('conclusions', 'No conclusions provided')
-    conclusions_paragraph = doc.add_paragraph(conclusions_text if conclusions_text else 'No conclusions provided')
-    conclusions_paragraph.runs[0].font.size = Pt(12)
-    conclusions_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
-    conclusions_paragraph
-    # Recommendations Section
-    doc.add_heading('Recommendations:', level=1)
-    recommendations_text = data.get('recommendations', 'No recommendations provided')
-    recommendations_paragraph = doc.add_paragraph(recommendations_text if recommendations_text else 'No recommendations provided')
-    recommendations_paragraph.runs[0].font.size = Pt(12)
-    recommendations_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.LEFT
-    
-    # Signature and Footer (unchanged)
-    signature = doc.add_paragraph()
-    signature_run = signature.add_run("\nReported and electronically signed by:\nRegistration Number:\n")
-    signature_run.font.size = Pt(12)
-    signature_run.bold = True
-    date_run = signature.add_run(f"Dated: {datetime.now().strftime('%Y-%m-%d')}")
-    date_run.font.size = Pt(12)
-    date_run.italic = True
-
-    section = doc.sections[0]
-    footer = section.footer
-    footer_paragraph = footer.paragraphs[0]
-    footer_paragraph.text = 'SmartReportTemplates\nBrought to you by WSCompanion: because every Hero needs a companion'
-    footer_paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-    footer_paragraph.runs[0].font.size = Pt(10)
-    footer_paragraph.runs[0].font.color.rgb = RGBColor(107, 142, 35)
-    
-    # Use a temporary directory
-    with tempfile.TemporaryDirectory() as temp_dir:
-        word_file_path = os.path.join(temp_dir, "report_template.docx")
-        doc.save(word_file_path)
-        
-        if return_path_only:
-            # Since the temporary directory will be deleted after the 'with' block,
-            # we need to copy the file if we need the path
-            temp_word_file = tempfile.NamedTemporaryFile(delete=False, suffix='.docx')
-            temp_word_file.close()
-            shutil.copy(word_file_path, temp_word_file.name)
-            return temp_word_file.name
-        else:
-            # Read the file into a BytesIO buffer
-            with open(word_file_path, "rb") as word_file:
-                file_stream = BytesIO(word_file.read())
-            return file_stream
-
-
-# Function to create pdf document form form data :from fpdf import FPDF
-from reportlab.lib.pagesizes import LETTER, A4
-from reportlab.lib.units import inch, mm
-from reportlab.pdfgen import canvas
-from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, PageBreak
-)
-from reportlab.lib import colors
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-
-def create_report_template_pdf(data, return_path_only=False):
-    # Create a BytesIO buffer to hold the PDF data
-    buffer = BytesIO()
-    
-    # Create a SimpleDocTemplate object
-    doc = SimpleDocTemplate(buffer, pagesize=A4, rightMargin=72, leftMargin=72,
-                            topMargin=72, bottomMargin=72)
-    
-    # Get styles
-    styles = getSampleStyleSheet()
-    
-    # Build the PDF elements
-    elements = []
-    
-    # Add logo and title
-    # Assuming the logo is in 'app/static/assets/images/logo-white-bg.png'
-    logo_path = 'app/static/assets/images/logo-white-bg.png'
-    try:
-        logo = Image(logo_path, width=1*inch, height=1*inch)
-        logo.hAlign = 'CENTER'
-        elements.append(logo)
-    except Exception as e:
-        pass  # If logo not found, skip it
-    
-    title_style = ParagraphStyle(
-        name='TitleStyle',
-        fontSize=20,
-        leading=24,
-        alignment=1,  # Center alignment
-        textColor=colors.HexColor('#343A40'),
-        spaceAfter=6
-    )
-    title = Paragraph("WSC - A Workstation Companion App", title_style)
-    elements.append(title)
-    
-    subtitle_style = ParagraphStyle(
-        name='SubtitleStyle',
-        fontSize=16,
-        leading=18,
-        alignment=1,
-        textColor=colors.HexColor('#6C757D'),
-        spaceAfter=2
-    )
-    subtitle = Paragraph(
-        "Simplify your radiology workflow with our intuitive and comprehensive tools.",
-        subtitle_style
-    )
-    elements.append(subtitle)
-    
-    italic_text_style = ParagraphStyle(
-        name='ItalicTextStyle',
-        fontSize=14,
-        leading=12,
-        alignment=1,
-        textColor=colors.HexColor('#28A745'),
-        spaceAfter=12,
-        italic=True
-    )
-    italic_text = Paragraph("Because every hero needs a trusty companion.", italic_text_style)
-    elements.append(italic_text)
-    
-    # Document Title
-    report_title_style = ParagraphStyle(
-        name='ReportTitleStyle',
-        fontSize=20,
-        leading=24,
-        alignment=1,
-        textColor=colors.HexColor('#006400'),
-        spaceAfter=6
-    )
-    report_title = Paragraph("Report Template", report_title_style)
-    elements.append(report_title)
-    
-    template_name = data.get('template_name', '')
-    template_name_style = ParagraphStyle(
-        name='TemplateNameStyle',
-        fontSize=14,
-        leading=18,
-        alignment=1,
-        textColor=colors.HexColor('#6C757D'),
-        spaceAfter=12
-    )
-    template_name_paragraph = Paragraph(template_name, template_name_style)
-    elements.append(template_name_paragraph)
-    
-    # Patient Information Table
-    patient_info_data = [
-        ['Name:', data.get('name', 'No name provided'), 'Gender:', data.get('gender', 'Not specified')],
-        ['ID:', data.get('patient_id', 'No ID provided'), 'Age:', data.get('age', 'Not specified')],
-        ['DOB:', data.get('dob', 'Not specified'), 'Location:', data.get('location', 'No location provided')]
-    ]
-    
-    table_style = TableStyle([
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-        ('FONTNAME', (0, 0), (-1, -1), 'Helvetica'),
-        ('FONTSIZE', (0, 0), (-1, -1), 12),
-    ])
-    
-    patient_table = Table(patient_info_data, colWidths=[1*inch, 2.5*inch, 1*inch, 2.5*inch])
-    patient_table.setStyle(table_style)
-    elements.append(patient_table)
-    elements.append(Spacer(1, 12))
-    
-    # Sections: Clinical Context, Protocol/Technique, Comparisons, Observations, Conclusions, Recommendations
-    def add_section(heading, content):
-        combined_style = ParagraphStyle(
-        name='CombinedStyle',
-        fontSize=12,
-        leading=15,
-        textColor=colors.black,
-        spaceAfter=12,
-        spaceBefore=12
-        )
-        combined_text = f'<b>{heading}</b> {content if content else "No information provided"}'
-        elements.append(Paragraph(combined_text, combined_style))
-        
-        
-    # Clinical Context
-    add_section('Clinical Context:', data.get('clinical_info', 'No clinical information provided'))
-    
-    # Protocol/Technique
-    add_section('Protocol/Technique:', data.get('technical_info', 'No technique information provided'))
-    
-    # Comparisons
-    add_section('Comparisons:', data.get('comparison', 'No relevant priors available for comparison'))
-    
-    # Observations
-    # setting styles for observation fields :
-    
-    # Section name in bold and blue color
-    section_style = ParagraphStyle(
-        name='SectionStyle',
-        fontSize=13,
-        leading=16,
-        textColor=colors.HexColor('#0066CC'),
-        spaceAfter=4
-        )
-    detail_style = ParagraphStyle(
-        name='DetailStyle',
-        fontSize=12,
-        leading=15,
-        leftIndent=20,
-        spaceAfter=6
-        )
-    heading_style = ParagraphStyle(
-        name='HeadingStyle',
-        fontSize=14,
-        leading=20,
-        textColor=colors.black,
-        spaceAfter=6,
-        spaceBefore=12
-    )
-    elements.append(Paragraph('Observations:', heading_style))
-    
-    # Ensure observations is always a list, with a default entry if the list is empty or None
-    
-    observations = data.get('observations', [])  # Default to an empty list if observations is None
-    section_name = ""
-    detail = ""
-
-    for obs in observations:
-        if obs is None:  # Skip if the observation itself is None
-            continue
-
-        # Initialize defaults for each observation
-        section_name = "Section"
-        detail = "No details provided"
-    
-        for key, value in obs.items():
-            if key == 'section':
-                section_name = value if value else 'Section'  # Handle empty or None values
-            elif key == 'details':
-                detail = value if value else 'No details provided'  # Handle empty or None values
-
-        # Add section and detail to the document
-        section_paragraph = Paragraph(f"{section_name}:", section_style)
-        elements.append(section_paragraph)
-        detail_paragraph = Paragraph(detail, detail_style)
-        elements.append(detail_paragraph)
-
-    # Conclusions
-    add_section('Conclusions:', data.get('conclusions', 'No conclusions provided'))
-    
-    # Recommendations
-    add_section('Recommendations:', data.get('recommendations', 'No recommendations provided'))
-    
-    # Signature and Date
-    signature_style = ParagraphStyle(
-        name='SignatureStyle',
-        fontSize=12,
-        leading=15,
-        spaceAfter=12,
-        spaceBefore=36
-    )
-    registration_style=ParagraphStyle(
-        name='RegistrationStyle',
-        fontSize=12,
-        leading=15,
-        spaceAfter=12,
-        spaceBefore=8,
-        italic=True
-    )
-    signature_text = f"Reported and electronically signed by:                  "
-    registration_no="Registration Number:               "
-    signature_date = f"Dated: {datetime.now().strftime('%Y-%m-%d')}"
-    elements.append(Paragraph(signature_text, signature_style))
-    elements.append(Paragraph(registration_no, registration_style))
-    elements.append(Paragraph(signature_date, signature_style))
-    
-    # Footer
-    def add_footer(canvas, doc):
-        footer_text = 'SmartReportTemplates\nBrought to you by WSCompanion: because every Hero needs a companion'
-        canvas.saveState()
-        canvas.setFont('Helvetica', 10)
-        canvas.setFillColor(colors.HexColor('#6B8E23'))
-        width, height = doc.pagesize
-        footer_lines = footer_text.split('\n')
-        y = 15 * mm
-        for line in footer_lines:
-            canvas.drawCentredString(width / 2.0, y, line)
-            y -= 12  # Move up for next line
-        canvas.restoreState()
-    
-    # Build the PDF
-    doc.build(elements, onFirstPage=add_footer, onLaterPages=add_footer)
-    
-    buffer.seek(0)
-    
-    if return_path_only:
-        # Save buffer to a temporary file
-        temp_pdf_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
-        temp_pdf_file.write(buffer.getvalue())
-        temp_pdf_file.close()
-        return temp_pdf_file.name
-    else:   
-        # Return the buffer for direct download
-        return buffer
-
+    # If none of the conditions met
+    flash("Invalid request. Please try again.", "error")
+    return render_template('create_smart_report_template.html', mobile_form=mobile_form, desktop_form=desktop_form)
 #----------------------------------------------------------------
 
 # todo: Placeholder route for adding contents

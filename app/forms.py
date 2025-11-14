@@ -22,7 +22,12 @@ class ObservationForm(FlaskForm):
 
 class AddReportTemplateMobile(FlaskForm):
     template_name = StringField('Template Name', validators=[DataRequired()])
-    
+    def validate_template_name(self, field):
+        existing = db.session.query(UserReportTemplate).filter_by(
+        template_name=field.data,
+        user_id=current_user.id).first()
+        if existing:
+            raise ValidationError("A template with this name already exists.")
     # Patient Information
     name = StringField('Name', validators=[Optional()])
     gender = StringField('Gender', validators=[Optional()])
@@ -45,8 +50,18 @@ class AddReportTemplateMobile(FlaskForm):
     # Unique Submit Button
     submit_mobile = SubmitField('Save Report Template')
 
+from wtforms import ValidationError
+from app.models import UserReportTemplate
+from flask_login import current_user
+from app import db
 class AddReportTemplateDesktop(FlaskForm):
     template_name = StringField('Template Name', validators=[DataRequired()])
+    def validate_template_name(self, field):
+        existing = db.session.query(UserReportTemplate).filter_by(
+        template_name=field.data,
+        user_id=current_user.id).first()
+        if existing:
+            raise ValidationError("A template with this name already exists.")
     
     # Patient Information
     name = StringField('Name', validators=[Optional()])

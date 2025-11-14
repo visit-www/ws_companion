@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}PDF Preview – PDF.js Express{% endblock %}
+
+{% block content %}
+<div id="viewer" style="height: 90vh;"></div>
+
+<script src="https://pdfjs.express/webviewer/lib/webviewer.min.js"></script>
+<script>
+  WebViewer({
+    path: 'https://pdfjs.express/webviewer/lib',
+    initialDoc: "{{ file_url }}"
+  }, document.getElementById('viewer')).then(instance => {
+    console.log("✅ WebViewer loaded", instance);
+  });
+</script>
+{% endblock %}

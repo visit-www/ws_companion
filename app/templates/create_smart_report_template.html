@@ -22,6 +22,9 @@
             </div>
             <div class="col-lg-10 col-md-10 col-sm-12 card-body">
                 {{ mobile_form.template_name(class="form-control bg-light") }}
+                    {% for error in mobile_form.template_name.errors %}
+                    <div class="text-danger small mt-1">{{ error }}</div>
+                    {% endfor %}
             </div>
         </div>
         <div class="mobile_view_container row g-3 mb-5">
@@ -197,8 +200,10 @@
                 <input class="form-check-input" type="checkbox" id="report_type_word" name="report_type" value="word">
                 <label class="form-check-label" for="report_type_word">Word</label>
             </div>
-            <!-- Remove the form attribute from the button -->
-            <button type="submit" name="mobile-submit_mobile" class="btn btn-primary w-auto m-2">Save Report Template</button>
+            <!-- button -->
+            <button type="submit" name="desktop-submit_desktop" class="btn btn-outline-primary w-auto m-2">Export Report</button>
+            <button type="submit" name="save_report" class="btn btn-outline-success">Save Report and Preview Saved Report</button>
+            <button type="submit" name="preview_report" class="btn btn-outline-info">Preview Report</button>
             </div>
         </div>
     </form>
@@ -210,9 +215,10 @@
             <div class="col-lg-2 col-md-2 col-sm-12 bg-light card-header rounded-3">
                 <h5 class="mb-0">{{ desktop_form.template_name.label }}</h5>
             </div>
-            <div class="col-lg-10 col-md-10 col-sm-12 card-body">
-                {{ desktop_form.template_name(class="form-control bg-light") }}
-            </div>
+            {{desktop_form.template_name(class="form-control bg-light") }}
+            {% for error in desktop_form.template_name.errors %}
+            <div class="text-danger small mt-1">{{ error }}</div>
+            {% endfor %}
         </div>     
         <table class="table table-bordered m-auto mb-5" id="desktop-view" style="display:block">
             <thead>
@@ -387,8 +393,10 @@
                 <input class="form-check-input" type="checkbox" id="report_type_word" name="report_type" value="word">
                 <label class="form-check-label" for="report_type_word">Word</label>
             </div>
-            <!-- Remove the form attribute from the button -->
-            <button type="submit" name="desktop-submit_desktop" class="btn btn-primary w-auto m-2">Save Report Template</button>
+            <!-- button -->
+            <button type="submit" name="desktop-submit_desktop" class="btn btn-outline-primary w-auto m-2">Export Report</button>
+            <button type="submit" name="save_report" class="btn btn-outline-success">Save and Preview Saved Report</button>
+            <button type="submit" name="preview_report" class="btn btn-outline-info">Preview Report</button>
             </div>
         </div>
     </form>

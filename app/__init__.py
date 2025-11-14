@@ -7,8 +7,10 @@ from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
 from config import Config,userdir,basedir,creativesfolder
 from flask_login import LoginManager
-from .models import Base ,db, Content, User, UserData
+from .models import db
 import os
+import logging
+import sys
 from datetime import datetime,timedelta,timezone
 from flask_mail import Mail
 from uuid import UUID
@@ -29,7 +31,7 @@ flask_admin = Admin(
     template_mode='bootstrap4',  # Use bootstrap4 for compatibility
 )
 
-# instantiate flak mail
+# instantiate flask mail
 mail = Mail()
 
 
@@ -37,6 +39,26 @@ mail = Mail()
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+    
+    # *------------------------------------------------------------------
+    # Logging configuration (works well on Heroku & local)
+    # *------------------------------------------------------------------
+    if not app.debug and not app.testing:
+        # Log to stdout (Heroku reads from stdout/stderr)
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.setLevel(logging.INFO)
+
+        formatter = logging.Formatter(
+            "[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
+        )
+        stream_handler.setFormatter(formatter)
+
+        # Attach to app.logger
+        if not app.logger.handlers:
+            app.logger.addHandler(stream_handler)
+        app.logger.setLevel(logging.INFO)
+
+        app.logger.info("WSCompanion app startup with logging configured")
     
     
     # Initialize extensions with the app
@@ -51,9 +73,19 @@ def create_app():
     #import secret key ofr pyotp
     app.secret_key =Config.SECRET_KEY
     
+    # Import models so that they are registered with SQLAlchemy
+    from .models import (
+        User,
+        Content,
+        AdminReportTemplate,
+        ClassificationSystem,
+        ImagingProtocol,
+        NormalMeasurement,
+        UserAnalyticsEvent,
+        )  # noqa: F401
+    
     
     # User loader function
-    from .models import User
     @login_manager.user_loader
     def load_user(user_id):
         return db.session.query(User).get(UUID(user_id)) # Use db.session.query instead of User.query
@@ -78,22 +110,6 @@ def create_app():
     flask_admin.add_view(ExtendModelView(UserProfile, db.session, endpoint='user_profiles'))
     flask_admin.add_view(ExtendModelView(UserReportTemplate, db.session, endpoint='user_report_templates'))
     # ! Other app configurations, like database setup, blueprints, etc.
-
-    # * Route to serve user data files
-    @app.route('/user_data/<path:filename>')
-    def serve_user_data(filename):
-        return send_from_directory(userdir, filename)
-    # Serve `creatives_folder` as a secondary static folder
-    @app.route('/creatives_folder/<path:filename>')
-    def serve_creatives_folder(filename):
-        return send_from_directory(creativesfolder,filename)
-    
-    @app.route('/enable_2fa')
-    def enable_2fa():
-        # Generate a new TOTP secret key
-        totp_secret = pyotp.random_base32()
-        session['totp_secret'] = totp_secret  # Temporarily store the secret in the session
-        return render_template('enable_2fa.html', totp_secret=totp_secret)
     
     # * other Blueprints to be registered
     # App admin routes
@@ -199,5 +215,50 @@ def create_app():
     log_file = os.path.join(log_dir, 'app.log')
     # Register custom Jinja filter for from_json
     app.jinja_env.filters['from_json'] = from_json_filter
+    
+    # *------------------------------------------------------------------
+    # Helper to decide if JSON response is preferred
+    # *------------------------------------------------------------------
+    def wants_json_response() -> bool:
+        if request.args.get("format") == "json":
+            return True
+        accept = request.headers.get("Accept", "")
+        return "application/json" in accept.lower()
+    
+    # *------------------------------------------------------------------
+    # Error handlers
+    # *------------------------------------------------------------------
+    @app.errorhandler(404)
+    def handle_404(error):
+        app.logger.warning("404 Not Found: %s", request.path)
 
+        if wants_json_response():
+            return (
+                {
+                    "error": "Not Found",
+                    "status": 404,
+                    "path": request.path,
+                },
+                404,
+            )
+
+        return render_template("errors/404.html"), 404
+    
+    @app.errorhandler(500)
+    def handle_500(error):
+        # Log full stack trace
+        app.logger.exception("500 Internal Server Error at %s", request.path)
+
+        if wants_json_response():
+            return (
+                {
+                    "error": "Internal Server Error",
+                    "status": 500,
+                    "path": request.path,
+                },
+                500,
+            )
+
+        return render_template("errors/500.html"), 500
+    
     return app
