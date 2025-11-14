@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Report Templates{% endblock %}
+
+{% block content %}
+<div class="row text-center mb-4">
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+           <div class="card-body">
+    <h5 class="card-title">Start a Blank Report</h5>
+    <p class="card-text text-muted">Create a structured report from scratch using our assistant.</p>
+    <a href="{{ url_for('app_user.smart_report_dashboard',action='create new report') }}" class="btn btn-primary">
+        Start Reporting
+    </a>
+</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <form method="get" action="{{ url_for('app_user.smart_report_dashboard') }}">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Search a Condition</h5>
+                    <input type="text" name="q" class="form-control mb-2" placeholder="e.g. Cholesteatoma, Pancreatitis" value="{{ query }}">
+                    <button type="submit" class="btn btn-outline-success">Search Templates & AI Help</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="col-md-4">
+        <form method="post" action="{{ url_for('app_user.smart_report_paste') }}">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">Paste & Structure a Report</h5>
+                    <textarea name="pasted_text" class="form-control mb-2" rows="3" placeholder="Paste report here..."></textarea>
+                    <button type="submit" class="btn btn-outline-warning">Parse & Load into Template</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

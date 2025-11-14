@@ -21,6 +21,26 @@ Base: Type[so.DeclarativeMeta] = app_registry.generate_base()
 
 # ********************************
 # * Reusable Enums:
+# Default values for templates
+class TemplateTypeEnum(PyEnum):
+    STRUCTURED = 'structured'
+    CHECKLIST = 'checklist'
+    NARRATIVE = 'narrative'
+
+class ClassificationCategoryEnum(PyEnum):
+    TNM = 'tnm'
+    RADS = 'rads'
+    TRAUMA = 'trauma'
+    SCORING = 'scoring'
+    OTHER = 'other'
+
+class UserEventTypeEnum(PyEnum):
+    VIEW = 'view'
+    CLICK = 'click'
+    IMPRESSION = 'impression'
+    USE_TEMPLATE = 'use_template'
+    OPEN_STAGING = 'open_staging'
+    OPEN_PROTOCOL = 'open_protocol'
 
 # Default values for categories
 class CategoryNames(PyEnum):
@@ -232,16 +252,168 @@ class AdminReportTemplate(Base):
         nullable=True, 
         index=True
     )
+    description: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
+
+    template_type: so.Mapped[TemplateTypeEnum] = sa.Column(
+        sa.Enum(TemplateTypeEnum, name='template_type_enum'),
+        nullable=False,
+        default=TemplateTypeEnum.STRUCTURED,
+        index=True,
+    )
+
+    is_active: so.Mapped[bool] = sa.Column(sa.Boolean, nullable=False, default=True)
+
+    usage_count: so.Mapped[int] = sa.Column(sa.Integer, nullable=False, default=0)
+
+    created_by_user_id: so.Mapped[Optional[uuid.UUID]] = sa.Column(
+        sa.UUID(as_uuid=True),
+        sa.ForeignKey('users.id', ondelete='SET NULL', onupdate='CASCADE'),
+        nullable=True,
+        index=True,
+    )
     created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), nullable=False)
     updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc), nullable=False)
 
     def __repr__(self):
         return f"<AdminReportTemplate(id={self.id}, template_name='{self.template_name}')>"
+    
+#5. classification category model:
+class ClassificationCategoryEnum(PyEnum):
+    TNM = 'tnm'
+    RADS = 'rads'
+    TRAUMA = 'trauma'
+    SCORING = 'scoring'
+    OTHER = 'other'
+#6. Model for Staging & Classification Hub -lets us to keep complex systems in JSON for now.
+class ClassificationSystem(Base):
+    __tablename__ = 'classification_systems'
 
-# ----------------------------------------------------------------
+    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
+
+    name: so.Mapped[str] = sa.Column(sa.String(255), nullable=False, unique=True, index=True)
+    short_code: so.Mapped[Optional[str]] = sa.Column(sa.String(50), nullable=True, index=True)  # e.g., 'TNM Lung', 'LI-RADS'
+
+    category: so.Mapped[ClassificationCategoryEnum] = sa.Column(
+            sa.Enum(ClassificationCategoryEnum, name='classification_category_enum'),
+            nullable=False,
+            index=True,
+        )
+
+    modality: so.Mapped[Optional[ModalityEnum]] = sa.Column(
+            sa.Enum(ModalityEnum, name='modality_enum'),
+            nullable=True,
+            index=True,
+        )
+
+    body_part: so.Mapped[Optional[BodyPartEnum]] = sa.Column(
+            sa.Enum(BodyPartEnum, name='body_part_enum'),
+            nullable=True,
+            index=True,
+        )
+
+    version: so.Mapped[Optional[str]] = sa.Column(sa.String(50), nullable=True)  # e.g., 'v8', '2019'
+
+    description: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
+
+    # JSON structure storing the actual classification levels/criteria
+    definition_json: so.Mapped[Optional[dict]] = sa.Column(sa.JSON, nullable=True)
+
+    is_active: so.Mapped[bool] = sa.Column(sa.Boolean, nullable=False, default=True)
+
+    created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), nullable=False)
+    updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc), nullable=False)
+
+    def __repr__(self) -> str:
+            return f"<ClassificationSystem(id={self.id}, name='{self.name}', category='{self.category.value}')>"
+
+#7. Model to Protocol & Safety Hub
+
+class ImagingProtocol(Base):
+    __tablename__ = 'imaging_protocols'
+
+    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
+
+    name: so.Mapped[str] = sa.Column(sa.String(255), nullable=False, unique=True, index=True)
+    modality: so.Mapped[Optional[ModalityEnum]] = sa.Column(
+            sa.Enum(ModalityEnum, name='modality_enum'),
+            nullable=True,
+            index=True,
+    )
+    body_part: so.Mapped[Optional[BodyPartEnum]] = sa.Column(
+            sa.Enum(BodyPartEnum, name='body_part_enum'),
+            nullable=True,
+            index=True,
+    )
+
+    indication: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)  # e.g., 'PE', 'Stroke', 'Acute abdomen'
+
+    is_emergency: so.Mapped[bool] = sa.Column(sa.Boolean, nullable=False, default=False)
+
+    uses_contrast: so.Mapped[Optional[bool]] = sa.Column(sa.Boolean, nullable=True)
+    contrast_details: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
+
+    technique_text: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
+
+    parameters_json: so.Mapped[Optional[dict]] = sa.Column(sa.JSON, nullable=True)  # kVp, mAs, slice thickness...
+
+    tags: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)  # comma-separated or JSON
+
+    is_active: so.Mapped[bool] = sa.Column(sa.Boolean, nullable=False, default=True)
+
+    created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), nullable=False)
+    updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc), nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<ImagingProtocol(id={self.id}, name='{self.name}')>"
+        
+#8. Model for Normal Values Panel in the template viewer
+class NormalMeasurement(Base):
+    __tablename__ = 'normal_measurements'
+
+    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
+
+    name: so.Mapped[str] = sa.Column(sa.String(255), nullable=False, index=True)  # e.g., 'Appendix diameter', 'CBD calibre'
+
+    body_part: so.Mapped[Optional[BodyPartEnum]] = sa.Column(
+            sa.Enum(BodyPartEnum, name='body_part_enum'),
+            nullable=True,
+            index=True,
+    )
+
+    modality: so.Mapped[Optional[ModalityEnum]] = sa.Column(
+            sa.Enum(ModalityEnum, name='modality_enum'),
+            nullable=True,
+            index=True,
+    )
+
+    min_value: so.Mapped[Optional[float]] = sa.Column(sa.Float, nullable=True)
+    max_value: so.Mapped[Optional[float]] = sa.Column(sa.Float, nullable=True)
+    unit: so.Mapped[Optional[str]] = sa.Column(sa.String(50), nullable=True)  # e.g., 'mm', 'cm'
+
+    age_group: so.Mapped[Optional[str]] = sa.Column(sa.String(50), nullable=True)  # 'adult', 'paediatric', 'neonate', or '50–70y'
+    sex: so.Mapped[Optional[str]] = sa.Column(sa.String(10), nullable=True)  # 'male', 'female', 'any'
+
+    context: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)  # e.g., 'end-diastole', 'supine CT'
+
+    reference_text: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
+    reference_doi: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)
+
+    tags: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
+
+    is_active: so.Mapped[bool] = sa.Column(sa.Boolean, nullable=False, default=True)
+
+    created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), nullable=False)
+    updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc), nullable=False)
+
+    def __repr__(self) -> str:
+        return f"<NormalMeasurement(id={self.id}, name='{self.name}')>"
+        
+
+
+# *----------------------------------------------------------------
 # Models for User Data and Preferences:
 
-# 5. UserData Model: captures user interactions with the contents
+# 7. UserData Model: captures user interactions with the contents
 from sqlalchemy.orm import mapped_column
 import sqlalchemy.orm as so
 from sqlalchemy.dialects.postgresql import ENUM as PGEnum  # ensure this is imported
@@ -321,7 +493,82 @@ class UserData(Base):
 
     def __repr__(self) -> str:
         return f"<UserData(id={self.id}, user_id={self.user_id}, content_id={self.content_id})>"
-# 6. UserContentState Model: Saves user content state for future sessions
+    
+# Models for user generic event log
+
+class UserEventTypeEnum(PyEnum):
+    VIEW = 'view'
+    CLICK = 'click'
+    IMPRESSION = 'impression'
+    USE_TEMPLATE = 'use_template'
+    OPEN_STAGING = 'open_staging'
+    OPEN_PROTOCOL = 'open_protocol'
+        
+class UserAnalyticsEvent(Base):
+    __tablename__ = 'user_analytics_events'
+
+    id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, nullable=False)
+
+    user_id: so.Mapped[Optional[uuid.UUID]] = sa.Column(
+                sa.UUID(as_uuid=True),
+                sa.ForeignKey('users.id', ondelete='SET NULL', onupdate='CASCADE'),
+                nullable=True,
+                index=True,
+    )
+
+    event_type: so.Mapped[UserEventTypeEnum] = sa.Column(
+                sa.Enum(UserEventTypeEnum, name='user_event_type_enum'),
+                nullable=False,
+                index=True,
+    )
+
+    # What the event refers to
+    content_type: so.Mapped[Optional[str]] = sa.Column(sa.String(50), nullable=True, index=True)  # 'template', 'staging', 'protocol', 'normal_measurement', 'page'
+    content_id: so.Mapped[Optional[int]] = sa.Column(sa.Integer, nullable=True, index=True)
+
+    template_id: so.Mapped[Optional[int]] = sa.Column(
+                sa.Integer,
+                sa.ForeignKey('admin_report_templates.id', ondelete='SET NULL', onupdate='CASCADE'),
+                nullable=True,
+                index=True,
+    )
+
+    classification_id: so.Mapped[Optional[int]] = sa.Column(
+                sa.Integer,
+                sa.ForeignKey('classification_systems.id', ondelete='SET NULL', onupdate='CASCADE'),
+                nullable=True,
+                index=True,
+    )
+
+    protocol_id: so.Mapped[Optional[int]] = sa.Column(
+                sa.Integer,
+                sa.ForeignKey('imaging_protocols.id', ondelete='SET NULL', onupdate='CASCADE'),
+                nullable=True,
+                index=True,
+    )
+
+    normal_measurement_id: so.Mapped[Optional[int]] = sa.Column(
+                sa.Integer,
+                sa.ForeignKey('normal_measurements.id', ondelete='SET NULL', onupdate='CASCADE'),
+                nullable=True,
+                index=True,
+    )
+
+    path: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)  # e.g., request.path
+    metadata_json: so.Mapped[Optional[dict]] = sa.Column(sa.JSON, nullable=True)
+
+    created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), nullable=False)
+
+    # relationships (optional, but handy)
+    user: so.Mapped[Optional["User"]] = so.relationship('User', backref=so.backref('analytic_events', passive_deletes=True))
+    template: so.Mapped[Optional["AdminReportTemplate"]] = so.relationship('AdminReportTemplate', backref=so.backref('analytic_events', passive_deletes=True))
+    classification_system: so.Mapped[Optional["ClassificationSystem"]] = so.relationship('ClassificationSystem', backref=so.backref('analytic_events', passive_deletes=True))
+    protocol: so.Mapped[Optional["ImagingProtocol"]] = so.relationship('ImagingProtocol', backref=so.backref('analytic_events', passive_deletes=True))
+    normal_measurement: so.Mapped[Optional["NormalMeasurement"]] = so.relationship('NormalMeasurement', backref=so.backref('analytic_events', passive_deletes=True))
+
+    def __repr__(self) -> str:
+        return f"<UserAnalyticsEvent(id={self.id}, event_type='{self.event_type.value}')>"
+# 8. UserContentState Model: Saves user content state for future sessions
 class UserContentState(Base):
     __tablename__ = 'user_content_states'
 
@@ -338,7 +585,7 @@ class UserContentState(Base):
     user = so.relationship('User', backref=so.backref('user_content_states', lazy='dynamic', cascade="all, delete-orphan"), passive_deletes=True)
     content = so.relationship('Content', backref=so.backref('user_content_states'))
 
-# 7. UserReportTemplate Model
+# 9. UserReportTemplate Model
 class UserReportTemplate(Base):
     __tablename__ = 'user_report_templates'
 
@@ -373,7 +620,7 @@ class UserReportTemplate(Base):
     def __repr__(self):
         return f"<ReportTemplate(id={self.id}, template_name='{self.template_name}', is_public={self.is_public})>"
 
-# 8. UserProfile Model: stores user preferences and profile information
+# 10. UserProfile Model: stores user preferences and profile information
 from sqlalchemy.dialects.postgresql import ARRAY
 
 class UserProfile(Base):
@@ -405,7 +652,7 @@ class UserProfile(Base):
     def __repr__(self):
         return f"<UserProfile(id={self.id}, user_id={self.user_id})>"
 
-# 9. UserFeedback Model: stores user feedbacks
+# 11. UserFeedback Model: stores user feedbacks
 # ----------------------------------------------
 from config import ANONYMOUS_USER_ID
 class UserFeedback(Base):

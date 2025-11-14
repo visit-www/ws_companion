@@ -1,4 +1,4 @@
-#
+
 from flask import Blueprint, request, render_template, redirect, url_for, flash, session, jsonify, send_file, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -404,6 +404,7 @@ def change_password(token):
     return render_template('change_password.html', token=token)
 # ********************************
 # Update password route:
+# ********************************
 @app_user_bp.route('/update_password', methods=['GET', 'POST'])
 @login_required
 def update_password():
@@ -539,9 +540,9 @@ def user_management():
         # Handle any unexpected errors gracefully, log the error, and fall back to the default profile picture
         print(f"An error occurred: {e}")
         return render_template('user_management.html', categories=categories, modules=modules, profile_pic_path=url_for('static', filename='assets/images/logo-white-bg.png'))
-# .###############################
+#*###############################
 # PROFILE MANAGEMENT ROUTES
-# ===============================
+#*===============================
 
 @app_user_bp.route('/profile_manager', methods=['GET', 'POST'])
 @login_required
@@ -727,9 +728,9 @@ def security_manager():
         flash('Security management functionality will be implemented here.', 'info')
     return render_template('account_security.html')
 
-# =======
+#*--------------------------------
 # CPD dashboard mangment ROUTES
-# =======
+#*--------------------------------
 from app.models import UserCPDState, CPDLog
 
 
@@ -1102,7 +1103,6 @@ def cpd_edit(log_id):
         return redirect(url_for("app_user.cpd_dashboard"))
 
     return render_template("cpd_add.html", form=form, edit_mode=True, log=log)
-#====================
 
 #====================
 #This route allow user to deleate Appraisal cylce #
@@ -1263,7 +1263,7 @@ def delete_cpd_entry(log_id):
 
     return redirect(url_for('app_user.cpd_dashboard'))
 #===================================================================#
-# This is route for exproting the cpd log for single appraisal year #
+# This is route for exporting the cpd log for single appraisal year #
 #====================================================================#
 @app_user_bp.route("/cpd/export_single_year", methods=["POST"])
 @login_required
@@ -1342,7 +1342,7 @@ def export_single_year_log():
         HTML(string=html, base_url=request.host_url).write_pdf(pdf_io)
         pdf_io.seek(0)
         return send_file(pdf_io, mimetype="application/pdf", as_attachment=True,
-                         download_name=f"CPD_Appraisal_Year_{start_yr}-{start_yr+1}.pdf")
+                        download_name=f"CPD_Appraisal_Year_{start_yr}-{start_yr+1}.pdf")
 
     elif export_format == "word":
         doc = Document()
@@ -1418,8 +1418,8 @@ def export_full_appraisal_log():
     logs = (
         db.session.query(CPDLog)
         .filter_by(user_id=current_user.id,
-                   appraisal_cycle_start=active_cycle.appraisal_cycle_start,
-                   appraisal_cycle_end=active_cycle.appraisal_cycle_end)
+                appraisal_cycle_start=active_cycle.appraisal_cycle_start,
+                appraisal_cycle_end=active_cycle.appraisal_cycle_end)
         .order_by(CPDLog.start_date.asc())
         .all()
     )
@@ -1534,9 +1534,9 @@ def export_full_appraisal_log():
 
 
 
-# -------------------------
+# *------------------------------------------------------
 # Productivity Dashboard
-# -------------------------
+# *------------------------------------------------------
 from datetime import datetime, timedelta
 from pytz import UTC
 from flask import render_template
@@ -1700,3 +1700,59 @@ def save_session_log():
         flash(f"Error saving session log: {str(e)}", "danger")
 
     return redirect(url_for('app_user.productivity_dashboard'))
+
+#*-------------------------------------------------
+#reporting ad report template routes.
+#*-------------------------------------------------
+from app.forms import AddReportTemplateMobile, AddReportTemplateDesktop
+from app.models import UserReportTemplate
+
+@app_user_bp.route('/smart_report', methods=['GET', 'POST'])
+@login_required
+def smart_report_dashboard():
+    action = request.args.get('action')
+
+    if action == 'create new report':
+        #  initialize the forms here
+        mobile_form = AddReportTemplateMobile(prefix='mobile')
+        desktop_form = AddReportTemplateDesktop(prefix='desktop')
+        return render_template(
+            'create_smart_report_template.html',
+            mobile_form=mobile_form,
+            desktop_form=desktop_form
+        )
+
+    # Default view (dashboard)
+    return render_template('smart_report_dashboard.html')
+    
+
+# Use an existing admin template by ID
+@app_user_bp.route('/smart_report/template/<int:template_id>', methods=['GET'])
+@login_required
+def use_report_template(template_id):
+    # In future: load AdminReportTemplate by ID and pre-fill form
+    return render_template('smart_report_viewer.html', template_id=template_id)
+
+
+# Paste a report and parse into structured form (AI-assisted)
+@app_user_bp.route('/smart_report/paste', methods=['POST'])
+@login_required
+def smart_report_paste():
+    pasted_text = request.form.get('pasted_text', '')
+    # In future: send to AI for parsing, then render structured form
+    return render_template('smart_report_viewer.html', pasted_text=pasted_text)
+
+
+from flask import current_app
+
+@app_user_bp.route("/debug_mail_config")
+def debug_mail_config():
+    cfg = current_app.config
+    return {
+        "MAIL_SERVER": cfg.get("MAIL_SERVER"),
+        "MAIL_PORT": cfg.get("MAIL_PORT"),
+        "MAIL_USE_TLS": cfg.get("MAIL_USE_TLS"),
+        "MAIL_USE_SSL": cfg.get("MAIL_USE_SSL"),
+        "MAIL_USERNAME": cfg.get("MAIL_USERNAME"),
+        "MAIL_PASSWORD_length": len(cfg.get("MAIL_PASSWORD") or "")
+    }

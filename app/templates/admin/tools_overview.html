@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Tools Overview – Admin{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h1 class="mb-4">Tools Overview</h1>
+  <div class="row g-3">
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Report Templates</h5>
+          <p class="display-6">{{ templates_count }}</p>
+          <p class="text-muted mb-0">AdminReportTemplate</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Staging Systems</h5>
+          <p class="display-6">{{ classification_count }}</p>
+          <p class="text-muted mb-0">ClassificationSystem</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Imaging Protocols</h5>
+          <p class="display-6">{{ protocol_count }}</p>
+          <p class="text-muted mb-0">ImagingProtocol</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Normal Values</h5>
+          <p class="display-6">{{ normal_measurements_count }}</p>
+          <p class="text-muted mb-0">NormalMeasurement</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title">Analytics Events</h5>
+          <p class="display-6">{{ events_count }}</p>
+          <p class="text-muted mb-0">UserAnalyticsEvent</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
