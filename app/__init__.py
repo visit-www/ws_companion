@@ -14,7 +14,7 @@ import sys
 from datetime import datetime,timedelta,timezone
 from flask_mail import Mail
 from uuid import UUID
-from .util import load_default_data,add_default_admin,add_default_contents,add_anonymous_user
+from .util import load_default_data,add_default_admin,add_default_contents,add_anonymous_user,add_default_admin_templates
 
 import pyotp
 
@@ -198,6 +198,13 @@ def create_app():
                 print("Default contents loaded successfully")  # Add default data for contents and admin
             except Exception as e:
                 print(f"Error while adding default contents: {e}")
+                pass
+            print("I will create default admin templates if they do not already exist")
+            try:
+                add_default_admin_templates()
+                print("Default admin templates loaded successfully")
+            except Exception as e:
+                print(f"Error while adding default admin templates: {e}")
                 pass
             print("I Will look for anaonymous user and create one if not existing")
             try:
