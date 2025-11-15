@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template,jsonify, request, flash, send_from_directory
 from flask_wtf.csrf import generate_csrf
-from .models import CategoryNames,User,UserData,Reference
+from .models import Content, User, AdminReportTemplate, ClassificationSystem, ImagingProtocol, db, CategoryNames, UserData, Reference
 from . import db
 from flask_cors import CORS
 from flask_login import current_user, AnonymousUserMixin, login_required
@@ -45,6 +45,46 @@ def index():
     
     # Render the 'index.html' template, passing the category dictionary to the template
     return render_template('index.html',last_login=last_login)
+
+# *---------------------------------------------------------------
+# Radilogy tools routes.
+@main_bp.route("/tools", methods=["GET"])
+@login_required
+def radiology_tools():
+    """
+    Landing page for Radiology Tools:
+    - Report templates (AdminReportTemplate)
+    - Staging / classification systems
+    - Imaging protocols
+    """
+    templates = (
+        db.session.query(AdminReportTemplate)
+        .filter_by(is_active=True)
+        .order_by(AdminReportTemplate.modality, AdminReportTemplate.body_part, AdminReportTemplate.template_name)
+        .all()
+    )
+
+    classifications = (
+        db.session.query(ClassificationSystem)
+        .filter_by(is_active=True)
+        .order_by(ClassificationSystem.category, ClassificationSystem.name)
+        .all()
+    )
+
+    protocols = (
+        db.session.query(ImagingProtocol)
+        .filter_by(is_active=True)
+        .order_by(ImagingProtocol.modality, ImagingProtocol.body_part, ImagingProtocol.name)
+        .all()
+    )
+
+    return render_template(
+        "radiology_tools.html",
+        templates=templates,
+        classifications=classifications,
+        protocols=protocols,
+    )
+
 #!----------------------------------------------------------------
 # Place holder routes for maain page navigations :
 

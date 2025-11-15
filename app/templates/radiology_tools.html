@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Radiology Tools – WSC{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h1 class="mb-4">Radiology Tools</h1>
+  <p class="text-muted mb-4">
+    Quick access to report templates, staging systems, and imaging protocols to support your daily reporting workflow.
+  </p>
+
+  <div class="row g-4">
+    <!-- Templates column -->
+    <div class="col-12 col-lg-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h3 class="h5 mb-3">Report Templates</h3>
+          {% if templates %}
+            <ul class="list-unstyled small">
+              {% for t in templates %}
+              <li class="mb-2">
+                <strong>{{ t.template_name }}</strong><br>
+                <span class="text-muted">
+                  {{ t.modality.value if t.modality else '' }}
+                  {% if t.body_part %} · {{ t.body_part.value }}{% endif %}
+                  {% if t.module %} · {{ t.module.value }}{% endif %}
+                </span><br>
+                {% if t.filepath %}
+                  <a href="{{ url_for('content_routes.serve_template_file', template_id=t.id) }}"
+                     class="link-primary" target="_blank">
+                    Open template
+                  </a>
+                {% else %}
+                  <a href="{{ url_for('content_routes.get_template', template_id=t.id) }}?format=json"
+                     class="link-secondary" target="_blank">
+                    View metadata (JSON)
+                  </a>
+                {% endif %}
+              </li>
+              {% endfor %}
+            </ul>
+            <a href="{{ url_for('content_routes.list_templates') }}?format=json" class="btn btn-sm btn-outline-primary">
+              View all as JSON API
+            </a>
+          {% else %}
+            <p class="text-muted">No templates available yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Staging / classification column -->
+    <div class="col-12 col-lg-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h3 class="h5 mb-3">Staging & Classification</h3>
+          {% if classifications %}
+            <ul class="list-unstyled small">
+              {% for s in classifications[:8] %}
+              <li class="mb-2">
+                <strong>{{ s.name }}</strong>
+                {% if s.short_code %}<span class="text-muted"> ({{ s.short_code }})</span>{% endif %}<br>
+                <span class="text-muted">
+                  {{ s.category.value if s.category else '' }}
+                  {% if s.modality %} · {{ s.modality.value }}{% endif %}
+                  {% if s.body_part %} · {{ s.body_part.value }}{% endif %}
+                </span>
+              </li>
+              {% endfor %}
+            </ul>
+            <a href="{{ url_for('content_routes.list_classification_systems') }}?format=json"
+               class="btn btn-sm btn-outline-primary">
+              View all as JSON API
+            </a>
+          {% else %}
+            <p class="text-muted">No staging systems configured yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Protocols column -->
+    <div class="col-12 col-lg-4">
+      <div class="card shadow-sm h-100">
+        <div class="card-body">
+          <h3 class="h5 mb-3">Imaging Protocols</h3>
+          {% if protocols %}
+            <ul class="list-unstyled small">
+              {% for p in protocols[:8] %}
+              <li class="mb-2">
+                <strong>{{ p.name }}</strong><br>
+                <span class="text-muted">
+                  {{ p.modality.value if p.modality else '' }}
+                  {% if p.body_part %} · {{ p.body_part.value }}{% endif %}
+                </span><br>
+                {% if p.indication %}
+                  <span class="text-muted">Indication: {{ p.indication }}</span>
+                {% endif %}
+              </li>
+              {% endfor %}
+            </ul>
+            <a href="{{ url_for('content_routes.list_protocols') }}?format=json"
+               class="btn btn-sm btn-outline-primary">
+              View all as JSON API
+            </a>
+          {% else %}
+            <p class="text-muted">No imaging protocols configured yet.</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
