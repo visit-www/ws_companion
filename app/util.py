@@ -1,6 +1,12 @@
-# * Imports
+#Imports
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from flask import current_app
+import json
+from datetime import datetime, timezone
+from .models import db,Content, User, UserData, UserContentState, AdminReportTemplate, ModuleNames, BodyPartEnum, ModalityEnum
+import os
+from config import basedir,ADMIN_EMAIL, ADMIN_PASSWORD,ANONYMOUS_EMAIL,ANONYMOUS_PASSWORD,ANONYMOUS_USER_ID
+# *-------------------------------------------------------------------------
 
 def generate_password_reset_token(data, expiration=600):
     """Generate a secure token for given data."""
@@ -28,15 +34,8 @@ def generate_otp_token(secret, interval=200):
     totp = pyotp.TOTP(secret, interval=interval)
     return totp.now()
 
-    
+# *-----------------------------------------------------------
 # Default app initialization
-import json
-from datetime import datetime, timezone
-from .models import db,Content, User, UserData, UserContentState, AdminReportTemplate
-from config import basedir
-import os
-from config import ADMIN_EMAIL, ADMIN_PASSWORD,ANONYMOUS_EMAIL,ANONYMOUS_PASSWORD,ANONYMOUS_USER_ID
-
 def add_default_admin(admin_data):
     """Add admin user if not already present."""
     admin_user = db.session.query(User).filter_by(email=ADMIN_EMAIL).first()
@@ -149,6 +148,83 @@ def add_default_contents(contents_data):
 
     db.session.commit()
     print("Default contents loaded successfully.")
+
+# Utility function to add default admin templates
+def add_default_admin_templates():
+    """
+    Seed a small, curated set of reporting templates into AdminReportTemplate.
+    Idempotent: if a template with the same name already exists, it is skipped.
+    """
+    default_templates = [
+        {
+            "template_name": "MRI Brain – General Reporting Template",
+            "modality": ModalityEnum.MRI,
+            "body_part": BodyPartEnum.NEURO,
+            "module": ModuleNames.NEURORADIOLOGY,
+            "category": "Reporting Template",
+            "tags": "mri, brain, neuro, routine",
+            "file": None,
+            "filepath": None,
+        },
+        {
+            "template_name": "CT Chest – Pulmonary Embolism (CTPA)",
+            "modality": ModalityEnum.CT,
+            "body_part": BodyPartEnum.LUNG,
+            "module": ModuleNames.CHEST,
+            "category": "Reporting Template",
+            "tags": "ct, chest, ctpa, pulmonary embolism",
+            "file": None,
+            "filepath": None,
+        },
+        {
+            "template_name": "CT Abdomen/Pelvis – Acute Abdomen",
+            "modality": ModalityEnum.CT,
+            "body_part": BodyPartEnum.MISCELLANEOUS,
+            "module": ModuleNames.ABDOMINAL,
+            "category": "Reporting Template",
+            "tags": "ct, abdomen, pelvis, acute abdomen, emergency",
+            "file": None,
+            "filepath": None,
+        },
+        {
+            "template_name": "X-ray Chest – General / Preoperative",
+            "modality": ModalityEnum.X_RAY,
+            "body_part": BodyPartEnum.LUNG,
+            "module": ModuleNames.CHEST,
+            "category": "Reporting Template",
+            "tags": "xray, chest, preop, general",
+            "file": None,
+            "filepath": None,
+        },
+    ]
+
+    created = 0
+
+    for tpl in default_templates:
+        existing = db.session.query(AdminReportTemplate).filter_by(
+            template_name=tpl["template_name"]
+        ).first()
+        if existing:
+            continue
+
+        new_tpl = AdminReportTemplate(
+            template_name=tpl["template_name"],
+            modality=tpl["modality"],
+            body_part=tpl["body_part"],
+            module=tpl["module"],
+            category=tpl["category"],
+            tags=tpl["tags"],
+            file=tpl["file"],
+            filepath=tpl["filepath"],
+        )
+        db.session.add(new_tpl)
+        created += 1
+
+    if created > 0:
+        db.session.commit()
+        print(f"Admin templates seeded: {created}")
+    else:
+        print("Admin templates already present, no new templates added.")
 
 def load_default_data():
     """Load default admin and content data from JSON."""
