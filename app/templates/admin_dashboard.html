@@ -7,92 +7,139 @@
     <!-- Dashboard Heading -->
     <h1 class="text-center mb-4">Admin Dashboard</h1>
 
-    <!-- Admin Cards -->
-    <div class="row g-4">
-        <!-- View and Manage Database Card -->
-        <div class="col-md-3">
-            <div class="card mb-3">
-                <div class="card-body">
-                    <h5 class="card-title">Database Management</h5>
-                    <p class="card-text">Visualise and Manage the database.</p>
-                    <a href="{{ url_for('app_admin.view_models') }}" class="btn btn-warning">Manage Database</a> <!-- This route should be defined in your Flask routes -->
-                </div>
-            </div>
-        </div>
-
+    <!-- Row 1: Main admin tools -->
+    <div class="row g-4 justify-content-center">
         <!-- Content Management Card -->
-        <div class="col-md-3">
-            <div class="card text-center shadow-sm">
-                <div class="card-body">
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card h-100 text-center shadow-sm">
+                <div class="card-body d-flex flex-column">
                     <h5 class="card-title">Add Contents</h5>
-                    <p class="card-text">Manage and add new contents to the App.</p>
-                    <!-- Form to add new contents -->
-                    <form method="POST" action="{{ url_for('app_admin.manage_model') }}"> <!-- Fixed the URL route -->
+                    <p class="card-text flex-grow-1">
+                        Manage and add new contents to the App.
+                    </p>
+                    <form method="POST" action="{{ url_for('app_admin.manage_model') }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="action" value="add_data">
-                        <input type="hidden" name="button_id" value="contents"> <!-- Ensure the button ID matches the expected model -->
-                        <button type="submit" class="btn btn-success">Add Contents</button>
+                        <input type="hidden" name="button_id" value="contents">
+                        <button type="submit" class="btn btn-success mt-auto">
+                            Add Contents
+                        </button>
                     </form>
                 </div>
             </div>
         </div>
 
         <!-- User Management Card -->
-        <div class="col-md-3">
-            <div class="card text-center shadow-sm">
-                <div class="card-body">
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card h-100 text-center shadow-sm">
+                <div class="card-body d-flex flex-column">
                     <h5 class="card-title">Add Users</h5>
-                    <p class="card-text">Manage and add new users to the App.</p>
-                    <form method="POST" action="{{ url_for('app_admin.manage_model') }}"> <!-- Fixed the URL route -->
+                    <p class="card-text flex-grow-1">
+                        Manage and add new users to the App.
+                    </p>
+                    <form method="POST" action="{{ url_for('app_admin.manage_model') }}">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        <input type="hidden" name="action" value="add_data"> 
-                        <input type="hidden" name="button_id" value="users"> <!-- Ensure the button ID matches the expected model -->
-                        <button type="submit" class="btn btn-success">Manage Users</button>
+                        <input type="hidden" name="action" value="add_data">
+                        <input type="hidden" name="button_id" value="users">
+                        <button type="submit" class="btn btn-success mt-auto">
+                            Manage Users
+                        </button>
                     </form>
                 </div>
             </div>
         </div>
+
         <!-- Smart report template card -->
-        <div class="col-md-3">
-            <div class="card text-center shadow-sm">
-                <div class="card-body">
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card h-100 text-center shadow-sm">
+                <div class="card-body d-flex flex-column">
                     <h5 class="card-title">SmartReport Template</h5>
-                    <p class="card-text">Create SmartReport Templates.</p>
-                    <a href="{{ url_for('app_admin.create_report_template') }}" class="btn btn-success">Create SmartReport Templates</a>
+                    <p class="card-text flex-grow-1">
+                        Create SmartReport Templates.
+                    </p>
+                    <a href="{{ url_for('app_admin.create_report_template') }}"
+                       class="btn btn-success mt-auto">
+                        Create SmartReport Templates
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tools Overview card -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card h-100 text-center shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">Tools Overview</h5>
+                    <p class="card-text flex-grow-1">
+                        See how many report templates, staging systems, imaging protocols, and
+                        other tools are currently available in the Workstation Companion.
+                    </p>
+                    <a href="{{ url_for('app_admin.tools_overview') }}"
+                       class="btn btn-success mt-auto">
+                        Open Tools Overview
+                    </a>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Reset Cards -->
-    <div class="row g-4">
+    <!-- Row 2: Reset / DB tools -->
+    <div class="row g-4 justify-content-center mt-2">
+        <!-- View and Manage Database Card -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card h-100 text-center shadow-sm">
+                <div class="card-body d-flex flex-column">
+                    <h5 class="card-title">Database Management</h5>
+                    <p class="card-text flex-grow-1">
+                        Visualise and manage the database.
+                    </p>
+                    <a href="{{ url_for('app_admin.view_models') }}"
+                       class="btn btn-warning mt-auto">
+                        Manage Database
+                    </a>
+                </div>
+            </div>
+        </div>
+
         <!-- Reset Database Card -->
-        <div class="col-md-6">
-            <div class="card text-center shadow-sm">
-                <div class="card-body">
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card h-100 text-center shadow-sm">
+                <div class="card-body d-flex flex-column">
                     <h5 class="card-title">Reset Database</h5>
-                    <p class="card-text">Delete all Data except Users</p>
-                    <form method="POST" action="{{ url_for('app_admin.reset_db') }}" onsubmit="return ConfirmReset();"> <!-- Fixed the URL route -->
+                    <p class="card-text flex-grow-1">
+                        Delete all Data except Users.
+                    </p>
+                    <form method="POST"
+                          action="{{ url_for('app_admin.reset_db') }}"
+                          onsubmit="return ConfirmReset();">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="action" value="reset_db">
                         <input type="hidden" name="button_id" value="db">
-                        <button type="submit" class="btn btn-danger">RESET Database</button>
+                        <button type="submit" class="btn btn-danger mt-auto">
+                            RESET Database
+                        </button>
                     </form>
                 </div>
             </div>
         </div>
 
         <!-- Reset Users Card -->
-        <div class="col-md-6">
-            <div class="card text-center shadow-sm">
-                <div class="card-body">
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card h-100 text-center shadow-sm">
+                <div class="card-body d-flex flex-column">
                     <h5 class="card-title">Reset Users</h5>
-                    <p class="card-text">Delete all Users except Admins</p>
-                    <form method="POST" action="{{ url_for('app_admin.reset_db') }}" onsubmit="return ConfirmReset();"> <!-- Fixed the URL route -->
+                    <p class="card-text flex-grow-1">
+                        Delete all Users except Admins.
+                    </p>
+                    <form method="POST"
+                          action="{{ url_for('app_admin.reset_db') }}"
+                          onsubmit="return ConfirmReset();">
                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                         <input type="hidden" name="action" value="reset_users">
                         <input type="hidden" name="button_id" value="users">
-                        <button type="submit" class="btn btn-danger">RESET Users</button>
+                        <button type="submit" class="btn btn-danger mt-auto">
+                            RESET Users
+                        </button>
                     </form>
                 </div>
             </div>
