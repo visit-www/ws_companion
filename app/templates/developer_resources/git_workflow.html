@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-4">
+
+  <!-- Breadcrumb Navigation -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{{ url_for('app_admin.admin_dashboard') }}">Admin Dashboard</a>
+      </li>
+      <li class="breadcrumb-item">
+        <a href="#">Developer Resources</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        Git Workflow
+      </li>
+    </ol>
+  </nav>
+
+  <!-- Header / Intro -->
+  <div class="row mb-4">
+    <div class="col-12 col-lg-10 mx-auto">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <h1 class="h3 mb-0">WSCompanion – Git & Deployment Workflow</h1>
+        <span class="badge bg-secondary">Developer Resources</span>
+      </div>
+      <p class="text-muted mb-0">
+        A concise, opinionated workflow for working with feature branches, Alembic migrations,
+        and deployments to Heroku staging & production for the WSCompanion app.
+      </p>
+    </div>
+  </div>
+
+  <!-- Section 0: Initial Project & Remote Setup -->
+  <div class="row mb-4">
+    <div class="col-12 col-lg-10 mx-auto">
+      <div class="card shadow-sm">
+        <div class="card-header bg-light">
+          <h2 class="h5 mb-0">0. Initial Git & GitHub Setup (once per project)</h2>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <h6 class="fw-semibold">0.1 Initialize Git repository locally</h6>
+            <pre class="bg-light p-3 rounded small mb-0"><code>git init</code></pre>
+          </div>
+
+          <div class="mb-3">
+            <h6 class="fw-semibold">0.2 Add files and commit initial version</h6>
+            <pre class="bg-light p-3 rounded small mb-0"><code>git add .
+git commit -m "Initial project setup"</code></pre>
+          </div>
+
+          <div class="mb-3">
+            <h6 class="fw-semibold">0.3 Create GitHub repo & connect local → remote</h6>
+            <p class="mb-1 small text-muted">
+              On GitHub, create an empty repository (no README, no .gitignore).
+              Then connect your local repo to it:
+            </p>
+            <pre class="bg-light p-3 rounded small mb-0"><code>git remote add origin https://github.com/&lt;username&gt;/ws_companion.git</code></pre>
+          </div>
+
+          <div>
+            <h6 class="fw-semibold">0.4 Push main branch to GitHub for the first time</h6>
+            <pre class="bg-light p-3 rounded small mb-0"><code>git branch -M main
+git push -u origin main</code></pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 1: High-level Flow Table -->
+  <div class="row mb-4">
+    <div class="col-12 col-lg-10 mx-auto">
+      <div class="card shadow-sm">
+        <div class="card-header bg-light">
+          <h2 class="h5 mb-0">1. Full Workflow Overview</h2>
+        </div>
+        <div class="card-body">
+          <p class="small text-muted">
+            Recommended branch roles:
+            <strong>main</strong> = production,
+            <strong>development</strong> = staging / integration,
+            <strong>feature/*</strong> = short-lived branches for new work.
+          </p>
+          <div class="table-responsive">
+            <table class="table table-sm align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 5%">#</th>
+                  <th style="width: 25%">Stage</th>
+                  <th style="width: 40%">What you do</th>
+                  <th style="width: 30%">Commands</th>
+                </tr>
+              </thead>
+              <tbody class="small">
+                <tr>
+                  <td>0</td>
+                  <td>Initial setup</td>
+                  <td>Create repo, connect to GitHub (once per project).</td>
+                  <td><code>git init</code><br><code>git remote add origin ...</code><br><code>git push -u origin main</code></td>
+                </tr>
+                <tr>
+                  <td>1</td>
+                  <td>Start feature</td>
+                  <td>Branch off latest <code>development</code>.</td>
+                  <td><code>git checkout development</code><br><code>git pull origin development</code><br><code>git checkout -b feature/&lt;name&gt;</code></td>
+                </tr>
+                <tr>
+                  <td>2</td>
+                  <td>Local dev + migrations</td>
+                  <td>Code, tests, optional Alembic migration, local DB upgrade.</td>
+                  <td><code>git add .</code><br><code>git commit -m "..."</code><br><code>alembic revision --autogenerate -m "..."</code><br><code>alembic upgrade head</code></td>
+                </tr>
+                <tr>
+                  <td>3</td>
+                  <td>Rebase feature</td>
+                  <td>Rebase on latest remote <code>development</code>.</td>
+                  <td><code>git fetch origin</code><br><code>git rebase origin/development</code></td>
+                </tr>
+                <tr>
+                  <td>4</td>
+                  <td>Push feature</td>
+                  <td>Publish feature branch to GitHub.</td>
+                  <td><code>git push origin feature/&lt;name&gt;</code></td>
+                </tr>
+                <tr>
+                  <td>5</td>
+                  <td>Merge into development</td>
+                  <td>Integrate feature to <code>development</code> locally or via PR.</td>
+                  <td><code>git checkout development</code><br><code>git merge --no-ff feature/&lt;name&gt;</code><br><code>git push origin development</code></td>
+                </tr>
+                <tr>
+                  <td>6</td>
+                  <td>Deploy to staging</td>
+                  <td>Deploy <code>development</code> to Heroku staging.</td>
+                  <td><code>git checkout development</code><br><code>git push staging development:main</code></td>
+                </tr>
+                <tr>
+                  <td>7</td>
+                  <td>Staging DB migrate</td>
+                  <td>Run Alembic on staging DB.</td>
+                  <td><code>heroku run alembic upgrade head --app wscompanion-staging</code></td>
+                </tr>
+                <tr>
+                  <td>8</td>
+                  <td>Test staging</td>
+                  <td>Manual testing: login, protocols, admin, emails, etc.</td>
+                  <td><em>Browser + app testing</em></td>
+                </tr>
+                <tr>
+                  <td>9</td>
+                  <td>Promote to main</td>
+                  <td>Sync <code>main</code> with tested <code>development</code>.</td>
+                  <td><code>git checkout main</code><br><code>git merge --no-ff development</code><br><code>git push origin main</code></td>
+                </tr>
+                <tr>
+                  <td>10</td>
+                  <td>Deploy to production</td>
+                  <td>Deploy <code>main</code> to Heroku production.</td>
+                  <td><code>git push production main:main</code></td>
+                </tr>
+                <tr>
+                  <td>11</td>
+                  <td>Production DB migrate</td>
+                  <td>Run Alembic on production DB.</td>
+                  <td><code>heroku run alembic upgrade head --app wscompanion-production</code></td>
+                </tr>
+                <tr>
+                  <td>12</td>
+                  <td>Cleanup</td>
+                  <td>Remove merged feature branches.</td>
+                  <td><code>git branch -d feature/&lt;name&gt;</code><br><code>git push origin --delete feature/&lt;name&gt;</code></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="small text-muted mb-0">
+            Rule of thumb: <strong>never develop directly on</strong> <code>development</code> or <code>main</code>.
+            Always use <code>feature/*</code> branches, then merge.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 2: Quick Reference Cards -->
+  <div class="row g-3">
+    <div class="col-12 col-md-4">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header bg-light">
+          <h3 class="h6 mb-0">Feature Branch Cheat Sheet</h3>
+        </div>
+        <div class="card-body small">
+          <p class="mb-1"><strong>Create feature branch</strong></p>
+          <pre class="bg-light p-2 rounded mb-2"><code>git checkout development
+git pull origin development
+git checkout -b feature/&lt;name&gt;</code></pre>
+
+          <p class="mb-1"><strong>Rebase on latest development</strong></p>
+          <pre class="bg-light p-2 rounded mb-2"><code>git fetch origin
+git rebase origin/development</code></pre>
+
+          <p class="mb-1"><strong>Push to GitHub</strong></p>
+          <pre class="bg-light p-2 rounded mb-0"><code>git push origin feature/&lt;name&gt;</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header bg-light">
+          <h3 class="h6 mb-0">Alembic Migration Cheat Sheet</h3>
+        </div>
+        <div class="card-body small">
+          <p class="mb-1"><strong>Create migration</strong></p>
+          <pre class="bg-light p-2 rounded mb-2"><code>alembic revision --autogenerate -m "Describe migration"</code></pre>
+
+          <p class="mb-1"><strong>Upgrade local DB</strong></p>
+          <pre class="bg-light p-2 rounded mb-2"><code>alembic upgrade head</code></pre>
+
+          <p class="mb-1"><strong>Upgrade staging</strong></p>
+          <pre class="bg-light p-2 rounded mb-2"><code>heroku run alembic upgrade head --app wscompanion-staging</code></pre>
+
+          <p class="mb-1"><strong>Upgrade production</strong></p>
+          <pre class="bg-light p-2 rounded mb-0"><code>heroku run alembic upgrade head --app wscompanion-production</code></pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-12 col-md-4">
+      <div class="card h-100 shadow-sm">
+        <div class="card-header bg-light">
+          <h3 class="h6 mb-0">Deployment Quick Steps</h3>
+        </div>
+        <div class="card-body small">
+          <p class="mb-1"><strong>Deploy to staging</strong></p>
+          <pre class="bg-light p-2 rounded mb-2"><code>git checkout development
+git push staging development:main</code></pre>
+
+          <p class="mb-1"><strong>Deploy to production</strong></p>
+          <pre class="bg-light p-2 rounded mb-2"><code>git checkout main
+git push production main:main</code></pre>
+
+          <p class="mb-1"><strong>After deploy</strong></p>
+          <ul class="mb-0 ps-3">
+            <li>Run Alembic upgrade.</li>
+            <li>Check logs for errors.</li>
+            <li>Open app and test login, protocols, admin flows.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

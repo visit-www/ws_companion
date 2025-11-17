@@ -7,6 +7,22 @@
     <!-- Dashboard Heading -->
     <h1 class="text-center mb-4">Admin Dashboard</h1>
 
+    <!-- Developer Resources Dropdown -->
+    <div class="d-flex justify-content-end mb-3">
+        <div class="dropdown">
+            <button class="btn btn-secondary dropdown-toggle" type="button" id="devResourcesDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                Developer Resources
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="devResourcesDropdown">
+                <li>
+                    <a class="dropdown-item" href="{{ url_for('app_admin.developer_git_workflow') }}">
+                        Git Workflow Guide
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
     <!-- Row 1: Main admin tools -->
     <div class="row g-4 justify-content-center">
         <!-- Content Management Card -->

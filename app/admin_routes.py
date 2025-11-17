@@ -368,3 +368,12 @@ def reset_db():
         flash("The resetting of the database is not enabled. Please contact the owner of the App if you want to perform this action.", 'warning')
         return redirect(url_for('app_admin.view_models'))
 #!----------------------------------------------------------------
+
+# Developer resources: Git workflow route
+@app_admin_bp.route('/developer-resources/git-workflow', methods=['GET'])
+@login_required
+def developer_git_workflow():
+    if not current_user.is_admin:
+        flash('Access restricted to administrators only.', 'warning')
+        return redirect(url_for('main_routes.index'))
+    return render_template('developer_resources/git_workflow.html')
