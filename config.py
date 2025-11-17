@@ -47,7 +47,6 @@ class Config:
     SESSION_IDLE_TIMEOUT = timedelta(minutes=30)
     SESSION_WARNING_TIME = timedelta(minutes=5)
     # Mail settings
-    # Mail settings
     MAIL_SERVER = 'smtp-relay.brevo.com'
     MAIL_PORT = 587
     MAIL_USE_TLS = True
