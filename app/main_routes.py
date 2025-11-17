@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template,jsonify, request, flash, send_from_directory
 from flask_wtf.csrf import generate_csrf
-from .models import Content, User, AdminReportTemplate, ClassificationSystem, ImagingProtocol, db, CategoryNames, UserData, Reference
+from .models import Content, User, AdminReportTemplate, ClassificationSystem, ImagingProtocol, db, CategoryNames, UserData, Reference, ModalityEnum, BodyPartEnum
 from . import db
 from flask_cors import CORS
 from flask_login import current_user, AnonymousUserMixin, login_required
@@ -56,33 +56,90 @@ def radiology_tools():
     - Report templates (AdminReportTemplate)
     - Staging / classification systems
     - Imaging protocols
+    With optional filters: modality, body_part, query (free text).
     """
-    templates = (
-        db.session.query(AdminReportTemplate)
-        .filter_by(is_active=True)
-        .order_by(AdminReportTemplate.modality, AdminReportTemplate.body_part, AdminReportTemplate.template_name)
-        .all()
+
+    # Read filters from query string
+    modality_param = request.args.get("modality") or ""
+    body_part_param = request.args.get("body_part") or ""
+    query = request.args.get("q") or ""
+
+    # Resolve enums from params (we'll use enum.name in the HTML)
+    selected_modality = None
+    selected_body_part = None
+
+    if modality_param:
+        try:
+            selected_modality = ModalityEnum[modality_param]
+        except KeyError:
+            selected_modality = None
+
+    if body_part_param:
+        try:
+            selected_body_part = BodyPartEnum[body_part_param]
+        except KeyError:
+            selected_body_part = None
+
+    # Base queries
+    tpl_q = db.session.query(AdminReportTemplate).filter(
+        AdminReportTemplate.is_active.is_(True)
+    )
+    cls_q = db.session.query(ClassificationSystem).filter(
+        ClassificationSystem.is_active.is_(True)
+    )
+    proto_q = db.session.query(ImagingProtocol).filter(
+        ImagingProtocol.is_active.is_(True)
     )
 
-    classifications = (
-        db.session.query(ClassificationSystem)
-        .filter_by(is_active=True)
-        .order_by(ClassificationSystem.category, ClassificationSystem.name)
-        .all()
-    )
+    # Apply modality/body_part filters where applicable
+    if selected_modality is not None:
+        tpl_q = tpl_q.filter(AdminReportTemplate.modality == selected_modality)
+        cls_q = cls_q.filter(ClassificationSystem.modality == selected_modality)
+        proto_q = proto_q.filter(ImagingProtocol.modality == selected_modality)
 
-    protocols = (
-        db.session.query(ImagingProtocol)
-        .filter_by(is_active=True)
-        .order_by(ImagingProtocol.modality, ImagingProtocol.body_part, ImagingProtocol.name)
-        .all()
-    )
+    if selected_body_part is not None:
+        tpl_q = tpl_q.filter(AdminReportTemplate.body_part == selected_body_part)
+        cls_q = cls_q.filter(ClassificationSystem.body_part == selected_body_part)
+        proto_q = proto_q.filter(ImagingProtocol.body_part == selected_body_part)
+
+    # Simple free text search on name/title fields
+    if query:
+        like = f"%{query}%"
+        tpl_q = tpl_q.filter(AdminReportTemplate.template_name.ilike(like))
+        cls_q = cls_q.filter(ClassificationSystem.name.ilike(like))
+        proto_q = proto_q.filter(ImagingProtocol.name.ilike(like))
+
+    templates = tpl_q.order_by(
+        AdminReportTemplate.modality,
+        AdminReportTemplate.body_part,
+        AdminReportTemplate.template_name,
+    ).all()
+
+    classifications = cls_q.order_by(
+        ClassificationSystem.category,
+        ClassificationSystem.name,
+    ).all()
+
+    protocols = proto_q.order_by(
+        ImagingProtocol.modality,
+        ImagingProtocol.body_part,
+        ImagingProtocol.name,
+    ).all()
+
+    # Provide enums for dropdowns
+    modality_choices = list(ModalityEnum)
+    body_part_choices = list(BodyPartEnum)
 
     return render_template(
         "radiology_tools.html",
         templates=templates,
         classifications=classifications,
         protocols=protocols,
+        modality_choices=modality_choices,
+        body_part_choices=body_part_choices,
+        selected_modality=selected_modality,
+        selected_body_part=selected_body_part,
+        query=query,
     )
 
 #!----------------------------------------------------------------

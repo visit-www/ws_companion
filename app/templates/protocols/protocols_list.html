@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Imaging Protocols – WSC{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Breadcrumb + search + back link -->
+    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-3 gap-2">
+      <nav aria-label="breadcrumb" class="flex-grow-1">
+        <ol class="breadcrumb mb-0">
+          <li class="breadcrumb-item">
+            <a href="{{ url_for('main_routes.radiology_tools') }}">Radiology tools</a>
+          </li>
+          <li class="breadcrumb-item active" aria-current="page">
+            Imaging protocols
+          </li>
+        </ol>
+      </nav>
+
+      <div class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-2">
+        <div class="position-relative">
+          <input
+            id="protocol-search-input"
+            class="form-control form-control-sm"
+            type="search"
+            placeholder="Search protocols…"
+            aria-label="Search protocols">
+          <div id="protocol-search-results"
+              class="list-group position-absolute mt-1 w-100 shadow-sm"
+              style="z-index: 1050; max-height: 260px; overflow-y: auto; display: none;">
+          </div>
+        </div>
+        <a href="{{ url_for('main_routes.radiology_tools') }}" class="btn btn-sm btn-outline-secondary">
+          ← Back to tools
+        </a>
+      </div>
+    </div>
+
+  <h1 class="mb-3">Imaging Protocols</h1>
+  <p class="text-muted mb-4">
+    All CT / MRI / US / X-ray protocols currently stored.
+  </p>
+
+  {% if protocols %}
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Modality</th>
+            <th>Body part</th>
+            <th>Emergency</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in protocols %}
+          <tr>
+            <td>{{ p.name }}</td>
+            <td>{{ p.modality.value if p.modality else "-" }}</td>
+            <td>{{ p.body_part.value if p.body_part else "-" }}</td>
+            <td>
+              {% if p.is_emergency %}
+                <span class="badge bg-danger">Yes</span>
+              {% else %}
+                <span class="badge bg-secondary">No</span>
+              {% endif %}
+            </td>
+            <td class="text-end">
+              <a href="{{ url_for('content_routes.get_protocol', protocol_id=p.id) }}"
+                 class="btn btn-sm btn-outline-primary">
+                View
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-muted">No protocols available.</p>
+  {% endif %}
+</div>
+{% endblock %}
+{% block script %}
+  {{ super() }}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      initLiveSearch({
+        inputId: 'protocol-search-input',
+        resultsId: 'protocol-search-results',
+        buildUrl: function (q) {
+          return "{{ url_for('content_routes.list_protocols') }}" + "?format=json&q=" + encodeURIComponent(q);
+        },
+        extractItems: function (data) {
+          return (data && data.protocols) ? data.protocols : [];
+        },
+        renderItem: function (item) {
+          const a = document.createElement('a');
+          const href = item.detail_url || '#';
+          a.href = href;
+          a.className = 'list-group-item list-group-item-action py-1 px-2 small';
+          a.innerHTML = `
+            <div class="fw-semibold">${item.name}</div>
+            <div class="text-muted">
+              ${item.modality || ''}${item.body_part ? ' · ' + item.body_part : ''}${item.tags ? ' · ' + item.tags : ''}
+            </div>
+          `;
+          return a;
+        },
+        emptyText: 'No matching protocols found',
+        minChars: 2,
+        debounceMs: 250
+      });
+    });
+  </script>
+{% endblock %}

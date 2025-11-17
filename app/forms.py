@@ -4,7 +4,11 @@ from wtforms import StringField, PasswordField, SubmitField, BooleanField, TextA
 from wtforms.validators import DataRequired, Length, EqualTo, Optional, URL
 
 class LoginForm(FlaskForm):
-    username = StringField('Username', validators=[DataRequired()], render_kw={"placeholder": "Enter Username", "class": "form-control"})
+    username = StringField(
+        'Username or Email',
+        validators=[DataRequired()],
+        render_kw={"placeholder": "Enter username or email", "class": "form-control"}
+    )
     password = PasswordField('Password', validators=[DataRequired()], render_kw={"placeholder": "Enter Password", "class": "form-control"})
     submit = SubmitField('Login', render_kw={"class": "btn btn-primary login-btn w-100"})
     remember = BooleanField('Remember Me')

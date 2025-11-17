@@ -159,6 +159,16 @@
                         {% endif %}
                         {% endwith %}
                     </div>
+                    <!-- toast messages for copy clipboard -->
+                    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+                        <div id="copyToast"
+                            class="toast text-bg-dark hide" role="alert" aria-live="assertive" aria-atomic="true"> <!-- note the 'hide' class -->
+                            <div class="toast-body">
+                            Copied
+                            </div>
+                        </div>
+                    </div>  
+                    
                 </div>
                 <!-- Content Section -->
                 {% block content %}
@@ -231,11 +241,16 @@
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
         <script src="{{ url_for('main_routes.static', filename='js/script.js') }}"></script>
 
-        <!-- ✅ Flash Message Handler -->
+        <!-- ✅ Flash Message Handler and Copy-to-Clipboard -->
         <script>
+            // ✅ Flash messages (Flask flashes) – only handle dynamic toast container
             document.addEventListener('DOMContentLoaded', function () {
-                const messageContainer = document.querySelector('.toast-container');
-                const toastElList = [].slice.call(document.querySelectorAll('.toast'));
+                const messageContainer = document.getElementById('dynamic-toast-container');
+                if (!messageContainer) {
+                    return;
+                }
+
+                const toastElList = [].slice.call(messageContainer.querySelectorAll('.toast'));
                 let hasMessage = false;
 
                 toastElList.forEach(function (toastEl) {
@@ -245,7 +260,7 @@
                         const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 5000 });
                         toast.show();
                         toastEl.addEventListener('hidden.bs.toast', function () {
-                            if (!document.querySelector('.toast.show')) {
+                            if (!messageContainer.querySelector('.toast.show')) {
                                 messageContainer.style.display = 'none';
                             }
                         });
@@ -258,7 +273,7 @@
                     messageContainer.style.display = 'none';
                 }
 
-                document.querySelectorAll('.toast-body').forEach(function (messageBody) {
+                messageContainer.querySelectorAll('.toast-body').forEach(function (messageBody) {
                     const text = messageBody.textContent || messageBody.innerText;
                     messageBody.classList.add("text-dark");
                     if (text.includes('LOGIN FAILED')) {
@@ -269,7 +284,222 @@
                         messageBody.classList.add("text-dark");
                     }
                 });
+
+                // Ensure copy toast is hidden on initial load
+                const copyToastEl = document.getElementById('copyToast');
+                if (copyToastEl) {
+                    copyToastEl.classList.remove('show');
+                    copyToastEl.classList.add('hide');
+                }
             });
+
+            // ✅ Generic copy helper that works everywhere (now supports rich HTML if provided)
+            function copyFromDataset(btn) {
+                if (!btn || !btn.dataset) return;
+
+                // Direct payloads (for simple buttons)
+                let html = btn.dataset.copyHtml || '';
+                let plain = btn.dataset.copy || '';
+
+                // Target-based payloads (for large HTML like protocols)
+                const htmlTargetId = btn.dataset.copyHtmlTarget;
+                const plainTargetId = btn.dataset.copyTarget;
+
+                if (!html && htmlTargetId) {
+                    const el = document.getElementById(htmlTargetId);
+                    if (el) {
+                        // Use innerHTML for rich HTML content
+                        html = el.innerHTML;
+                    }
+                }
+
+                if (!plain && plainTargetId) {
+                    const elPlain = document.getElementById(plainTargetId);
+                    if (elPlain) {
+                        // Use value for textarea/inputs, textContent otherwise
+                        plain = (typeof elPlain.value !== 'undefined') ? elPlain.value : elPlain.textContent;
+                    }
+                }
+
+                // Nothing to copy
+                if (!html && !plain) return;
+
+                // Modern clipboard API with HTML support
+                if (navigator.clipboard && navigator.clipboard.write && window.ClipboardItem) {
+                    const items = {};
+                    if (html) {
+                        items['text/html'] = new Blob([html], { type: 'text/html' });
+                    }
+                    if (plain) {
+                        items['text/plain'] = new Blob([plain], { type: 'text/plain' });
+                    } else if (html) {
+                        // Fallback plain text = raw HTML string (so at least something is available)
+                        items['text/plain'] = new Blob([html], { type: 'text/plain' });
+                    }
+
+                    if (Object.keys(items).length) {
+                        const clipboardItem = new ClipboardItem(items);
+                        navigator.clipboard.write([clipboardItem])
+                            .then(function () {
+                                showCopyToast('Copied to clipboard');
+                            })
+                            .catch(function (err) {
+                                console.error('Rich copy failed, falling back to legacy selection copy', err);
+                                // Fallback to legacy DOM-based rich copy
+                                legacyCopyRich(html, plain);
+                            });
+                        return; // we've handled the copy via write()
+                    }
+                }
+
+                // Older browsers or missing ClipboardItem: use rich legacy path if possible
+                legacyCopyRich(html, plain);
+            }
+
+            // ✅ Legacy copy that prefers HTML selection if available, otherwise plain text
+            function legacyCopyRich(html, plain) {
+                // If we have HTML, use a hidden contentEditable div so execCommand('copy')
+                // puts rich HTML + plain text on the clipboard.
+                if (html) {
+                    const container = document.createElement('div');
+                    container.contentEditable = 'true';
+                    container.style.position = 'fixed';
+                    container.style.left = '-9999px';
+                    container.style.top = '0';
+                    container.innerHTML = html;
+                    document.body.appendChild(container);
+
+                    const range = document.createRange();
+                    range.selectNodeContents(container);
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+
+                    try {
+                        document.execCommand('copy');
+                        showCopyToast('Copied to clipboard');
+                    } catch (e) {
+                        console.error('Rich legacy copy failed, falling back to plain text', e);
+                        if (plain) {
+                            legacyCopyPlain(plain);
+                        }
+                    } finally {
+                        selection.removeAllRanges();
+                        document.body.removeChild(container);
+                    }
+                    return;
+                }
+
+                // If no HTML available, fall back to plain text
+                if (plain) {
+                    legacyCopyPlain(plain);
+                }
+            }
+
+            // Plain-text-only legacy copy (textarea-based)
+            function legacyCopyPlain(text) {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.style.position = 'fixed';
+                ta.style.left = '-9999px';
+                document.body.appendChild(ta);
+                ta.select();
+                try {
+                    document.execCommand('copy');
+                    showCopyToast('Copied to clipboard');
+                } catch (e) {
+                    console.error('Plain copy failed', e);
+                }
+                document.body.removeChild(ta);
+            }
+
+            // ✅ Toast feedback for copy operations
+            function showCopyToast(message) {
+                const toastEl = document.getElementById('copyToast');
+                if (!toastEl) return;
+                const body = toastEl.querySelector('.toast-body');
+                if (body) {
+                    body.textContent = message || 'Copied';
+                }
+                const toast = new bootstrap.Toast(toastEl);
+                toast.show();
+            }
+        </script>
+        <!-- Generic live search box helper: keep initLiveSearch in base.html. 
+             Change only (1) input/result IDs, (2) endpoint (buildUrl), 
+             (3) how you render each item in individual templates. -->
+        <script>
+            function initLiveSearch(config) {
+                const input = document.getElementById(config.inputId);
+                const resultsBox = document.getElementById(config.resultsId);
+                if (!input || !resultsBox) return;
+
+                let typingTimer = null;
+                const DEBOUNCE_MS = config.debounceMs || 250;
+                const MIN_CHARS = config.minChars || 2;
+
+                function clearResults() {
+                    resultsBox.innerHTML = '';
+                    resultsBox.style.display = 'none';
+                }
+
+                function renderItems(items) {
+                    resultsBox.innerHTML = '';
+                    if (!items || !items.length) {
+                    const empty = document.createElement('div');
+                    empty.className = config.emptyClass || 'list-group-item small text-muted';
+                    empty.textContent = config.emptyText || 'No results found';
+                    resultsBox.appendChild(empty);
+                    resultsBox.style.display = 'block';
+                    return;
+                    }
+                    items.forEach(function (item) {
+                    const el = config.renderItem(item);
+                    if (el) {
+                        resultsBox.appendChild(el);
+                    }
+                    });
+                    resultsBox.style.display = 'block';
+                }
+
+                async function performSearch(query) {
+                    const q = query.trim();
+                    if (q.length < MIN_CHARS) {
+                    clearResults();
+                    return;
+                    }
+                    try {
+                    const url = config.buildUrl(q);
+                    const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+                    if (!resp.ok) {
+                        clearResults();
+                        return;
+                    }
+                    const data = await resp.json();
+                    const items = config.extractItems ? config.extractItems(data) : data;
+                    renderItems(items || []);
+                    } catch (err) {
+                    console.error('Live search error', err);
+                    clearResults();
+                    }
+                }
+
+                input.addEventListener('input', function () {
+                    if (typingTimer) {
+                    clearTimeout(typingTimer);
+                    }
+                    const value = this.value || '';
+                    typingTimer = setTimeout(function () {
+                    performSearch(value);
+                    }, DEBOUNCE_MS);
+                });
+
+                document.addEventListener('click', function (evt) {
+                    if (!resultsBox.contains(evt.target) && evt.target !== input) {
+                    clearResults();
+                    }
+                });
+                }
         </script>
 
         <!-- ✅ Idle Logout -->
@@ -355,15 +585,7 @@
             });
         </script>
     
-        <script>
-                document.addEventListener('DOMContentLoaded', function () {
-                    const autoToastEls = document.querySelectorAll('.toast');
-                    autoToastEls.forEach(function (toastEl) {
-                    const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 5000 });
-                    toast.show();
-                    });
-                });
-        </script>
+        
         {% endblock %}
     </body>
 

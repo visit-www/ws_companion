@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ system.name }} – Staging / Classification{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <a href="{{ url_for('content_routes.list_classification_systems') }}" class="btn btn-link mb-3">
+    ← Back to all staging systems
+  </a>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h2 class="card-title mb-2">{{ system.name }}</h2>
+
+      <p class="text-muted mb-3">
+        {% if system.short_code %}
+          <span class="badge bg-secondary me-2">{{ system.short_code }}</span>
+        {% endif %}
+        {% if system.category %}
+          <strong>Category:</strong>
+          {{ system.category.value if system.category.value is defined else system.category }}
+          ·
+        {% endif %}
+        {% if system.modality %}
+          <strong>Modality:</strong> {{ system.modality.value }}
+          ·
+        {% endif %}
+        {% if system.body_part %}
+          <strong>Body part:</strong> {{ system.body_part.value }}
+        {% endif %}
+        {% if system.version %}
+          <br><strong>Version:</strong> {{ system.version }}
+        {% endif %}
+      </p>
+
+      {% if system.description %}
+        <h5>Description</h5>
+        <p>{{ system.description }}</p>
+      {% endif %}
+
+      {% if system.definition_json %}
+        <h5 class="mt-3">Structured definition</h5>
+        <pre class="bg-light p-2 rounded small">{{ system.definition_json | tojson(indent=2) }}</pre>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
