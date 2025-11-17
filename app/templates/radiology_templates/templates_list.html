@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Report Templates – WSC{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h1 class="mb-3">Report Templates</h1>
+  <p class="text-muted mb-4">
+    All available report templates in the system.
+  </p>
+
+  {% if templates %}
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Modality</th>
+            <th>Body part</th>
+            <th>Tags</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in templates %}
+          <tr>
+            <td>{{ t.template_name }}</td>
+            <td>{{ t.modality.value if t.modality else "-" }}</td>
+            <td>{{ t.body_part.value if t.body_part else "-" }}</td>
+            <td>{{ t.tags or "" }}</td>
+            <td class="text-end">
+              <a href="{{ url_for('content_routes.get_template', template_id=t.id) }}"
+                 class="btn btn-sm btn-outline-primary">
+                View
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-muted">No templates available.</p>
+  {% endif %}
+</div>
+{% endblock %}

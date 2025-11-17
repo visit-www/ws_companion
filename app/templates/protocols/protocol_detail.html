@@ -1,0 +1,494 @@
+{% extends "base.html" %}
+{% block title %}{{ protocol.name }} – Imaging Protocol{% endblock %}
+
+{% block content %}
+
+<div class="container py-4">
+
+  <!-- Breadcrumb + search + back link -->
+  <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center mb-3 gap-2">
+    <nav aria-label="breadcrumb" class="flex-grow-1">
+      <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item">
+          <a href="{{ url_for('main_routes.radiology_tools') }}">Radiology tools</a>
+        </li>
+        <li class="breadcrumb-item">
+          <a href="{{ url_for('content_routes.list_protocols') }}">Imaging protocols</a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">
+          {{ protocol.name }}
+        </li>
+      </ol>
+    </nav>
+    <div class="d-flex justify-content-end align-items-center mb-2 gap-2 small">
+      <div class="dropdown">
+        <button class="btn btn-outline-secondary btn-sm dropdown-toggle d-flex align-items-center gap-1"
+                type="button"
+                id="layoutDropdown"
+                data-bs-toggle="dropdown"
+                aria-expanded="false">
+          <i class="bi bi-columns-gap"></i>
+          <span class="d-none d-sm-inline">Layout</span>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="layoutDropdown">
+          <li>
+            <button type="button"
+                    class="dropdown-item layout-btn active"
+                    data-layout="balanced">
+              <i class="bi bi-layout-split me-2"></i>
+              Balanced (50 / 50)
+            </button>
+          </li>
+          <li>
+            <button type="button"
+                    class="dropdown-item layout-btn"
+                    data-layout="left">
+              <i class="bi bi-layout-sidebar-inset me-2"></i>
+              Focus left (Indication / Technique)
+            </button>
+          </li>
+          <li>
+            <button type="button"
+                    class="dropdown-item layout-btn"
+                    data-layout="right">
+              <i class="bi bi-layout-sidebar me-2"></i>
+              Focus right (Sequences / Phases)
+            </button>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="d-flex flex-column flex-sm-row align-items-stretch align-items-sm-center gap-2">
+      <div class="position-relative">
+        <input
+          id="protocol-search-input"
+          class="form-control form-control-sm"
+          type="search"
+          placeholder="Search protocols…"
+          aria-label="Search protocols">
+        <div id="protocol-search-results"
+             class="list-group position-absolute mt-1 w-100 shadow-sm"
+             style="z-index: 1050; max-height: 260px; overflow-y: auto; display: none;">
+        </div>
+      </div>
+      <a href="{{ url_for('content_routes.list_protocols') }}" class="btn btn-sm btn-outline-secondary">
+        ← Back to list
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-3 align-items-stretch">
+    <!-- LEFT: metadata / badges -->
+    <div id="protocol-left-col" class="col-12 col-lg-4 col-xl-4 mb-3 mb-lg-0">
+      <div class="card shadow-sm h-100">
+        <div class="card-body text-start protocol-rich-text">
+          <h4 class="card-title mb-1">{{ protocol.name }}</h4>
+          <p class="text-muted mb-3 small">Imaging protocol detail</p>
+
+          <div class="mb-3">
+            {% if protocol.modality %}
+              <span class="badge bg-secondary me-1">
+                {{ protocol.modality.name }}
+              </span>
+            {% endif %}
+            {% if protocol.body_part %}
+              <span class="badge bg-light text-dark border me-1">
+                {{ protocol.body_part.name.replace("_", " ").title() }}
+              </span>
+            {% endif %}
+            {% if protocol.is_emergency %}
+              <span class="badge bg-danger text-uppercase">STAT</span>
+            {% endif %}
+          </div>
+
+          {% if protocol.uses_contrast is not none %}
+            <p class="mb-1">
+              <span class="fw-semibold">Contrast:</span>
+              {% if protocol.uses_contrast %}
+                IV contrast used
+              {% else %}
+                Non-contrast protocol
+              {% endif %}
+            </p>
+          {% endif %}
+
+          {% if protocol.contrast_details %}
+            {# STEP 1 — Regex-detect ANY HTML tag #}
+            {% set any_tag = tech|regex_search('<[a-zA-Z][^>]*>') %}
+            {# STEP 2 — Regex-detect ONLY allowed inline tags #}
+            {% set allowed_tag = tech|regex_search('<(strong|i|u|mark)[^>]*>') %}
+            {% set looks_html = any_tag and not allowed_tag %}
+            {% if looks_html %}
+              <div class="small text-muted protocol-text mb-3">
+                {{ protocol.contrast_details | safe }}
+              </div>
+            {% else %}
+              <div class="protocol-text small" style="white-space: pre-line; text-align: justify;">
+                {{ protocol.contrast_details | safe }}
+              </div>
+            {% endif %}
+          {% endif %}
+
+          {% if protocol.tags %}
+              <p class="fw-semibold mb-1 small">Tags</p>
+              <div>
+                {% set raw_tags = protocol.tags.replace(";", ",") %}
+                {% for tag in raw_tags.split(",") %}
+                  {% set t = tag.strip() %}
+                  {% if t %}
+                    <span class="badge rounded-pill bg-light text-dark border me-1 mb-1">
+                      {{ t }}
+                    </span>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            {% endif %}
+
+          <!-- Quick copy of protocol name for RIS / notes -->
+          <div class="mt-3">
+            <button type="button"
+                    class="btn btn-sm btn-outline-primary"
+                    data-copy="{{ protocol.name }}"
+                    onclick="copyFromDataset(this)">
+              Copy protocol name
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: content cards -->
+    <div id="protocol-right-col" class="col-12 col-lg-8 col-xl-8">
+
+      <!-- Indication + technique -->
+      <div class="card shadow-sm">
+        <div class="card-body">
+          {% if protocol.indication %}
+            <h6 class="fw-bold small text-primary text-bg-light text-start mb-1">Indications</h6>
+            {# STEP 1 — Regex-detect ANY HTML tag #}
+            {% set any_tag = tech|regex_search('<[a-zA-Z][^>]*>') %}
+            {# STEP 2 — Regex-detect ONLY allowed inline tags #}
+            {% set allowed_tag = tech|regex_search('<(strong|i|u|mark)[^>]*>') %}
+            {% set looks_html = any_tag and not allowed_tag %}
+            {% if looks_html %}
+              <div class="small text-muted protocol-text mb-3">
+                {{ protocol.indication | safe }}
+              </div>
+            {% else %}
+              <div class="protocol-text small" style="white-space: pre-line; text-align: justify;">
+                {{ protocol.indication | safe }}
+              </div>
+            {% endif %}
+          {% endif %}
+
+          {% if protocol.technique_text %}
+            <h6 class="fw-bold small text-primary text-bg-light text-start mb-1">Technique</h6>
+            {# STEP 1 — Regex-detect ANY HTML tag #}
+            {% set any_tag = tech|regex_search('<[a-zA-Z][^>]*>') %}
+            {# STEP 2 — Regex-detect ONLY allowed inline tags #}
+            {% set allowed_tag = tech|regex_search('<(strong|i|u|mark)[^>]*>') %}
+            {% set looks_html = any_tag and not allowed_tag %}
+            {% if looks_html %}
+              <div class="small text-muted protocol-text protocol-text mb-3">
+                {{ protocol.technique_text | safe }}
+              </div>
+            {% else %}
+              <div class="protocol-text small" style="white-space: pre-line; text-align: justify;">
+                {{ protocol.technique_text | safe }}
+              </div>
+            {% endif %}
+          {% else %}
+            <p class="text-muted small mb-0">No technique description entered yet.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Parameters from JSON -->
+      {% set params = protocol.parameters_json or {} %}
+
+      {% if params %}
+        <div class="card shadow-sm">
+        <div class="card-body">
+          <h6 class="text-uppercase text-muted small mb-3 text-center">
+            Acquisition parameters
+          </h6>
+
+          <!-- Global info row -->
+          <div class="row small mb-3">
+            {% if params.field_strength %}
+              <div class="col-md-4 mb-2 text-start">
+                <span class="fw-bold small text-primary text-bg-light text-start mb-1">Field strength</span>
+                <span class="d-block protocol-text">{{ params.field_strength }}</span>
+              </div>
+            {% endif %}
+            {% if params.coil %}
+              <div class="col-md-4 mb-2 text-start">
+                <span class="fw-bold small text-primary text-bg-light text-start mb-1">Coil</span>
+                <span class="d-block protocol-text">{{ params.coil }}</span>
+              </div>
+            {% endif %}
+            {% if params.patient_position %}
+              <div class="col-md-12 mb-2 text-start">
+                <p class="fw-bold small text-primary text-bg-light text-start mb-1">Position</p>
+                <span class="fw-light protocol-text d-block">{{ params.patient_position }}</span>
+              </div>
+            {% endif %}
+          </div>
+
+          <!-- Contrast block as a table -->
+          {% if params.contrast %}
+            <div class="mb-3 small">
+              <p class="fw-bold mb-1 text-start">Contrast details</p>
+              <div class="table-responsive">
+                <table class="table table-sm table-bordered align-middle mb-0">
+                  <tbody class="small">
+                    {% if params.contrast.type %}
+                      <tr>
+                        <th scope="row" class="w-25">Type</th>
+                        <td>{{ params.contrast.type }}</td>
+                      </tr>
+                    {% endif %}
+                    {% if params.contrast.volume_ml %}
+                      <tr class="table-danger">
+                        <th scope="row">Volume (mL)</th>
+                        <td>{{ params.contrast.volume_ml }}</td>
+                      </tr>
+                    {% endif %}
+                    {% if params.contrast.rate_ml_s %}
+                      <tr class="table-warning">
+                        <th scope="row">Rate (mL/s)</th>
+                        <td>{{ params.contrast.rate_ml_s }}</td>
+                      </tr>
+                    {% endif %}
+                    {% if params.contrast.saline_chaser_ml %}
+                      <tr>
+                        <th scope="row">Saline chaser (mL)</th>
+                        <td>{{ params.contrast.saline_chaser_ml }}</td>
+                      </tr>
+                    {% endif %}
+                    {% if params.contrast.timing %}
+                      <tr>
+                        <th scope="row">Timing / trigger</th>
+                        <td class="protocol-text">{{ params.contrast.timing }}</td>
+                      </tr>
+                    {% endif %}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          {% endif %}
+
+            <!-- MRI sequences table -->
+            {% if params.sequences %}
+              <p class="fw-bold small mt-5 mb-1 text-start">MRI Sequences</p>
+              <div class="table-responsive">
+                <table class="table table-sm table-striped align-middle mb-0">
+                  <thead class="small">
+                    <tr class="table-info">
+                      <th>Plane</th>
+                      <th>Sequence</th>
+                      <th>Slice (mm)</th>
+                      <th>Gap</th>
+                      <th>FS</th>
+                      <th>BH/Free</th>
+                      <th>Phase of Scan</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody class="small">
+                    {% set ns = namespace(last_group='pre') %}
+                    {% for s in params.sequences %}
+                      {% set group = (s.phase_group or 'pre')|lower %}
+                      {% if group != ns.last_group %}
+                        <!-- red divider row when phase group changes (e.g. pre → post) -->
+                        <tr>
+                          <td colspan="8" class="p-0">
+                            <hr class="w-100 border border-danger border-2 opacity-75 my-1">
+                          </td>
+                        </tr>
+                      {% endif %}
+                      <tr>
+                        <td>{{ s.plane }}</td>
+                        <td>{{ s.name }}</td>
+                        <td>{{ s.slice_thickness_mm or '—' }}</td>
+                        <td>{{ s.gap_mm or '—' }}</td>
+                        <td>{{ s.fat_sat or '—' }}</td>
+                        <td>{{ s.breath_hold or '—' }}</td>
+                        <td>{{ s.phase_group or '—' }}</td>
+                        <td class="text-start p-3">{{ s.notes or '' }}</td>
+                      </tr>
+                      {% set ns.last_group = group %}
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% endif %}
+
+          </div>
+        </div>
+      {% endif %}
+      <!-- CT phases table -->
+      {% if params.phases %}
+              <p class="fw-bold small mt-5 mb-1 text-start">CT Phases</p>
+              <div class="table-responsive">
+                <table class="table table-sm table-striped align-middle mb-0">
+                  <thead class="small">
+                    <tr class="table-info">
+                      <th>Phase</th>
+                      <th>kVp</th>
+                      <th>mAs</th>
+                      <th>Slice (mm)</th>
+                      <th>Interval (mm)</th>
+                      <th>Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody class="small">
+                    {% set ctns = namespace(inserted_divider=false) %}
+                    {% for p in params.phases %}
+                      {# get phase label and lowercase version #}
+                      {% set phase_label = (p.name or p.phase or '') %}
+                      {% set phase_label_lower = phase_label|lower %}
+
+                      {# when we hit the first contrast phase, draw red divider above it #}
+                      {% if not ctns.inserted_divider and 'contrast' in phase_label_lower %}
+                        <tr>
+                          <td colspan="6" class="p-0">
+                            <hr class="w-100 border border-danger border-2 opacity-75 my-1">
+                          </td>
+                        </tr>
+                        {% set ctns.inserted_divider = true %}
+                      {% endif %}
+
+                      <tr>
+                        <td>{{ phase_label }}</td>
+                        <td>{{ p.kVp or p.kvp or '—' }}</td>
+                        <td>{{ p.mAs or p.mas or '—' }}</td>
+                        <td>{{ p.slice_mm or p.slice_thickness_mm or '—' }}</td>
+                        <td>{{ p.interval_mm or '—' }}</td>
+                        <td class="text-start p-3">{{ p.notes or '' }}</td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+      {% endif %}
+      <!--Export protcol button-->
+      <div class="card shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="text-uppercase text-muted small mb-0">Export / Copy</h6>
+              <!-- Hidden containers for rich and plain export -->
+              <div id="full-export-html" class="d-none">
+                {{ full_export_text|safe }}
+              </div>
+              <textarea id="full-export-plain" class="d-none">
+              {{ full_export_text|striptags }}
+              </textarea>
+              <button type="button"
+                      class="btn btn-sm btn-outline-primary"
+                      onclick="copyFromDataset(this)"
+                      data-copy-html-target="full-export-html"
+                      data-copy-target="full-export-plain">
+                Copy full protocol
+              </button>
+            </div>
+            <textarea class="form-control form-control-sm" rows="10" readonly>
+              {{ full_export_text|striptags }}
+            </textarea>
+            <small class="text-muted d-block mt-1">
+              Paste directly into Word; headings and line breaks will be preserved.
+            </small>
+          </div>
+        </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block script %}
+  {{ super() }}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      initLiveSearch({
+        inputId: 'protocol-search-input',
+        resultsId: 'protocol-search-results',
+        buildUrl: function (q) {
+          return "{{ url_for('content_routes.list_protocols') }}" + "?format=json&q=" + encodeURIComponent(q);
+        },
+        extractItems: function (data) {
+          return (data && data.protocols) ? data.protocols : [];
+        },
+        renderItem: function (item) {
+          const a = document.createElement('a');
+          const href = item.detail_url || '#';
+          a.href = href;
+          a.className = 'list-group-item list-group-item-action py-1 px-2 small';
+          a.innerHTML = `
+            <div class="fw-semibold">${item.name}</div>
+            <div class="text-muted">
+              ${item.modality || ''}${item.body_part ? ' · ' + item.body_part : ''}${item.tags ? ' · ' + item.tags : ''}
+            </div>
+          `;
+          return a;
+        },
+        emptyText: 'No matching protocols found',
+        minChars: 2,
+        debounceMs: 250
+      });
+    });
+  </script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const leftCol = document.getElementById('protocol-left-col');
+      const rightCol = document.getElementById('protocol-right-col');
+      const layoutButtons = document.querySelectorAll('.layout-btn');
+
+      if (!leftCol || !rightCol || !layoutButtons.length) {
+        return;
+      }
+
+      function resetCols() {
+        // Remove any previously-applied layout widths for lg/xl
+        const classesToRemove = [
+          'col-lg-4', 'col-lg-5', 'col-lg-6', 'col-lg-7', 'col-lg-8',
+          'col-xl-3', 'col-xl-4', 'col-xl-5', 'col-xl-6', 'col-xl-7', 'col-xl-8', 'col-xl-9'
+        ];
+        leftCol.classList.remove(...classesToRemove);
+        rightCol.classList.remove(...classesToRemove);
+      }
+
+      function applyLayout(mode) {
+        resetCols();
+
+        if (mode === 'left') {
+          // Make left wider, right narrower
+          leftCol.classList.add('col-lg-8', 'col-xl-9');
+          rightCol.classList.add('col-lg-4', 'col-xl-3');
+        } else if (mode === 'right') {
+          // Make right wider, left narrower
+          leftCol.classList.add('col-lg-4', 'col-xl-3');
+          rightCol.classList.add('col-lg-8', 'col-xl-9');
+        } else {
+          // Balanced / default – tweak as you like
+          leftCol.classList.add('col-lg-6', 'col-xl-6');
+          rightCol.classList.add('col-lg-6', 'col-xl-6');
+        }
+      }
+
+      layoutButtons.forEach(btn => {
+        btn.addEventListener('click', function () {
+          layoutButtons.forEach(b => b.classList.remove('active'));
+          this.classList.add('active');
+          const mode = this.dataset.layout || 'balanced';
+          applyLayout(mode);
+        });
+      });
+
+      // Initial state: use whatever button is marked active (Balanced by default)
+      const activeBtn = document.querySelector('.layout-btn.active');
+      applyLayout(activeBtn ? activeBtn.dataset.layout : 'balanced');
+    });
+  </script>
+{% endblock %}

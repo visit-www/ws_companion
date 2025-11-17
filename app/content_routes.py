@@ -13,8 +13,12 @@ from .models import (
     AdminReportTemplate,
     ClassificationSystem,
     ImagingProtocol,
+    ModalityEnum,
+    BodyPartEnum,
     )
 from . import db
+import re
+
 upload_folder=Config.UPLOAD_FOLDER
 # *-------------------------------------------------------------------------
 # * Blueprint setup
@@ -39,6 +43,14 @@ def wants_json_response() -> bool:
     if "application/json" in accept.lower():
         return True
     return False
+# Helper function to strip all html tags from incoming data:
+def _strip_html(value: str) -> str:
+    if not value:
+        return ""
+    # remove HTML tags
+    text = re.sub(r"<[^>]+>", "", value)
+    # collapse multiple spaces/newlines
+    return re.sub(r"\s+\n", "\n", text).strip()
 
 # -------------------------------------------------------------------------
 # Helper: resolve an AdminReportTemplate filepath safely inside UPLOAD_FOLDER
@@ -422,6 +434,41 @@ def list_classification_systems():
         return jsonify({"classifications": data})
 
     return render_template("staging/staging_list.html", systems=systems)
+# -------------------------------------------------------------------------
+# Staging & classification systems – detail
+# -------------------------------------------------------------------------
+
+@content_routes_bp.route("/staging/<int:system_id>", methods=["GET"])
+@login_required
+def get_classification_system(system_id: int):
+    """
+    Get a single staging / classification system.
+    Returns JSON if ?format=json, otherwise renders an HTML detail page.
+    """
+    system = (
+        db.session.query(ClassificationSystem)
+        .filter_by(id=system_id, is_active=True)
+        .first()
+    )
+    if system is None:
+        abort(404)
+
+    if wants_json_response():
+        data = {
+            "id": system.id,
+            "name": system.name,
+            "short_code": system.short_code,
+            "category": system.category.value if system.category else None,
+            "modality": system.modality.value if system.modality else None,
+            "body_part": system.body_part.value if system.body_part else None,
+            "version": system.version,
+            "description": system.description,
+            "is_active": system.is_active,
+            "definition": system.definition_json,
+        }
+        return jsonify(data)
+
+    return render_template("staging/staging_detail.html", system=system)
 
 # -------------------------------------------------------------------------
 # Imaging protocols – list
@@ -480,12 +527,245 @@ def list_protocols():
                     "technique_text": p.technique_text,
                     "parameters": p.parameters_json,
                     "tags": p.tags,
+                    "detail_url": url_for("content_routes.get_protocol", protocol_id=p.id),
                     "is_active": p.is_active,
                 }
             )
         return jsonify({"protocols": data})
 
     return render_template("protocols/protocols_list.html", protocols=protocols)
+
+# -------------------------------------------------------------------------
+# Imaging protocols – detail
+# -------------------------------------------------------------------------
+
+@content_routes_bp.route("/protocols/<int:protocol_id>", methods=["GET"])
+@login_required
+def get_protocol(protocol_id: int):
+    """
+    Get a single imaging protocol.
+    Returns JSON if ?format=json, otherwise renders an HTML detail page.
+    """
+    protocol = (
+        db.session.query(ImagingProtocol)
+        .filter_by(id=protocol_id, is_active=True)
+        .first()
+    )
+    if protocol is None:
+        abort(404)
+
+    if wants_json_response():
+        data = {
+            "id": protocol.id,
+            "name": protocol.name,
+            "modality": protocol.modality.value if protocol.modality else None,
+            "body_part": protocol.body_part.value if protocol.body_part else None,
+            "indication": protocol.indication,
+            "is_emergency": protocol.is_emergency,
+            "uses_contrast": protocol.uses_contrast,
+            "contrast_details": protocol.contrast_details,
+            "technique_text": protocol.technique_text,
+            "parameters": protocol.parameters_json,
+            "tags": protocol.tags,
+            "is_active": protocol.is_active,
+        }
+        return jsonify(data)
+    def build_export_rich_text(protocol: ImagingProtocol) -> str:
+        """
+        Build a rich-text (HTML) representation of the protocol suitable for
+        pasting into Word or other editors that understand HTML.
+        This preserves headings, lists, and tables.
+        """
+        parts: list[str] = []
+
+        # Header
+        parts.append(f"<h2>Protocol: {protocol.name}</h2>")
+        meta_bits = []
+        if protocol.modality:
+            meta_bits.append(f"<strong>Modality:</strong> {protocol.modality.name}")
+        if protocol.body_part:
+            meta_bits.append(
+                f"<strong>Body part:</strong> {protocol.body_part.name.replace('_', ' ').title()}"
+            )
+        if getattr(protocol, 'is_emergency', None) is not None:
+            meta_bits.append(
+                f"<strong>Emergency:</strong> {'Yes' if protocol.is_emergency else 'No'}"
+            )
+        if meta_bits:
+            parts.append("<p>" + " | ".join(meta_bits) + "</p>")
+
+        # Indications (HTML or plain text; preserve line breaks for plain text)
+        if protocol.indication:
+            parts.append("<h3>Indications</h3>")
+            ind_val = protocol.indication or ""
+            # Detect real HTML tags, not just any '<' (e.g. "eGFR < 30")
+            if re.search(r"<[a-zA-Z/][^>]*>", ind_val):
+                # Assume user provided HTML; include as-is
+                parts.append(ind_val)
+            else:
+                # Plain text: preserve line breaks as <br>
+                lines = [line.rstrip() for line in ind_val.splitlines()]
+                ind_html = "<p>" + "<br>".join(lines) + "</p>"
+                parts.append(ind_html)
+
+        # Technique (HTML or plain text; preserve line breaks for plain text)
+        if protocol.technique_text:
+            parts.append("<h3>Technique</h3>")
+            tech_val = protocol.technique_text or ""
+            # Detect real HTML tags, not just any '<'
+            if re.search(r"<[a-zA-Z/][^>]*>", tech_val):
+                # Assume user provided HTML; include as-is
+                parts.append(tech_val)
+            else:
+                # Plain text: preserve line breaks as <br>
+                lines = [line.rstrip() for line in tech_val.splitlines()]
+                tech_html = "<p>" + "<br>".join(lines) + "</p>"
+                parts.append(tech_html)
+
+        params = protocol.parameters_json or {}
+
+        # Position
+        position = params.get("position")
+        if position:
+            parts.append(f"<p><strong>Position:</strong> {position}</p>")
+
+        # Contrast section (details + structured injection)
+        uses_contrast = getattr(protocol, "uses_contrast", None)
+        contrast_details = getattr(protocol, "contrast_details", None)
+        contrast_injection = (
+            params.get("contrast_injection")
+            or params.get("contrast")
+            or {}
+        )
+
+        if uses_contrast is not None or contrast_details or contrast_injection:
+            parts.append("<h3>Contrast</h3>")
+
+            meta = []
+            if uses_contrast is not None:
+                meta.append(
+                    "Uses contrast" if uses_contrast else "Non-contrast protocol"
+                )
+
+            if contrast_details:
+                cd_val = contrast_details or ""
+                # Detect real HTML tags, not just any '<'
+                if re.search(r"<[a-zA-Z/][^>]*>", cd_val):
+                    # Assume user provided HTML; include as-is
+                    parts.append("<div>" + cd_val + "</div>")
+                else:
+                    # Plain text: preserve line breaks as <br>
+                    cd_lines = [line.rstrip() for line in cd_val.splitlines()]
+                    cd_html = "<p>" + "<br>".join(cd_lines) + "</p>"
+                    parts.append(cd_html)
+
+            if meta:
+                parts.append("<p><strong>Summary:</strong> " + " ".join(meta) + "</p>")
+
+            if contrast_injection:
+                fields: list[str] = []
+                type_ = contrast_injection.get("type")
+                if type_:
+                    fields.append(type_)
+                vol = contrast_injection.get("volume_ml")
+                if vol is not None:
+                    fields.append(f"{vol} mL")
+                rate = contrast_injection.get("rate_ml_s")
+                if rate is not None:
+                    fields.append(f"{rate} mL/s")
+                saline = contrast_injection.get("saline_ml")
+                if saline is not None:
+                    fields.append(f"saline {saline} mL")
+                timing = contrast_injection.get("timing")
+                if timing:
+                    fields.append(timing)
+
+                injection_line = " | ".join(fields) if fields else ""
+                notes = contrast_injection.get("notes")
+                if notes:
+                    if injection_line:
+                        injection_line = f"{injection_line} – {notes}"
+                    else:
+                        injection_line = notes
+
+                if injection_line:
+                    parts.append(
+                        "<p><strong>Injection:</strong> " + injection_line + "</p>"
+                    )
+
+        # MRI sequences as an HTML table
+        seqs = params.get("sequences") or []
+        if seqs:
+            parts.append("<h3>MRI Sequences</h3>")
+            parts.append(
+                "<table border='1' cellspacing='0' cellpadding='4'>"
+                "<thead><tr>"
+                "<th>Plane</th><th>Name</th><th>Slice (mm)</th>"
+                "<th>Gap (mm)</th><th>Fat sat</th><th>Breath hold</th><th>Notes</th>"
+                "</tr></thead><tbody>"
+            )
+            for s in seqs:
+                plane = s.get("plane", "") or ""
+                name = s.get("name", "") or ""
+                slice_thick = s.get("slice_thickness_mm") or ""
+                gap = s.get("gap_mm") or ""
+                fat_sat = s.get("fat_sat") or ""
+                bh = s.get("breath_hold") or ""
+                notes = s.get("notes") or ""
+                parts.append(
+                    "<tr>"
+                    f"<td>{plane}</td>"
+                    f"<td>{name}</td>"
+                    f"<td>{slice_thick}</td>"
+                    f"<td>{gap}</td>"
+                    f"<td>{fat_sat}</td>"
+                    f"<td>{bh}</td>"
+                    f"<td>{notes}</td>"
+                    "</tr>"
+                )
+            parts.append("</tbody></table>")
+
+        # CT phases as an HTML table
+        phases = params.get("phases") or []
+        if phases:
+            parts.append("<h3>CT Phases</h3>")
+            parts.append(
+                "<table border='1' cellspacing='0' cellpadding='4'>"
+                "<thead><tr>"
+                "<th>Phase</th><th>kVp</th><th>mAs</th>"
+                "<th>Slice (mm)</th><th>Interval (mm)</th><th>Notes</th>"
+                "</tr></thead><tbody>"
+            )
+            for p in phases:
+                phase_name = p.get("name") or p.get("phase") or ""
+                kvp = p.get("kVp") or p.get("kvp") or ""
+                mas = p.get("mAs") or p.get("mas") or ""
+                slice_val = p.get("slice_mm") or p.get("slice_thickness_mm") or ""
+                interval = p.get("interval_mm") or ""
+                notes = p.get("notes") or ""
+                parts.append(
+                    "<tr>"
+                    f"<td>{phase_name}</td>"
+                    f"<td>{kvp}</td>"
+                    f"<td>{mas}</td>"
+                    f"<td>{slice_val}</td>"
+                    f"<td>{interval}</td>"
+                    f"<td>{notes}</td>"
+                    "</tr>"
+                )
+            parts.append("</tbody></table>")
+
+        return "\n".join(parts)
+    full_export_text = build_export_rich_text(protocol)
+    return render_template("protocols/protocol_detail.html",
+                       protocol=protocol,
+                       full_export_text=full_export_text)
+    
+
+#
+#
+#
+
 
 # -------------------------------------------------------------------------
 # Secure file serving for template files

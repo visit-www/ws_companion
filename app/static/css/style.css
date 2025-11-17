@@ -1037,3 +1037,40 @@ body {
     background-color: #dc3545;
     color: white;
 }
+
+.protocol-text {
+    /* Retains your useful properties for handling text content */
+    white-space: pre-wrap;
+    line-height: 1.6; /* Excellent for readability */
+    text-align: justify;
+    /* Typography Enhancements */
+    font-size: 1rem; /* Standard readable size */
+    color: #333; /* Softer black than default for better readability */
+    margin: 0 auto; /* Center the div if it has a defined width */
+    max-width: 80ch; /* Optional: Sets an ideal reading width (~80 characters per line) */
+    padding: 0 15px; /* Adds padding to prevent text from touching screen edges */
+}
+.protocol-rich-text p,
+.protocol-rich-text ul,
+.protocol-rich-text ol {
+  text-align: justify;
+}
+
+.protocol-rich-text h3,
+.protocol-rich-text h4,
+.protocol-rich-text h5 {
+  text-align: left;
+}
+.badge-pill {border-radius: 999px;}
+
+.protocol-rich-text table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+
+.protocol-rich-text table th,
+.protocol-rich-text table td {
+  white-space: nowrap;
+}

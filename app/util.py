@@ -3,7 +3,7 @@ from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from flask import current_app
 import json
 from datetime import datetime, timezone
-from .models import db,Content, User, UserData, UserContentState, AdminReportTemplate, ModuleNames, BodyPartEnum, ModalityEnum
+from .models import db,Content,ImagingProtocol, ClassificationSystem, User, UserData, UserContentState, AdminReportTemplate, ClassificationSystem,ClassificationCategoryEnum, ModuleNames, BodyPartEnum, ModalityEnum
 import os
 from config import basedir,ADMIN_EMAIL, ADMIN_PASSWORD,ANONYMOUS_EMAIL,ANONYMOUS_PASSWORD,ANONYMOUS_USER_ID
 # *-------------------------------------------------------------------------
@@ -36,66 +36,76 @@ def generate_otp_token(secret, interval=200):
 
 # *-----------------------------------------------------------
 # Default app initialization
-def add_default_admin(admin_data):
-    """Add admin user if not already present."""
-    admin_user = db.session.query(User).filter_by(email=ADMIN_EMAIL).first()
+from sqlalchemy import or_
+from config import ADMIN_EMAIL, ADMIN_PASSWORD
+
+def add_default_admin(admin_data: dict) -> None:
+    """
+    Ensure there is at least one admin user.
+    If an admin already exists (same email, same username, or is_admin=True),
+    update its email/password to match current config.
+    Otherwise, create a new admin user.
+    """
     try:
-        if not admin_user:
+        admin_user = (
+            db.session.query(User)
+            .filter(
+                or_(
+                    User.email == ADMIN_EMAIL,
+                    User.username == admin_data.get("username", "admin"),
+                    User.is_admin.is_(True),
+                )
+            )
+            .first()
+        )
+
+        if admin_user:
+            changed = False
+
+            desired_username = admin_data.get("username", "admin")
+            if admin_user.username != desired_username:
+                admin_user.username = desired_username
+                changed = True
+
+            if admin_user.email != ADMIN_EMAIL:
+                admin_user.email = ADMIN_EMAIL
+                changed = True
+
+            if not admin_user.is_admin:
+                admin_user.is_admin = True
+                changed = True
+
+            if ADMIN_PASSWORD:
+                admin_user.set_password(ADMIN_PASSWORD)
+                changed = True
+
+            if changed:
+                db.session.commit()
+                print(
+                    f"Updated existing admin user: username={admin_user.username}, email={admin_user.email}"
+                )
+            else:
+                print(
+                    f"Admin user already up to date: username={admin_user.username}, email={admin_user.email}"
+                )
+        else:
             new_admin = User(
-                username=admin_data['username'],
+                username=admin_data.get("username", "admin"),
                 email=ADMIN_EMAIL,
-                is_paid=admin_data['is_paid'],
-                is_admin=admin_data['is_admin']
+                is_paid=admin_data.get("is_paid", True),
+                is_admin=admin_data.get("is_admin", True),
             )
             new_admin.set_password(ADMIN_PASSWORD)
             db.session.add(new_admin)
             db.session.commit()
-    
-            print(f"Admin user created: {new_admin.username}, {new_admin.email}")
-    
-            # Initialize UserData for the admin
-            user_data = UserData(
-                user_id=new_admin.id,
-                interaction_type='registered',
-                time_spent=0,
-                last_interaction=datetime.now(timezone.utc),
-                last_login=datetime.now(timezone.utc)
+            print(
+                f"Admin user created: username={new_admin.username}, email={new_admin.email}"
             )
-            db.session.add(user_data)
-    
-            # Initialize UserContentState for the admin
-            user_content_state = UserContentState(
-                user_id=new_admin.id,
-                modified_filepath=None,
-                annotations=None,
-                created_at=datetime.now(timezone.utc),
-                updated_at=datetime.now(timezone.utc)
-            )
-            db.session.add(user_content_state)
-            # Initialize AdminReportTemplate with
-            admin_report_template = AdminReportTemplate(
-                template_name=None,
-                    body_part= None,
-                    modality=None,
-                    file=None,
-                    filepath=None,
-                    tags=None,
-                    category=None,
-                    module=None,
-                    created_at=datetime.now(timezone.utc),
-                    updated_at=datetime.now(timezone.utc)
-                    )
-            db.session.add(admin_report_template)
-            db.session.commit()
-            print(f"Admin data initialized.")
-        else:
-            print(f"Admin already exists: {admin_user.username}")
-            print(f"Admin user created: {new_admin.username}, {new_admin.email}")
-            print(f"Admin data initialized.")
+
     except Exception as e:
-        print(f"Error adding default admin: {e}")
         db.session.rollback()
-        pass
+        print(f"Error while adding/updating admin user: {e}")
+        
 # Crreate Anonymous user to relate to orphaned data after users or content is delated (referecnes, userfeedback)
 from config import ANONYMOUS_USER_ID
 def add_anonymous_user():
@@ -226,6 +236,382 @@ def add_default_admin_templates():
     else:
         print("Admin templates already present, no new templates added.")
 
+# Utility function to add default classifications:
+def add_default_classification_systems():
+    """
+    Seed a curated set of tnm / reporting / scoring systems
+    into ClassificationSystem. Idempotent: skips if name already exists.
+    Assumes:
+    - ClassificationSystem has at least: name, short_code, category,
+        modality, body_part, description, is_active (optional).
+    - category is stored as a simple string (e.g. 'staging', 'scoring').
+    """
+
+    default_systems = [
+        {
+            "name": "ACR TI-RADS",
+            "short_code": "TI-RADS",
+            "category": "scoring",
+            "modality": ModalityEnum.ULTRASOUND,
+            "body_part": BodyPartEnum.ENDOCRINE,
+            "description": "ACR Thyroid Imaging Reporting and Data System for risk stratification of thyroid nodules.",
+        },
+        {
+            "name": "ACR BI-RADS",
+            "short_code": "BI-RADS",
+            "category": "scoring",
+            "modality": ModalityEnum.MAMMOGRAPHY,
+            "body_part": BodyPartEnum.BREAST,
+            "description": "Breast Imaging Reporting and Data System for mammography, ultrasound and breast MRI.",
+        },
+        {
+            "name": "LI-RADS",
+            "short_code": "LI-RADS",
+            "category": "scoring",
+            "modality": ModalityEnum.CT,
+            "body_part": BodyPartEnum.HEPATOBILIARY,
+            "description": "Liver Imaging Reporting and Data System for assessment of focal liver lesions in at-risk patients.",
+        },
+        {
+            "name": "PI-RADS",
+            "short_code": "PI-RADS",
+            "category": "scoring",
+            "modality": ModalityEnum.MRI,
+            "body_part": BodyPartEnum.UROLOGY,
+            "description": "Prostate Imaging Reporting and Data System for evaluation of prostate lesions on MRI.",
+        },
+        {
+            "name": "Bosniak Renal Cyst Classification",
+            "short_code": "Bosniak",
+            "category": "other",
+            "modality": ModalityEnum.CT,
+            "body_part": BodyPartEnum.UROLOGY,
+            "description": "Bosniak classification of cystic renal lesions (I–IV) to stratify malignancy risk.",
+        },
+        {
+            "name": "TNM – Lung Cancer",
+            "short_code": "TNM Lung",
+            "category": "tnm",
+            "modality": ModalityEnum.CT,
+            "body_part": BodyPartEnum.LUNG,
+            "description": "TNM staging for lung carcinoma (T, N, M descriptors).",
+        },
+        {
+            "name": "TNM – Breast Cancer",
+            "short_code": "TNM Breast",
+            "category": "tnm",
+            "modality": ModalityEnum.MAMMOGRAPHY,
+            "body_part": BodyPartEnum.BREAST,
+            "description": "TNM staging for breast carcinoma.",
+        },
+        {
+            "name": "TNM – Colorectal Cancer",
+            "short_code": "TNM CRC",
+            "category": "tnm",
+            "modality": ModalityEnum.CT,
+            "body_part": BodyPartEnum.ONCOLOGY,
+            "description": "TNM staging for colon and rectal carcinoma.",
+        },
+        {
+            "name": "ASPECTS – Ischemic Stroke",
+            "short_code": "ASPECTS",
+            "category": "scoring",
+            "modality": ModalityEnum.CT,
+            "body_part": BodyPartEnum.NEURO,
+            "description": "Alberta Stroke Program Early CT Score for early ischemic change in MCA territory.",
+        },
+        {
+            "name": "Fisher Scale – Subarachnoid Hemorrhage",
+            "short_code": "Fisher",
+            "category": "scoring",
+            "modality": ModalityEnum.CT,
+            "body_part": BodyPartEnum.NEURO,
+            "description": "Fisher grading scale for amount/distribution of subarachnoid blood on CT in SAH.",
+        },
+        {
+            "name": "Wilkes Classification – TMJ Internal Derangement",
+            "short_code": "Wilkes TMJ",
+            "category": "other",
+            "modality": ModalityEnum.MRI,
+            "body_part": BodyPartEnum.HEAD_AND_NECK,
+            "description": "Wilkes classification for temporomandibular joint internal derangement.",
+        },
+        {
+            "name": "Lung-RADS",
+            "short_code": "Lung-RADS",
+            "category": "scoring",
+            "modality": ModalityEnum.CT,
+            "body_part": BodyPartEnum.LUNG,
+            "description": "Lung CT Screening Reporting and Data System for low-dose CT lung cancer screening.",
+        },
+    ]
+
+    created = 0
+
+    for data in default_systems:
+        existing = db.session.query(ClassificationSystem).filter_by(
+            name=data["name"]
+        ).first()
+        if existing:
+            continue
+
+        cs = ClassificationSystem(
+            name=data["name"],
+            short_code=data.get("short_code"),
+            category=ClassificationCategoryEnum[data["category"].upper()],
+            modality=data.get("modality"),
+            body_part=data.get("body_part"),
+            description=data.get("description"),
+        )
+        db.session.add(cs)
+        created += 1
+
+    if created > 0:
+        db.session.commit()
+        print(f"Classification systems seeded: {created}")
+    else:
+        print("Classification systems already present, no new entries added.")
+
+# Utility function add default imaging protocols:
+def add_default_imaging_protocols():
+    """
+    Seed a curated set of imaging protocols into ImagingProtocol.
+
+    Aligned with ImagingProtocol model:
+      - name (str)
+      - modality (ModalityEnum)
+      - body_part (BodyPartEnum)
+      - indication (str)
+      - is_emergency (bool)
+      - uses_contrast (bool | None)
+      - contrast_details (str | None)
+      - technique_text (str | None)
+      - parameters_json (dict | None)
+      - tags (str | None)
+      - is_active (bool)
+    """
+
+    default_protocols = [
+        {
+            "name": "CT Brain – Non-contrast (Stroke / Trauma)",
+            "modality": ModalityEnum.CT,
+            "body_part": BodyPartEnum.NEURO,
+            "indication": "Acute stroke, head trauma, new focal neurological deficit, severe headache with red flags.",
+            "is_emergency": True,
+            "uses_contrast": False,
+            "contrast_details": None,
+            "technique_text": (
+                "Axial non-contrast CT from foramen magnum to vertex; thin slices with "
+                "soft tissue and bone reconstructions; review in brain and bone windows."
+            ),
+            "parameters_json": {
+                "slice_thickness_mm": 0.625,
+                "kvp": 120,
+                "pitch": "standard",
+                "kernel": "soft + bone",
+            },
+            "tags": "ct,brain,stroke,trauma,non-contrast",
+        },
+        {
+            "name": "CT Pulmonary Angiography (CTPA)",
+            "modality": ModalityEnum.CT,
+            "body_part": BodyPartEnum.LUNG,
+            "indication": "Suspected pulmonary embolism.",
+            "is_emergency": True,
+            "uses_contrast": True,
+            "contrast_details": "70–100 mL iodinated contrast at 4–5 mL/s; bolus tracking in main pulmonary artery.",
+            "technique_text": (
+                "Contrast-enhanced CT chest timed to pulmonary arterial phase. "
+                "Thin collimation (≤1.25 mm), coverage from lung apices to below diaphragm, "
+                "breath-hold at full inspiration."
+            ),
+            "parameters_json": {
+                "slice_thickness_mm": 1.0,
+                "kvp": 100,
+                "pitch": "low",
+                "contrast_phase": "pulmonary_arterial",
+            },
+            "tags": "ct,chest,ctpa,pe,pulmonary embolism,angiography",
+        },
+        {
+            "name": "CT Abdomen/Pelvis – Acute Abdomen",
+            "modality": ModalityEnum.CT,
+            "body_part": BodyPartEnum.MISCELLANEOUS,
+            "indication": "Acute abdominal pain, suspected obstruction, perforation, sepsis or undifferentiated acute abdomen.",
+            "is_emergency": True,
+            "uses_contrast": True,
+            "contrast_details": (
+                "IV contrast in portal venous phase; consider oral contrast depending on local practice. "
+                "Non-contrast phase if urolithiasis or hemorrhage suspected."
+            ),
+            "technique_text": (
+                "CT from dome of diaphragm to symphysis pubis. Portal venous phase acquisition; "
+                "reconstructions in axial, coronal, and sagittal planes."
+            ),
+            "parameters_json": {
+                "slice_thickness_mm": 2.0,
+                "kvp": 120,
+                "phase": "portal_venous",
+            },
+            "tags": "ct,abdomen,pelvis,acute abdomen,emergency",
+        },
+        {
+            "name": "CT KUB – Renal Colic",
+            "modality": ModalityEnum.CT,
+            "body_part": BodyPartEnum.UROLOGY,
+            "indication": "Suspected ureteric calculus / renal colic.",
+            "is_emergency": True,
+            "uses_contrast": False,
+            "contrast_details": None,
+            "technique_text": (
+                "Low-dose non-contrast CT from upper poles of kidneys to bladder base. "
+                "Thin-slice reconstructions; review in soft tissue and bone windows."
+            ),
+            "parameters_json": {
+                "slice_thickness_mm": 2.0,
+                "low_dose": True,
+            },
+            "tags": "ct,kub,renal,colic,stones,non-contrast",
+        },
+        {
+            "name": "HRCT Chest – Interstitial Lung Disease",
+            "modality": ModalityEnum.CT,
+            "body_part": BodyPartEnum.LUNG,
+            "indication": "Suspected or known interstitial lung disease.",
+            "is_emergency": False,
+            "uses_contrast": False,
+            "contrast_details": None,
+            "technique_text": (
+                "High-resolution CT of chest with thin collimation, high-spatial-frequency kernel, "
+                "supine and prone imaging; inspiratory ± expiratory series."
+            ),
+            "parameters_json": {
+                "slice_thickness_mm": 1.0,
+                "reconstruction_kernel": "high_resolution",
+            },
+            "tags": "ct,hrct,ild,interstitial lung disease",
+        },
+        {
+            "name": "MRI Brain – Standard Protocol",
+            "modality": ModalityEnum.MRI,
+            "body_part": BodyPartEnum.NEURO,
+            "indication": "Headache, seizures, suspected mass, demyelination, cognitive decline.",
+            "is_emergency": False,
+            "uses_contrast": True,
+            "contrast_details": "Gadolinium-based contrast 0.1 mmol/kg if indicated (tumour, infection, inflammation).",
+            "technique_text": (
+                "Sagittal T1; axial T1, T2, FLAIR, DWI/ADC; GRE/SWI as indicated. "
+                "Post-contrast T1-weighted imaging in axial and coronal planes where appropriate."
+            ),
+            "parameters_json": {
+                "slice_thickness_mm": 5.0,
+                "planes": ["axial", "sagittal", "coronal"],
+            },
+            "tags": "mri,brain,standard,headache,seizure",
+        },
+        {
+            "name": "MRI Lumbar Spine – Radiculopathy",
+            "modality": ModalityEnum.MRI,
+            "body_part": BodyPartEnum.MSK,
+            "indication": "Low back pain, radiculopathy, suspected canal stenosis or disc herniation.",
+            "is_emergency": False,
+            "uses_contrast": False,
+            "contrast_details": "Contrast only if infection, tumour, or postoperative complication suspected.",
+            "technique_text": (
+                "Sagittal T1 and T2, sagittal STIR or T2-FS; axial T2 (and/or T1) at disc levels; "
+                "coverage from T12/L1 through sacrum."
+            ),
+            "parameters_json": {
+                "slice_thickness_mm": 3.0,
+                "planes": ["sagittal", "axial"],
+            },
+            "tags": "mri,spine,lumbar,radiculopathy,disc",
+        },
+        {
+            "name": "MRI Knee – Internal Derangement",
+            "modality": ModalityEnum.MRI,
+            "body_part": BodyPartEnum.MSK,
+            "indication": "Meniscal injury, cruciate/ collateral ligament injury, cartilage lesion.",
+            "is_emergency": False,
+            "uses_contrast": False,
+            "contrast_details": "Intra-articular contrast for MR arthrography if instability or labral-type pathology suspected.",
+            "technique_text": (
+                "Sagittal PD/PD-FS, coronal PD-FS, axial sequences; optional 3D isotropic sequence "
+                "for multiplanar reformatting."
+            ),
+            "parameters_json": {
+                "slice_thickness_mm": 3.0,
+                "planes": ["sagittal", "coronal", "axial"],
+            },
+            "tags": "mri,knee,meniscus,ligament,internal derangement",
+        },
+        {
+            "name": "X-ray Chest – PA and Lateral",
+            "modality": ModalityEnum.X_RAY,
+            "body_part": BodyPartEnum.LUNG,
+            "indication": "General chest evaluation, pre-operative assessment, respiratory symptoms.",
+            "is_emergency": False,
+            "uses_contrast": False,
+            "contrast_details": None,
+            "technique_text": (
+                "Standard PA projection at full inspiration; lateral view as indicated. "
+                "Erect positioning where possible."
+            ),
+            "parameters_json": {
+                "projections": ["PA", "lateral"],
+            },
+            "tags": "xray,chest,pa,lateral,pre-op",
+        },
+        {
+            "name": "Ultrasound Abdomen – General Survey",
+            "modality": ModalityEnum.ULTRASOUND,
+            "body_part": BodyPartEnum.HEPATOBILIARY,
+            "indication": "RUQ pain, abnormal LFTs, suspected biliary pathology, general abdominal screening.",
+            "is_emergency": False,
+            "uses_contrast": False,
+            "contrast_details": None,
+            "technique_text": (
+                "Survey of liver, gallbladder, biliary tree, pancreas, spleen, kidneys, aorta and IVC; "
+                "patient fasting if feasible."
+            ),
+            "parameters_json": {
+                "transducer_frequency_MHz": "2–5",
+                "approach": "subcostal and intercostal",
+            },
+            "tags": "usg,abdomen,hepatobiliary,screening",
+        },
+    ]
+
+    created = 0
+
+    for data in default_protocols:
+        existing = db.session.query(ImagingProtocol).filter_by(
+            name=data["name"]
+        ).first()
+        if existing:
+            continue
+
+        proto = ImagingProtocol(
+            name=data["name"],
+            modality=data.get("modality"),
+            body_part=data.get("body_part"),
+            indication=data.get("indication"),
+            is_emergency=data.get("is_emergency", False),
+            uses_contrast=data.get("uses_contrast"),
+            contrast_details=data.get("contrast_details"),
+            technique_text=data.get("technique_text"),
+            parameters_json=data.get("parameters_json"),
+            tags=data.get("tags"),
+            is_active=True,
+        )
+        db.session.add(proto)
+        created += 1
+
+    if created > 0:
+        db.session.commit()
+        print(f"Imaging protocols seeded: {created}")
+    else:
+        print("Imaging protocols already present, no new entries added.")
 def load_default_data():
     """Load default admin and content data from JSON."""
     json_filepath= os.path.join(basedir,'app','default_data.json')
@@ -265,6 +651,7 @@ def get_anonymous_user_id():
         add_anonymous_user()
         user = db.session.query(User).filter_by(username="anonymous").first()
         return user.id if user else None
+
 #function related to report generation and report managment :
 # ------------------------------------------------------
 # Function to clear report preview files

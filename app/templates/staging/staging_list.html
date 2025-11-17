@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Staging & Classification Systems – WSC{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <h1 class="mb-3">Staging & Classification Systems</h1>
+  <p class="text-muted mb-4">
+    All staging / scoring / reporting systems currently available.
+  </p>
+
+  {% if systems %}
+    <div class="table-responsive">
+      <table class="table table-sm align-middle">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Short code</th>
+            <th>Category</th>
+            <th>Modality</th>
+            <th>Body part</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in systems %}
+          <tr>
+            <td>{{ s.name }}</td>
+            <td>{{ s.short_code or "" }}</td>
+            <td>{{ s.category.value if s.category else "-" }}</td>
+            <td>{{ s.modality.value if s.modality else "-" }}</td>
+            <td>{{ s.body_part.value if s.body_part else "-" }}</td>
+            <td class="text-end">
+              <a href="{{ url_for('content_routes.get_classification_system', system_id=s.id) }}"
+                 class="btn btn-sm btn-outline-primary">
+                View
+              </a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-muted">No staging systems available.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -14,8 +14,8 @@ import sys
 from datetime import datetime,timedelta,timezone
 from flask_mail import Mail
 from uuid import UUID
-from .util import load_default_data,add_default_admin,add_default_contents,add_anonymous_user,add_default_admin_templates
-
+from .util import load_default_data,add_default_admin,add_default_contents,add_anonymous_user,add_default_admin_templates, add_default_classification_systems, add_default_imaging_protocols
+import re
 import pyotp
 
 
@@ -93,7 +93,7 @@ def create_app():
     # Import models and add to Flask-Admin here to avoid circular import
     with app.app_context():
         from .models import User, Content, UserData, Reference, UserFeedback, UserContentState, UserProfile, UserReportTemplate, AdminReportTemplate,CategoryNames, ModuleNames,InteractionTypeEnum
-        from .admin_views import MyModelView,UserModelView,ExtendModelView,ReferenceAdmin # Import both MyModelView  and UserModelView and RefrenceAdmin
+        from .admin_views import MyModelView,UserModelView,ExtendModelView,ReferenceAdmin, ImagingProtocolAdmin # Import both MyModelView  and UserModelView and RefrenceAdmin
 
     # Register Models in Flask-Admin
     # Register admin-related models with MyModelView
@@ -101,7 +101,10 @@ def create_app():
     # Register the Reference model with the customized ReferenceAdmin
     flask_admin.add_view(ReferenceAdmin(Reference, db.session, endpoint='references'))
     flask_admin.add_view(MyModelView(AdminReportTemplate, db.session, endpoint='admin_report_templates'))
-
+    # Classification / staging systems
+    flask_admin.add_view(ExtendModelView(ClassificationSystem, db.session, endpoint='classification_systems', name='Classification Systems'))
+# Imaging protocols
+    flask_admin.add_view(ImagingProtocolAdmin(ImagingProtocol, db.session,endpoint='imaging_protocols', name='Imaging Protocols'))
     # Register user-related models with ModelView
     flask_admin.add_view(UserModelView(User, db.session, endpoint='users'))
     flask_admin.add_view(ExtendModelView(UserData, db.session, endpoint='user_data'))
@@ -154,6 +157,10 @@ def create_app():
             return json.loads(s) if s else []
         except Exception:
             return []
+    # function to enable regex detection inside jinja tempaltes
+    def regex_search(value, pattern):
+        return re.search(pattern, value or '') is not None
+    
             
 # ================================================================
 # Functions to be executed before initialization
@@ -206,6 +213,21 @@ def create_app():
             except Exception as e:
                 print(f"Error while adding default admin templates: {e}")
                 pass
+            print("I will create default classification systems if they do not already exist")
+            try:
+                add_default_classification_systems()
+                print("Default classification systems loaded successfully")
+            except Exception as e:
+                print(f"Error while adding default classification systems: {e}")
+                pass
+
+            print("I will create default imaging protocols if they do not already exist")
+            try:
+                add_default_imaging_protocols()
+                print("Default imaging protocols loaded successfully")
+            except Exception as e:
+                print(f"Error while adding default imaging protocols: {e}")
+                pass
             print("I Will look for anaonymous user and create one if not existing")
             try:
                 add_anonymous_user()
@@ -222,6 +244,8 @@ def create_app():
     log_file = os.path.join(log_dir, 'app.log')
     # Register custom Jinja filter for from_json
     app.jinja_env.filters['from_json'] = from_json_filter
+    app.jinja_env.filters['regex_search'] = regex_search
+    
     
     # *------------------------------------------------------------------
     # Helper to decide if JSON response is preferred

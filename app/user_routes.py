@@ -10,6 +10,7 @@ import json
 from dateutil import parser
 from datetime import datetime, timedelta
 from pytz import UTC
+from sqlalchemy import or_
 
 
 
@@ -122,12 +123,19 @@ def login():
     form = LoginForm()  # Instantiate the form
     login_failed = False  # Default value for login_failed
     if form.validate_on_submit():  # Checks if the form is submitted and valid
-        username = form.username.data.strip().lower()
+        identifier = form.username.data.strip().lower()
         password = form.password.data.strip()
-        remember = 'remember' in request.form  # Check if "Remember Me" was selected
-        
-        # Query the user using SQLAlchemy's session
-        user = db.session.query(User).filter_by(username=username).first()
+        remember = 'remember' in request.form
+
+        user = (
+            db.session.query(User).filter(
+                or_(
+                    User.username == identifier,
+                    User.email == identifier,
+                )
+            )
+            .first()
+        )
         if user and user.check_password(password):
             # Set the session to be permanent only if "Remember Me" is checked
             session.permanent = remember
