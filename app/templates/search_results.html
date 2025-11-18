@@ -1,0 +1,434 @@
+{% extends "base.html" %}
+
+{% block title %}Search – Radiology Workstation Companion{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('main_routes.index') }}">Home</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Search</li>
+        </ol>
+    </nav>
+
+    <!-- Search header -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
+        <div>
+            <h2 class="mb-1">Search results</h2>
+            <p class="text-muted mb-0">
+                For: <span class="fw-semibold">“{{ query }}”</span>
+            </p>
+        </div>
+        <form class="d-flex" method="get" action="{{ url_for('main_routes.site_search') }}">
+            <input
+                class="form-control me-2"
+                type="search"
+                name="q"
+                placeholder="Refine search…"
+                aria-label="Search"
+                value="{{ query }}"
+            >
+            <button class="btn btn-outline-primary" type="submit">
+                <i class="bi bi-search"></i>
+            </button>
+        </form>
+    </div>
+
+    {# Total hit count across all result groups #}
+    {% set total_hits =
+        (content_results|length)
+        + (refrences_results|length)
+        + (protocol_results|length)
+        + (classification_results|length)
+        + (adminreporttemplates_results|length)
+        + (userreportemplates_results|length)
+        + (measurement_results|length)
+    %}
+
+    {% if total_hits == 0 %}
+        <div class="alert alert-light border d-flex align-items-center" role="alert">
+            <i class="bi bi-search text-muted me-3" style="font-size: 1.5rem;"></i>
+            <div>
+                <h5 class="alert-heading mb-1">No results found</h5>
+                <p class="mb-0 text-muted small">
+                    Try different keywords, or search by modality, body part, classification name,
+                    protocol name, normal value or template text.
+                </p>
+            </div>
+        </div>
+    {% else %}
+        <!-- Summary chips -->
+        <div class="mb-3 d-flex flex-wrap gap-2">
+            {% if content_results %}
+            <span class="badge rounded-pill bg-primary-subtle text-primary border">
+                <i class="bi bi-journal-text me-1"></i>
+                Content ({{ content_results|length }})
+            </span>
+            {% endif %}
+
+            {% if refrences_results %}
+            <span class="badge rounded-pill bg-secondary-subtle text-secondary border">
+                <i class="bi bi-bookmark-check me-1"></i>
+                References ({{ refrences_results|length }})
+            </span>
+            {% endif %}
+
+            {% if protocol_results %}
+            <span class="badge rounded-pill bg-success-subtle text-success border">
+                <i class="bi bi-layers me-1"></i>
+                Protocols ({{ protocol_results|length }})
+            </span>
+            {% endif %}
+
+            {% if classification_results %}
+            <span class="badge rounded-pill bg-info-subtle text-info border">
+                <i class="bi bi-diagram-3 me-1"></i>
+                Classifications ({{ classification_results|length }})
+            </span>
+            {% endif %}
+
+            {% if adminreporttemplates_results %}
+            <span class="badge rounded-pill bg-warning-subtle text-warning border">
+                <i class="bi bi-file-earmark-medical me-1"></i>
+                Admin Templates ({{ adminreporttemplates_results|length }})
+            </span>
+            {% endif %}
+
+            {% if userreportemplates_results %}
+            <span class="badge rounded-pill bg-warning-subtle text-warning border">
+                <i class="bi bi-file-earmark-person me-1"></i>
+                My Templates ({{ userreportemplates_results|length }})
+            </span>
+            {% endif %}
+
+            {% if measurement_results %}
+            <span class="badge rounded-pill bg-danger-subtle text-danger border">
+                <i class="bi bi-rulers me-1"></i>
+                Normal Values ({{ measurement_results|length }})
+            </span>
+            {% endif %}
+        </div>
+
+        <!-- Collapsible sections -->
+        <div class="accordion" id="searchResultsAccordion">
+
+            {# Content results #}
+            {% if content_results %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingContent">
+                    <button class="accordion-button" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapseContent"
+                            aria-expanded="true" aria-controls="collapseContent">
+                        <i class="bi bi-journal-text me-2"></i>
+                        Content ({{ content_results|length }})
+                    </button>
+                </h2>
+                <div id="collapseContent" class="accordion-collapse collapse show"
+                     aria-labelledby="headingContent" data-bs-parent="#searchResultsAccordion">
+                    <div class="accordion-body">
+                        <div class="list-group list-group-flush">
+                            {% for item in content_results %}
+                            <a href="{{ url_for('content_routes.view_content',
+                                                category=item.category,
+                                                module=item.module,
+                                                content_id=item.id) }}"
+                               class="list-group-item list-group-item-action">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ item.title }}</h5>
+                                    <small class="text-muted">
+                                        {{ item.category }} · {{ item.module }}
+                                    </small>
+                                </div>
+                                {% if item.description %}
+                                <p class="mb-1 text-muted small">
+                                    {{ item.description|striptags|truncate(160) }}
+                                </p>
+                                {% endif %}
+                                {% if item.keywords %}
+                                <small class="text-muted">
+                                    <i class="bi bi-tags me-1"></i>{{ item.keywords }}
+                                </small>
+                                {% endif %}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# Reference results #}
+            {% if refrences_results %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingRefs">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapseRefs"
+                            aria-expanded="false" aria-controls="collapseRefs">
+                        <i class="bi bi-bookmark-check me-2"></i>
+                        References ({{ refrences_results|length }})
+                    </button>
+                </h2>
+                <div id="collapseRefs" class="accordion-collapse collapse"
+                     aria-labelledby="headingRefs" data-bs-parent="#searchResultsAccordion">
+                    <div class="accordion-body">
+                        <ul class="list-group list-group-flush">
+                            {% for ref in refrences_results %}
+                            <li class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ ref.title }}</h5>
+                                    <small class="text-muted">
+                                        {{ ref.category }} · {{ ref.module }}
+                                    </small>
+                                </div>
+                                {% if ref.description %}
+                                <p class="mb-1 text-muted small">
+                                    {{ ref.description|striptags|truncate(160) }}
+                                </p>
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# Imaging protocol results #}
+            {% if protocol_results %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingProtocols">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapseProtocols"
+                            aria-expanded="false" aria-controls="collapseProtocols">
+                        <i class="bi bi-layers me-2"></i>
+                        Imaging Protocols ({{ protocol_results|length }})
+                    </button>
+                </h2>
+                <div id="collapseProtocols" class="accordion-collapse collapse"
+                     aria-labelledby="headingProtocols" data-bs-parent="#searchResultsAccordion">
+                    <div class="accordion-body">
+                        <ul class="list-group list-group-flush">
+                            {% for p in protocol_results %}
+                            <a
+                                href="{{ url_for('content_routes.get_protocol', protocol_id=p.id) }}"
+                                class="list-group-item list-group-item-action"
+                            >
+                                <div class="d-flex w-100 justify-content-between">
+                                    <div>
+                                        <h5 class="mb-1">{{ p.name }}</h5>
+                                        <small class="text-muted">
+                                            {{ p.modality.value if p.modality else 'Unspecified modality' }} ·
+                                            {{ p.body_part.value if p.body_part else 'Unspecified body part' }}
+                                        </small>
+                                    </div>
+                                </div>
+                                {% if p.indication %}
+                                <p class="mb-1 text-muted small">
+                                    {{ p.indication|striptags|truncate(200) }}
+                                </p>
+                                {% endif %}
+                                {% if p.contrast_details %}
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-droplet-half me-1"></i>
+                                    {{ p.contrast_details|striptags|truncate(160) }}
+                                </small>
+                                {% endif %}
+                                {% if p.tags %}
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-tags me-1"></i>{{ p.tags }}
+                                </small>
+                                {% endif %}
+                            </a>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# Classification systems #}
+            {% if classification_results %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingClassifications">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapseClassifications"
+                            aria-expanded="false" aria-controls="collapseClassifications">
+                        <i class="bi bi-diagram-3 me-2"></i>
+                        Classification Systems ({{ classification_results|length }})
+                    </button>
+                </h2>
+                <div id="collapseClassifications" class="accordion-collapse collapse"
+                     aria-labelledby="headingClassifications" data-bs-parent="#searchResultsAccordion">
+                    <div class="accordion-body">
+                        <ul class="list-group list-group-flush">
+                            {% for c in classification_results %}
+                            <a
+                                href="{{ url_for('content_routes.get_classification_system', system_id=c.id) }}"
+                                class="list-group-item list-group-item-action"
+                            >
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ c.name }}</h5>
+                                    <small class="text-muted">{{ c.version or '' }}</small>
+                                </div>
+                                {% if c.description %}
+                                <p class="mb-1 text-muted small">
+                                    {{ c.description|striptags|truncate(200) }}
+                                </p>
+                                {% endif %}
+                                {% if c.category %}
+                                <small class="text-muted">
+                                    <i class="bi bi-diagram-3-fill me-1"></i>
+                                    {{ c.category.value if c.category else c.category }}
+                                </small>
+                                {% endif %}
+                            </a>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# Admin report templates #}
+            {% if adminreporttemplates_results %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingAdminTemplates">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapseAdminTemplates"
+                            aria-expanded="false" aria-controls="collapseAdminTemplates">
+                        <i class="bi bi-file-earmark-medical me-2"></i>
+                        Admin Report Templates ({{ adminreporttemplates_results|length }})
+                    </button>
+                </h2>
+                <div id="collapseAdminTemplates" class="accordion-collapse collapse"
+                     aria-labelledby="headingAdminTemplates" data-bs-parent="#searchResultsAccordion">
+                    <div class="accordion-body">
+                        <ul class="list-group list-group-flush">
+                            {% for t in adminreporttemplates_results %}
+                            <li class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ t.template_name }}</h5>
+                                    <small class="text-muted">
+                                        {{ t.modality.value if t.modality else 'Unspecified modality' }} ·
+                                        {{ t.body_part.value if t.body_part else 'Unspecified body part' }}
+                                    </small>
+                                </div>
+                                {% if t.description %}
+                                <p class="mb-1 text-muted small">
+                                    {{ t.description|striptags|truncate(200) }}
+                                </p>
+                                {% endif %}
+                                {% if t.tags %}
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-tags me-1"></i>{{ t.tags }}
+                                </small>
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# User report templates #}
+            {% if userreportemplates_results %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingUserTemplates">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapseUserTemplates"
+                            aria-expanded="false" aria-controls="collapseUserTemplates">
+                        <i class="bi bi-file-earmark-person me-2"></i>
+                        My Report Templates ({{ userreportemplates_results|length }})
+                    </button>
+                </h2>
+                <div id="collapseUserTemplates" class="accordion-collapse collapse"
+                     aria-labelledby="headingUserTemplates" data-bs-parent="#searchResultsAccordion">
+                    <div class="accordion-body">
+                        <ul class="list-group list-group-flush">
+                            {% for t in userreportemplates_results %}
+                            <li class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <h5 class="mb-1">{{ t.template_name }}</h5>
+                                    <small class="text-muted">
+                                        {{ t.modality.value if t.modality else 'Unspecified modality' }} ·
+                                        {{ t.body_part.value if t.body_part else 'Unspecified body part' }}
+                                    </small>
+                                </div>
+                                {% if t.template_text %}
+                                <p class="mb-1 text-muted small">
+                                    {{ t.template_text|striptags|truncate(200) }}
+                                </p>
+                                {% endif %}
+                                {% if t.tags %}
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-tags me-1"></i>{{ t.tags }}
+                                </small>
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# Normal measurements #}
+            {% if measurement_results %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingMeasurements">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapseMeasurements"
+                            aria-expanded="false" aria-controls="collapseMeasurements">
+                        <i class="bi bi-rulers me-2"></i>
+                        Normal Measurements ({{ measurement_results|length }})
+                    </button>
+                </h2>
+                <div id="collapseMeasurements" class="accordion-collapse collapse"
+                     aria-labelledby="headingMeasurements" data-bs-parent="#searchResultsAccordion">
+                    <div class="accordion-body">
+                        <ul class="list-group list-group-flush">
+                            {% for m in measurement_results %}
+                            <li class="list-group-item">
+                                <div class="d-flex w-100 justify-content-between">
+                                    <div>
+                                        <h5 class="mb-1">{{ m.name }}</h5>
+                                        <small class="text-muted">
+                                            {{ m.body_part.value if m.body_part else '' }}
+                                            {{ m.modality.value if m.modality else '' }}
+                                        </small>
+                                    </div>
+                                    {% if m.unit %}
+                                    <small class="text-muted">Unit: {{ m.unit }}</small>
+                                    {% endif %}
+                                </div>
+                                {% if m.context %}
+                                <p class="mb-1 text-muted small">
+                                    {{ m.context|striptags|truncate(160) }}
+                                </p>
+                                {% endif %}
+                                {% if m.reference_text %}
+                                <small class="text-muted d-block">
+                                    {{ m.reference_text|striptags|truncate(200) }}
+                                </small>
+                                {% endif %}
+                                {% if m.tags %}
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-tags me-1"></i>{{ m.tags }}
+                                </small>
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+        </div>  {# /accordion #}
+    {% endif %}
+</div>
+{% endblock %}

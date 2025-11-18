@@ -99,6 +99,19 @@
                                 {% endif %}
                             </ul>
                         </div>
+                        {# 🔍 Global site search #}
+                        <form class="d-flex me-3" method="get" action="{{ url_for('main_routes.site_search') }}">
+                            <input
+                            class="form-control me-2"
+                            type="search"
+                            name="q"
+                            placeholder="Search protocols, content, classifications…"
+                            aria-label="Search"
+                            >
+                            <button class="btn btn-outline-primary" type="submit">
+                            <i class="bi bi-search"></i>
+                            </button>
+                        </form>
                     </div>
                 </nav>
                 {% endblock %}

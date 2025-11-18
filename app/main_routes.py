@@ -1,7 +1,8 @@
-from flask import Blueprint, render_template,jsonify, request, flash, send_from_directory
+from flask import Blueprint, render_template, jsonify, request, flash, send_from_directory, redirect, url_for
 from flask_wtf.csrf import generate_csrf
-from .models import Content, User, AdminReportTemplate, ClassificationSystem, ImagingProtocol, db, CategoryNames, UserData, Reference, ModalityEnum, BodyPartEnum
+from .models import Content, User, AdminReportTemplate, ClassificationSystem, ImagingProtocol, db, CategoryNames, UserData, Reference, ModalityEnum, BodyPartEnum, NormalMeasurement, UserReportTemplate
 from . import db
+from sqlalchemy import or_
 from flask_cors import CORS
 from flask_login import current_user, AnonymousUserMixin, login_required
 from config import userdir, creativesfolder
@@ -45,7 +46,136 @@ def index():
     
     # Render the 'index.html' template, passing the category dictionary to the template
     return render_template('index.html',last_login=last_login)
+# *------------------------------------------------------------
+# Unified search route to search across the app contetns.
+@main_bp.route('/search')
+def site_search():
+    """Unified search across key WSCompanion models.
 
+    Uses simple ILIKE matching on a set of important text fields
+    for each model and returns results grouped by type.
+    """
+    q = request.args.get('q', '').strip()
+    if not q:
+        # If empty search, just go home for now
+        return redirect(url_for('main_routes.index'))
+
+    like_pattern = f"%{q}%"
+
+    # Search content library
+    content_results = (
+        db.session.query(Content)
+        .filter(
+            or_(
+                Content.title.ilike(like_pattern),
+                Content.description.ilike(like_pattern),
+                Content.keywords.ilike(like_pattern),
+            )
+        )
+        .limit(50)
+        .all()
+    )
+
+    # Search references (only text/string fields)
+    refrences_results = (
+        db.session.query(Reference)
+        .filter(
+            or_(
+                Reference.title.ilike(like_pattern),
+                Reference.description.ilike(like_pattern),
+            )
+        )
+        .limit(50)
+        .all()
+    )
+
+    # Search imaging protocols (only text/string fields)
+    protocol_results = (
+        db.session.query(ImagingProtocol)
+        .filter(
+            or_(
+                ImagingProtocol.name.ilike(like_pattern),
+                ImagingProtocol.indication.ilike(like_pattern),
+                ImagingProtocol.technique_text.ilike(like_pattern),
+                ImagingProtocol.contrast_details.ilike(like_pattern),
+                ImagingProtocol.tags.ilike(like_pattern),
+            )
+        )
+        .limit(50)
+        .all()
+    )
+
+    # Search classification systems (only text/string fields)
+    classification_results = (
+        db.session.query(ClassificationSystem)
+        .filter(
+            or_(
+                ClassificationSystem.name.ilike(like_pattern),
+                ClassificationSystem.description.ilike(like_pattern),
+                ClassificationSystem.version.ilike(like_pattern),
+            )
+        )
+        .limit(50)
+        .all()
+    )
+
+    # Search admin report templates (only text/string fields)
+    adminreporttemplates_results = (
+        db.session.query(AdminReportTemplate)
+        .filter(
+            or_(
+                AdminReportTemplate.template_name.ilike(like_pattern),
+                AdminReportTemplate.description.ilike(like_pattern),
+                AdminReportTemplate.tags.ilike(like_pattern),
+                AdminReportTemplate.category.ilike(like_pattern),
+            )
+        )
+        .limit(50)
+        .all()
+    )
+
+    # Search user report templates (only text/string fields)
+    userreportemplates_results = (
+        db.session.query(UserReportTemplate)
+        .filter(
+            or_(
+                UserReportTemplate.template_name.ilike(like_pattern),
+                UserReportTemplate.tags.ilike(like_pattern),
+                UserReportTemplate.template_text.ilike(like_pattern),
+            )
+        )
+        .limit(50)
+        .all()
+    )
+
+    # Search normal measurements (only text/string fields)
+    measurement_results = (
+        db.session.query(NormalMeasurement)
+        .filter(
+            or_(
+                NormalMeasurement.name.ilike(like_pattern),
+                NormalMeasurement.context.ilike(like_pattern),
+                NormalMeasurement.reference_text.ilike(like_pattern),
+                NormalMeasurement.tags.ilike(like_pattern),
+                NormalMeasurement.age_group.ilike(like_pattern),
+                NormalMeasurement.sex.ilike(like_pattern),
+            )
+        )
+        .limit(50)
+        .all()
+    )
+
+    return render_template(
+        'search_results.html',
+        query=q,
+        content_results=content_results,
+        refrences_results=refrences_results,
+        protocol_results=protocol_results,
+        classification_results=classification_results,
+        adminreporttemplates_results=adminreporttemplates_results,
+        userreportemplates_results=userreportemplates_results,
+        measurement_results=measurement_results,
+    )
 # *---------------------------------------------------------------
 # Radilogy tools routes.
 @main_bp.route("/tools", methods=["GET"])
