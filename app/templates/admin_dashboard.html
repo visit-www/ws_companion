@@ -6,6 +6,24 @@
 <div class="container mt-4">
     <!-- Dashboard Heading -->
     <h1 class="text-center mb-4">Admin Dashboard</h1>
+    <div class="container mt-4">
+    {% if breadcrumbs %}
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb">
+                {% for crumb in breadcrumbs %}
+                    {% if crumb.url %}
+                        <li class="breadcrumb-item">
+                            <a href="{{ crumb.url }}">{{ crumb.label }}</a>
+                        </li>
+                    {% else %}
+                        <li class="breadcrumb-item active" aria-current="page">
+                            {{ crumb.label }}
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ol>
+        </nav>
+        {% endif %}
 
     <!-- Developer Resources Dropdown -->
     <div class="d-flex justify-content-end mb-3">
