@@ -11,6 +11,7 @@ import shutil
 import json
 from datetime import datetime, timezone
 from .models import User, Content, AdminReportTemplate, ClassificationSystem, ImagingProtocol, NormalMeasurement, UserAnalyticsEvent,db,Base
+import difflib
 
 
 # * Blueprint setup
@@ -36,6 +37,7 @@ def admin_dashboard():
         flash('Access restricted to administrators only.', 'warning')
         return redirect(url_for('user.login'))
 
+    # Handle admin dashboard action buttons (POST)
     if request.method == 'POST':
         action = request.form.get('action')
 
@@ -48,10 +50,23 @@ def admin_dashboard():
         elif action == 'reset_users':
             return redirect(url_for('app_admin.reset_users'))
 
+    # Basic dashboard context
     users = db.session.query(User).all()
     contents = db.session.query(Content).all()
-    
-    return render_template('admin_dashboard.html', users=users, contents=contents)
+
+    # Optional breadcrumb data (can be used or ignored by the template)
+    breadcrumbs = [
+        {'label': 'Home', 'url': url_for('main_routes.index')},
+        {'label': 'Admin', 'url': url_for('app_admin.admin_dashboard')},
+        {'label': 'Dashboard', 'url': None},
+    ]
+
+    return render_template(
+        'admin_dashboard.html',
+        users=users,
+        contents=contents,
+        breadcrumbs=breadcrumbs,
+    )
 
 # *-----------------------------------------------------------------------------------
 # dd a simple page where you can see counts of:
@@ -91,16 +106,64 @@ def view_models():
         flash('Access restricted to administrators only.', 'warning')
         return redirect(url_for('main_routes.index'))
     
+    # Read search query from URL (?q=imaging, ?q=protcol, etc.)
+    search_query = request.args.get('q', '').strip()
+    
     # Use the Base metadata to get all model (table) names
-    model_names = Base.metadata.tables.keys()
-    tables_data = []
-    for table_name in model_names:
-        tables_data.append({
-                'table_name': table_name,
-                'endpoint': table_name
-            })
-    # Pass the list of tables data to the template
-    return render_template('tables.html', tables_data=tables_data)
+    model_names = sorted(Base.metadata.tables.keys())
+    
+    # Build initial table data
+    tables_data = [
+        {
+            'table_name': table_name,
+            'endpoint': table_name,
+        }
+        for table_name in model_names
+    ]
+    
+    # Apply flexible search if a query is provided
+    if search_query:
+        tokens = [t.lower() for t in search_query.split() if t.strip()]
+        filtered_tables = []
+        
+        for t in tables_data:
+            name = t['table_name']
+            name_lower = name.lower()
+            
+            # Split table name into parts for better fuzzy matching
+            parts = name_lower.replace('_', ' ').split()
+            
+            def token_matches(token: str) -> bool:
+                # Direct substring match
+                if token in name_lower:
+                    return True
+                # Fuzzy match against each part of the table name
+                for part in parts:
+                    ratio = difflib.SequenceMatcher(a=token, b=part).ratio()
+                    if ratio >= 0.7:  # allow minor spelling mistakes
+                        return True
+                return False
+            
+            # If any token matches (substring or fuzzy), keep this table
+            if any(token_matches(tok) for tok in tokens):
+                filtered_tables.append(t)
+        
+        tables_data = filtered_tables
+    
+    # Breadcrumbs for the models page
+    breadcrumbs = [
+        {'label': 'Home', 'url': url_for('main_routes.index')},
+        {'label': 'Admin', 'url': url_for('app_admin.admin_dashboard')},
+        {'label': 'Models', 'url': None},
+    ]
+    
+    # Pass the list of tables data and search/breadcrumb context to the template
+    return render_template(
+        'tables.html',
+        tables_data=tables_data,
+        search_query=search_query,
+        breadcrumbs=breadcrumbs,
+    )
 #*----------------------------------------------------------------
 @app_admin_bp.route('/manage-model', methods=['GET', 'POST'])
 @login_required
