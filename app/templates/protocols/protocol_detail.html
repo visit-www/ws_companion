@@ -299,9 +299,22 @@
                   <tbody class="small">
                     {% set ns = namespace(last_group='pre') %}
                     {% for s in params.sequences %}
-                      {% set group = (s.phase_group or 'pre')|lower %}
+
+                      {# Combine phase_group + name and normalise #}
+                      {% set phase_hint = ((s.phase_group or '') ~ ' ' ~ (s.name or ''))|lower %}
+
+                      {# Decide which group this row belongs to #}
+                      {% if 'post' in phase_hint %}
+                        {% set group = 'post' %}
+                      {% elif 'pre' in phase_hint %}
+                        {% set group = 'pre' %}
+                      {% else %}
+                        {# fallback – keep old behaviour #}
+                        {% set group = (s.phase_group or 'pre')|lower %}
+                      {% endif %}
+
                       {% if group != ns.last_group %}
-                        <!-- red divider row when phase group changes (e.g. pre → post) -->
+                        <!-- red divider row when phase changes (e.g. pre → post) -->
                         <tr>
                           <td colspan="8" class="p-0">
                             <hr class="w-100 border border-danger border-2 opacity-75 my-1">
@@ -344,20 +357,26 @@
                     </tr>
                   </thead>
                   <tbody class="small">
-                    {% set ctns = namespace(inserted_divider=false) %}
+                    {% set ctns = namespace(last_group='pre') %}
                     {% for p in params.phases %}
-                      {# get phase label and lowercase version #}
-                      {% set phase_label = (p.name or p.phase or '') %}
-                      {% set phase_label_lower = phase_label|lower %}
+                      {# Build a hint string from phase name + notes #}
+                      {% set phase_label   = (p.name or p.phase or '') %}
+                      {% set phase_hint    = (phase_label ~ ' ' ~ (p.notes or ''))|lower %}
 
-                      {# when we hit the first contrast phase, draw red divider above it #}
-                      {% if not ctns.inserted_divider and 'contrast' in phase_label_lower %}
+                      {# Decide pre vs post #}
+                      {% if 'post' in phase_hint %}
+                        {% set group = 'post' %}
+                      {% else %}
+                        {% set group = 'pre' %}
+                      {% endif %}
+
+                      {# Insert red divider when we first switch pre → post #}
+                      {% if group != ctns.last_group %}
                         <tr>
                           <td colspan="6" class="p-0">
                             <hr class="w-100 border border-danger border-2 opacity-75 my-1">
                           </td>
                         </tr>
-                        {% set ctns.inserted_divider = true %}
                       {% endif %}
 
                       <tr>
@@ -368,6 +387,8 @@
                         <td>{{ p.interval_mm or '—' }}</td>
                         <td class="text-start p-3">{{ p.notes or '' }}</td>
                       </tr>
+                      {# ✅ critical: update last_group every row #}
+                      {% set ctns.last_group = group %}
                     {% endfor %}
                   </tbody>
                 </table>

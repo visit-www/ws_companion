@@ -1048,7 +1048,7 @@ body {
     color: #333; /* Softer black than default for better readability */
     margin: 0 auto; /* Center the div if it has a defined width */
     max-width: 80ch; /* Optional: Sets an ideal reading width (~80 characters per line) */
-    padding: 0 15px; /* Adds padding to prevent text from touching screen edges */
+    padding: 0 2px; /* Adds padding to prevent text from touching screen edges */
 }
 .protocol-rich-text p,
 .protocol-rich-text ul,
