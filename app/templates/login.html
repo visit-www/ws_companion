@@ -45,14 +45,14 @@
                 </div>
             </div>
             <!-- Reset password and retrieve username buttons -->
-            <div class="failed_login row justify-content-center" style="display: none;">
-                <div class="col-md-3 mt-3 text-center">
+            <div class="failed_login row justify-content-center" >
+                <div class="col-auto text-center">
                     <!-- Use anchor tag for links -->
-                    <a class="btn btn-warning" href="{{ url_for('app_user.credential_manager', action='forgot_password') }}">Forgot Password?</a>
+                    <a class="retrieve-act-btn btn btn-info btn-sm text-muted px-2" href="{{ url_for('app_user.credential_manager', action='forgot_password') }}">Forgot Password?</a>
                 </div>
-                <div class="col-md-3 mt-3 text-center">
+                <div class="col-auto text-center">
                     <!-- Corrected quotes and used anchor tag -->
-                    <a class="btn btn-warning" href="{{ url_for('app_user.credential_manager',action='forgot_username' )}}">Retrieve Username</a>
+                    <a class="retrieve-act-btn btn btn-info btn-sm text-muted px-2" href="{{ url_for('app_user.credential_manager',action='forgot_username' )}}">Retrieve Username</a>
                 </div>
             </div>
             <!-- Registration Link -->
@@ -72,15 +72,19 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Ensure login_failed is correctly interpreted as a boolean
-        let login_failed;
-        login_failed = {{ login_failed | tojson }};
+        let login_failed = {{ login_failed | tojson }};
         
         // Check if login_failed is true and display the failed login message
         if (login_failed) {
-            let failedLoginElement = document.querySelector('.failed_login');
-            if (failedLoginElement) { // Check if the element exists
-                failedLoginElement.style.display = 'flex';
-            }
+            const actionButtons = document.querySelectorAll('.retrieve-act-btn');
+            actionButtons.forEach(btn => {
+                // Remove subtle state
+                btn.classList.remove('btn-info', 'text-muted', 'btn-sm');
+
+                // Add prominent failure state (orange / big)
+                btn.classList.add('btn-warning', 'btn-lg', 'text-dark'); 
+                // or use 'btn-danger' instead of 'btn-warning' if you want red
+            });
         }
 
         const togglePassword = document.getElementById('toggle-password');

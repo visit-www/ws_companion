@@ -1,0 +1,562 @@
+
+
+{% extends "base.html" %}
+
+{% block title %}Developer Roadmap – Case Workspace (Radiologist Co‑Pilot){% endblock %}
+
+{% block content %}
+<div class="container mt-4 protocol-rich-text">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h1 class="mb-0">Developer Roadmap – Case Workspace</h1>
+    </div>
+
+    <p class="lead">
+        This page documents how WSCompanion should function as a true “co‑pilot” for a radiologist working through a single case,
+        from opening images to signing the report and reflecting on learning. Treat this as the functional blueprint for the
+        <strong>Case Workspace</strong> module.
+    </p>
+
+    <div class="row mt-4">
+        <!-- Left: Section navigation -->
+        <div class="col-lg-3 mb-4">
+            <div class="card shadow-sm sticky-top" style="top: 80px;">
+                <div class="card-header">
+                    <strong>Workflow Sections</strong>
+                </div>
+                <div class="list-group list-group-flush">
+                    <a class="list-group-item list-group-item-action" href="#section-1">
+                        1. Clinical Question Panel
+                    </a>
+                    <a class="list-group-item list-group-item-action" href="#section-2">
+                        2. Pattern &amp; DDX Helper
+                    </a>
+                    <a class="list-group-item list-group-item-action" href="#section-3">
+                        3. Measurement Smart Assist
+                    </a>
+                    <a class="list-group-item list-group-item-action" href="#section-4">
+                        4. Diagnosis Companion
+                    </a>
+                    <a class="list-group-item list-group-item-action" href="#section-5">
+                        5. Report Checklist by Indication
+                    </a>
+                    <a class="list-group-item list-group-item-action" href="#section-6">
+                        6. Conclusion Wizard
+                    </a>
+                    <a class="list-group-item list-group-item-action" href="#section-7">
+                        7. Learning &amp; Analytics
+                    </a>
+                    <a class="list-group-item list-group-item-action" href="#section-8">
+                        8. How It Fits in WSCompanion
+                    </a>
+                    <a class="list-group-item list-group-item-action" href="#section-9">
+                        9. How to use this roadmap with ChatGpt
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Detailed content -->
+        <div class="col-lg-9">
+
+            <!-- Section 1 -->
+            <section id="section-1" class="mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">1. Case opened → “Clinical Question Panel”</h2>
+                    </div>
+                    <div class="card-body">
+                        <h5>Where you are in workflow</h5>
+                        <p>
+                            The radiologist has just opened the case, read the clinical history, and is about to start scrolling through images.
+                        </p>
+
+                        <h5>Pain points</h5>
+                        <ul>
+                            <li>History is often vague or messy.</li>
+                            <li>Hard to keep the core question in mind while getting lost in images.</li>
+                        </ul>
+
+                        <h5>What WSCompanion should do</h5>
+                        <h6>1.1 Quick “Clinical Question” capture</h6>
+                        <p>
+                            On the <strong>Case Workspace</strong> page, provide a simple “Clinical Question Panel” with:
+                        </p>
+                        <ul>
+                            <li><strong>Indication</strong> (free text / dropdown).</li>
+                            <li><strong>Suspected body part + modality</strong> (e.g. CT chest, MRI brain).</li>
+                            <li><strong>Core question</strong> (e.g. “?PE”, “?HCC characterization”, “?acute stroke”).</li>
+                        </ul>
+
+                        <p>Use these inputs to auto-suggest:</p>
+                        <ul>
+                            <li>Relevant imaging protocol(s).</li>
+                            <li>Relevant report template.</li>
+                            <li>Relevant checklist (e.g. “For ?PE you must mention…”).</li>
+                        </ul>
+
+                        <p class="mb-0">
+                            <strong>Effect:</strong> This fixes the clinical anchor right at the start so every later tool in the workspace is tailored to
+                            the actual clinical question.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 2 -->
+            <section id="section-2" class="mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">2. Scrolling images → “Pattern &amp; DDX helper”</h2>
+                    </div>
+                    <div class="card-body">
+                        <h5>Where you are</h5>
+                        <p>
+                            The radiologist is scrolling through slices and thinking:
+                            <em>“What on earth is this pattern?”</em>
+                        </p>
+
+                        <h5>Pain points</h5>
+                        <ul>
+                            <li>Pattern-based thinking (tree-in-bud, ground glass, ring-enhancing) is often in the radiologist’s head or scattered PDFs.</li>
+                            <li>Time is wasted googling or digging through Radiopaedia / textbooks during a busy list.</li>
+                        </ul>
+
+                        <h5>What WSCompanion should do</h5>
+                        <h6>2.1 Pattern-based DDX search</h6>
+                        <p>Add a “Finding → DDX” tab within the Case Workspace:</p>
+                        <ul>
+                            <li>Inputs:
+                                <ul>
+                                    <li>Modality.</li>
+                                    <li>Body part.</li>
+                                    <li>Visual pattern (dropdown + free text) such as “ring-enhancing lesion”, “crazy paving”, “restricting extra-axial mass”.</li>
+                                </ul>
+                            </li>
+                            <li>Output: a card list of differentials with:
+                                <ul>
+                                    <li>Top differentials ranked (common first, critical first).</li>
+                                    <li>Key imaging clues <em>for</em> each diagnosis.</li>
+                                    <li>Key clues <em>against</em> each diagnosis.</li>
+                                    <li>“Red flag” / must-not-miss notes.</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                        <p class="mb-0">
+                            Under the hood, this can sit on top of existing <strong>Classification</strong>/Content models, structured as
+                            <em>pattern → DDX content</em>.
+                            <br>
+                            <strong>Effect:</strong> when stuck on appearance, WSCompanion becomes a pattern library living right next to PACS.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 3 -->
+            <section id="section-3" class="mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">3. Needing measurements → “Measurement Smart Assist”</h2>
+                    </div>
+                    <div class="card-body">
+                        <h5>Where you are</h5>
+                        <p>
+                            The radiologist has spotted a finding and is now measuring structures – CBD, aortic diameter, canal stenosis, lesion size, etc.
+                        </p>
+
+                        <h5>Pain points</h5>
+                        <ul>
+                            <li>Normal ranges are scattered in random PDFs/books.</li>
+                            <li>It’s easy to forget which range applies (age, sex, paediatric vs adult).</li>
+                        </ul>
+
+                        <h5>What WSCompanion should do</h5>
+                        <h6>3.1 Quick “What’s normal here?” lookup</h6>
+                        <p>
+                            Integrate the existing <strong>NormalMeasurement</strong> module directly into the Case Workspace via a “Measurements” tab:
+                        </p>
+                        <ul>
+                            <li>Filter by body part + modality + age group (adult / paeds / pregnancy).</li>
+                            <li>Show a list of common measurements for that region (e.g. for “Liver CT”: portal vein, CBD, liver span).</li>
+                            <li>Each line displays:
+                                <ul>
+                                    <li>Name.</li>
+                                    <li>Normal range.</li>
+                                    <li>Short “how to measure” description.</li>
+                                    <li>Reference.</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                        <h6>3.2 Smart phrase generator</h6>
+                        <p>
+                            Next to each measurement:
+                        </p>
+                        <ul>
+                            <li>Input box to enter the measured value.</li>
+                            <li>Button to auto-generate a phrase, e.g.
+                                <em>“CBD measures 9 mm (upper normal limit up to 7 mm in this context) – mildly dilated.”</em>
+                            </li>
+                            <li>Ability to copy to clipboard or auto-insert into the open report template.</li>
+                        </ul>
+
+                        <p class="mb-0">
+                            <strong>Effect:</strong> “What’s normal again?” becomes a one-click, contextual, well-phrased helper instead of a separate hunt.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 4 -->
+            <section id="section-4" class="mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">4. Provisional diagnosis → “Diagnosis Companion”</h2>
+                    </div>
+                    <div class="card-body">
+                        <h5>Where you are</h5>
+                        <p>
+                            The radiologist has a working diagnosis in mind (e.g. “this looks like HCC”, “probably vestibular schwannoma”, “likely PE”).
+                        </p>
+
+                        <h5>Pain points</h5>
+                        <ul>
+                            <li>Uncertainty about which differentials to explicitly name for this diagnosis.</li>
+                            <li>Remembering which imaging features strongly support vs argue against it.</li>
+                            <li>Recalling what staging or classification applies.</li>
+                        </ul>
+
+                        <h5>What WSCompanion should do</h5>
+                        <h6>4.1 Diagnosis card view</h6>
+                        <p>Within a “Diagnosis” tab in the workspace:</p>
+                        <ul>
+                            <li>The user selects or types their working diagnosis.</li>
+                            <li>WSCompanion pulls a <strong>Diagnosis Card</strong> that includes:
+                                <ul>
+                                    <li>Key differentials for that diagnosis (each with a short 1‑line distinguishing feature).</li>
+                                    <li>Essential imaging features to check (capsule, washout, MVI risk factors, perineural spread, etc.).</li>
+                                    <li>Buttons for staging / classification systems (e.g. LI‑RADS, TNM, Bosniak) that open in an overlay.</li>
+                                    <li>Common pitfalls (“don’t mislabel X as Y”, “beware artifact”).</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                        <p class="mb-0">
+                            <strong>Effect:</strong> Once a likely diagnosis is named, the app prompts:
+                            <em>“If you think it’s this, here is the structured mental checklist + ddx you must walk through.”</em>
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 5 -->
+            <section id="section-5" class="mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">5. Ensuring clinical usefulness → “Report Checklist by Indication”</h2>
+                    </div>
+                    <div class="card-body">
+                        <h5>Where you are</h5>
+                        <p>
+                            The radiologist is constructing the main report body.
+                        </p>
+
+                        <h5>Pain points</h5>
+                        <ul>
+                            <li>Risk of missing clinically critical information (e.g. in rectal cancer: mesorectal fascia, CRM, nodal burden, EMVI).</li>
+                            <li>Guidelines differ by indication and are hard to remember in full during a busy session.</li>
+                        </ul>
+
+                        <h5>What WSCompanion should do</h5>
+                        <h6>5.1 Indication-specific checklists</h6>
+                        <p>
+                            Because the Case Workspace already knows the indication from Step 1, it can generate
+                            a <strong>“Must report” checklist</strong> for that combination of modality + body part + question:
+                        </p>
+                        <ul>
+                            <li>Structured bullet list that can be ticked off:
+                                <ul>
+                                    <li>Tumour size &amp; location.</li>
+                                    <li>Invasion into adjacent structures.</li>
+                                    <li>Key measurements (e.g. distance to anal verge).</li>
+                                    <li>Staging features.</li>
+                                    <li>Complications (abscess, perforation, aneurysm, etc.).</li>
+                                </ul>
+                            </li>
+                            <li>Optional ability to auto-insert a mini structured section into the report template.</li>
+                        </ul>
+
+                        <p class="mb-0">
+                            <strong>Effect:</strong> Clinically relevant content is not left to chance; the app acts as a
+                            safety net between the report and the MDT.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 6 -->
+            <section id="section-6" class="mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">6. Writing the conclusion → “Conclusion Wizard”</h2>
+                    </div>
+                    <div class="card-body">
+                        <h5>Where you are</h5>
+                        <p>
+                            The body of the report is complete; now it’s time for impression and recommendations.
+                        </p>
+
+                        <h5>Pain points</h5>
+                        <ul>
+                            <li>Balancing certainty vs doubt in wording.</li>
+                            <li>Translating imaging into actionable recommendations (follow-up, MDT, alternative imaging).</li>
+                            <li>Avoiding overly vague or purely defensive language.</li>
+                        </ul>
+
+                        <h5>What WSCompanion should do</h5>
+                        <h6>6.1 Simple “Impression Builder”</h6>
+                        <p>Provide a small structured form within an “Impression” tab:</p>
+                        <ul>
+                            <li>Diagnostic certainty slider (Definite / Probable / Possible / Uncertain).</li>
+                            <li>Main diagnosis text box.</li>
+                            <li>Optional top differentials (1–3) ranked.</li>
+                            <li>Key complications – present or excluded – as toggles or checkboxes.</li>
+                        </ul>
+
+                        <p>
+                            The app outputs an impression paragraph along the lines of:
+                        </p>
+                        <blockquote class="blockquote">
+                            Findings are most in keeping with [Diagnosis], with [brief justification].<br>
+                            Differential considerations include [Dx2, Dx3], [with/without] features to strongly suggest alternative diagnosis.
+                        </blockquote>
+
+                        <h6>6.2 Recommendation snippets</h6>
+                        <p>
+                            Based on diagnosis + indication, WSCompanion offers recommendation templates, for example:
+                        </p>
+                        <ul>
+                            <li>“Discuss at MDT; correlate with alpha-fetoprotein and liver function; consider surgical/hepatology opinion.”</li>
+                            <li>“Recommend CT pulmonary angiography if clinical suspicion for PE remains high.”</li>
+                            <li>“Short-term follow-up MRI in 3–6 months to assess lesion stability is advised.”</li>
+                        </ul>
+
+                        <p class="mb-0">
+                            The user can choose and edit these snippets, then insert them into the report.
+                            <br>
+                            <strong>Effect:</strong> The last few lines of the report become more consistent, clear, and clinically actionable.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 7 -->
+            <section id="section-7" class="mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">7. After sign‑off → “Learning &amp; Analytics”</h2>
+                    </div>
+                    <div class="card-body">
+                        <h5>Where you are</h5>
+                        <p>
+                            The case is done and signed off; the radiologist moves on to the next study.
+                        </p>
+
+                        <h5>Pain points</h5>
+                        <ul>
+                            <li>Great cases disappear into the ether.</li>
+                            <li>Hard to track what is being seen and what is being learned.</li>
+                            <li>No clear pattern recognition around fatigue or performance over time.</li>
+                        </ul>
+
+                        <h5>What WSCompanion should do</h5>
+                        <h6>7.1 One-click “Save as Teaching Case / Bookmark”</h6>
+                        <p>
+                            At the end of the case, provide a button:
+                            <strong>“Mark as interesting / teaching”</strong>.
+                        </p>
+                        <ul>
+                            <li>Store indication, diagnosis, modality, body part, and key tags.</li>
+                            <li>Optionally link to the external case location (if allowed) or keep it as a conceptual teaching slot.</li>
+                            <li>Later, a future <strong>TeachingFile</strong> module can surface these for viva practice.</li>
+                        </ul>
+
+                        <h6>7.2 Productivity + reflection log</h6>
+                        <p>
+                            Tie into the existing session tracking:
+                        </p>
+                        <ul>
+                            <li>Automatically log time spent (start to finish), modality, body part, workplace.</li>
+                            <li>Allow a subjective difficulty rating (1–5, optional).</li>
+                        </ul>
+                        <p>
+                            At the end of the day, show a brief summary:
+                        </p>
+                        <ul>
+                            <li>Cases by modality.</li>
+                            <li>Any flagged “tricky” or “teaching” cases.</li>
+                            <li>Optional 1‑line reflection, e.g. “today I struggled with X pattern”.</li>
+                        </ul>
+
+                        <p class="mb-0">
+                            <strong>Effect:</strong> WSCompanion becomes both a <em>logbook</em> and a <em>learning diary</em>.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Section 8 -->
+            <section id="section-8" class="mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">8. How this fits practically into WSCompanion</h2>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            To keep implementation realistic and incremental, the Case Workspace should be designed as a single,
+                            central screen that lives alongside PACS and reuses as much existing infrastructure as possible.
+                        </p>
+
+                        <h5>Core screen</h5>
+                        <ul>
+                            <li>Route: <code>/case_workspace</code>.</li>
+                            <li>Accepts query parameters: <code>modality</code>, <code>body_part</code>, <code>indication</code>.</li>
+                            <li>Tabs/sections:
+                                <ul>
+                                    <li>Clinical.</li>
+                                    <li>Findings/DDX.</li>
+                                    <li>Measurements.</li>
+                                    <li>Diagnosis.</li>
+                                    <li>Checklist.</li>
+                                    <li>Impression.</li>
+                                    <li>Notes / Reflection.</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                        <h5>Backed by existing models</h5>
+                        <ul>
+                            <li>Protocols.</li>
+                            <li>Classification systems.</li>
+                            <li>NormalMeasurement.</li>
+                            <li>Templates (admin + user).</li>
+                            <li>Generic Content items (links, embeds, guidelines).</li>
+                        </ul>
+
+                        <h5>New entities to introduce</h5>
+                        <ul>
+                            <li><strong>FindingPattern</strong> – to model pattern → ddx links.</li>
+                            <li><strong>DiagnosisGuide</strong> – to store diagnosis-centric DDX, key features, and staging pointers.</li>
+                            <li><strong>TeachingFileCase</strong> (later) – for teaching case metadata and links.</li>
+                        </ul>
+
+                        <h5>UX principles</h5>
+                        <ul>
+                            <li>Keep it lightweight – mostly lookup and phrase insertion, not heavy data entry.</li>
+                            <li>Think “second monitor” behaviour – WSCompanion on a laptop or side screen, PACS on main monitors.</li>
+                            <li>Minimise clicks:
+                                <ul>
+                                    <li>Use keyboard shortcuts where possible.</li>
+                                    <li>Enable quick copy/insert for all generated phrases and checklists.</li>
+                                </ul>
+                            </li>
+                        </ul>
+
+                        <p class="mb-0">
+                            This section should stay up to date as the Case Workspace is implemented, serving as the
+                            live functional spec for how WSCompanion supports radiologists at every step of a case.
+                        </p>
+                    </div>
+                </div>
+            </section>
+            <section id="section-9" class="mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header">
+                        <h2 class="h4 mb-0">9. How to use this roadmap with ChatGPT</h2>
+                    </div>
+                    <div class="card-body">
+                        <p>
+                            This section explains how you should interact with ChatGPT when working on WSCompanion so that
+                            all development stays aligned with this roadmap and the Case Workspace vision.
+                        </p>
+
+                        <h5>Core rule</h5>
+                        <p>
+                            Whenever you ask ChatGPT for development help on WSCompanion, explicitly tell it to
+                            <strong>use this roadmap as the single source of truth for feature priorities and design</strong>.
+                        </p>
+
+                        <h5>Suggested workflow with ChatGPT</h5>
+                        <ol>
+                            <li>
+                                <strong>Pick a roadmap section.</strong><br>
+                                Before you start a dev session, decide which part of the workflow you want to advance
+                                (e.g. Section 3 – Measurement Smart Assist, or Section 5 – Report Checklist by Indication).
+                            </li>
+                            <li>
+                                <strong>Tell ChatGPT which section you are focusing on.</strong><br>
+                                Begin your prompt with something like:
+                                <em>“For WSCompanion, using the Case Workspace roadmap, focus on Section 3 (Measurement Smart Assist)
+                                and help me design the models/routes/templates/Micro‑UI for it.”</em>
+                            </li>
+                            <li>
+                                <strong>Ask for concrete, implementation‑ready output.</strong><br>
+                                Favour prompts that request:
+                                <ul>
+                                    <li>Specific SQLAlchemy models and relationships.</li>
+                                    <li>Flask routes and view/controller logic.</li>
+                                    <li>Jinja template structure and Bootstrap layout.</li>
+                                    <li>How to integrate with existing models like <code>NormalMeasurement</code>, <code>Template</code>, etc.</li>
+                                </ul>
+                            </li>
+                            <li>
+                                <strong>Keep scope tight.</strong><br>
+                                Ask for one thin slice at a time (e.g. “just the API endpoint and service layer for pattern → DDX search”)
+                                so you can implement and test incrementally.
+                            </li>
+                            <li>
+                                <strong>Iterate based on real code.</strong><br>
+                                After you paste code or errors from your editor, ask ChatGPT to revise the design
+                                <em>while still honouring this roadmap</em>, rather than introducing unrelated features.
+                            </li>
+                        </ol>
+
+                        <h5>Example prompts you can reuse</h5>
+                        <ul>
+                            <li>
+                                <em>“Using the WSCompanion Case Workspace roadmap (Section 1 – Clinical Question Panel),
+                                help me design the /case_workspace route signature and the initial Jinja template skeleton.”</em>
+                            </li>
+                            <li>
+                                <em>“According to the roadmap’s Section 4 – Diagnosis Companion, suggest a SQLAlchemy model for DiagnosisGuide
+                                and how it should link to ClassificationSystem and Content.”</em>
+                            </li>
+                            <li>
+                                <em>“From Section 6 – Conclusion Wizard, generate Jinja form components and Bootstrap layout for the Impression tab,
+                                assuming we already have a CaseWorkspace context object.”</em>
+                            </li>
+                            <li>
+                                <em>“Using Sections 3 and 5 together, show how to wire the Measurement Smart Assist and Indication‑Specific Checklist
+                                into a single Case Workspace page with tabs.”</em>
+                            </li>
+                        </ul>
+
+                        <h5>What ChatGPT should avoid unless you explicitly request it</h5>
+                        <ul>
+                            <li>Designing new modules or big features that are not reflected in this roadmap.</li>
+                            <li>Re‑architecting the app away from the Case Workspace concept.</li>
+                            <li>Over‑complicating UX beyond the lightweight, second‑monitor usage described here.</li>
+                        </ul>
+
+                        <p class="mb-0">
+                            As long as you remind ChatGPT that this roadmap is the reference for WSCompanion, it will keep
+                            suggestions tightly aligned with the Case Workspace vision and your real radiologist workflow.
+                        </p>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

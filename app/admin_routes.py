@@ -1,17 +1,26 @@
 # * Imports
-from flask import Blueprint, request, render_template, redirect, url_for, flash, session, jsonify,send_file
-from sqlalchemy import inspect, Table,MetaData
+from flask import Blueprint, request, render_template, redirect, url_for, flash, send_file
 from flask_login import login_required, current_user
-from .models import User, Content
 from io import BytesIO
-from flask import send_file
 import os
-import tempfile
-import shutil
 import json
 from datetime import datetime, timezone
-from .models import User, Content, AdminReportTemplate, ClassificationSystem, ImagingProtocol, NormalMeasurement, UserAnalyticsEvent,db,Base
 import difflib
+import zipfile
+from .models import (
+    User,
+    Content,
+    AdminReportTemplate,
+    ClassificationSystem,
+    ImagingProtocol,
+    NormalMeasurement,
+    UserAnalyticsEvent,
+    db,
+    Base,
+)
+from .models import UserReportTemplate
+from .forms import AddReportTemplateMobile, AddReportTemplateDesktop
+from .util import create_report_template_pdf, create_report_template_word, cleanup_old_previews
 
 
 # * Blueprint setup
@@ -165,7 +174,7 @@ def view_models():
         breadcrumbs=breadcrumbs,
     )
 #*----------------------------------------------------------------
-@app_admin_bp.route('/manage-model', methods=['GET', 'POST'])
+@app_admin_bp.route('/manage-model', methods=['POST'])
 @login_required
 def manage_model():
     if not current_user.is_admin:
@@ -178,14 +187,16 @@ def manage_model():
 
     # Use the Base metadata to get all model (table) names
     model_names = Base.metadata.tables.keys()
+
     if action == "add_data" and button_id in model_names:
         # If action is 'add_data' and button ID matches a model name, redirect to the correct URL
         # Construct the URL to add new entries to the model via Flask-Admin
         target_url = f"/flask_admin/{button_id}/new/"
         return redirect(target_url)
-    # ! Debugging 
-    # If no specific action matches, render the test page with tables data and message in console
-    return render_template(url_for('main_routes.debug'))
+
+    # Fallback: go back to the models overview page
+    flash("No valid action selected for this model.", "warning")
+    return redirect(url_for('app_admin.view_models'))
 # *----------------------------------------------------------------
 # create smart report templates:
 # *----------------------------------------------------------------
@@ -228,17 +239,7 @@ def create_report_template():
     # Render the template with re-initialized forms
     return render_template('create_smart_report_template.html', mobile_form=mobile_form, desktop_form=desktop_form)
 
-# *-------------------------Route to save report, download report and preivew reports---------------------------------------
-from flask import request, render_template, redirect, url_for, flash, send_file
-from flask_login import login_required, current_user
-from datetime import datetime, timezone
-from io import BytesIO
-import os, zipfile, json
 
-from app import db
-from app.models import UserReportTemplate
-from app.forms import AddReportTemplateMobile, AddReportTemplateDesktop
-from app.util import create_report_template_pdf, create_report_template_word, cleanup_old_previews
 
 @app_admin_bp.route('/save_report_template', methods=['POST'])
 @login_required
@@ -440,3 +441,13 @@ def developer_git_workflow():
         flash('Access restricted to administrators only.', 'warning')
         return redirect(url_for('main_routes.index'))
     return render_template('developer_resources/git_workflow.html')
+
+# App devlopement roadmap :
+@app_admin_bp.route('/developer-resources/app-dev-roadmap')
+@login_required
+def app_dev_roadmap():
+    breadcrumbs = [
+        {"label": "Admin Dashboard", "url": url_for('app_admin.admin_dashboard')},
+        {"label": "Developer Roadmap", "url": None},
+    ]
+    return render_template('developer_resources/app_dev_roadmap.html', breadcrumbs=breadcrumbs)

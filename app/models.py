@@ -102,6 +102,9 @@ class BodyPartEnum(PyEnum):
     MISCELLANEOUS = 'MISCELLANEOUS'
     BREAST = 'BREAST'
     OTHERS = 'OTHERS'
+    ABDOMEN = 'ABDOMEN'
+    LOWER_GI = 'LOWER_GI'
+    
 
 
 # Enum for modalities
@@ -532,6 +535,12 @@ class UserAnalyticsEvent(Base):
                 nullable=True,
                 index=True,
     )
+    user_template_id: so.Mapped[Optional[int]] = sa.Column(
+                sa.Integer,
+                sa.ForeignKey('user_report_templates.id', ondelete='SET NULL', onupdate='CASCADE'),
+                nullable=True,
+                index=True,
+    )
 
     classification_id: so.Mapped[Optional[int]] = sa.Column(
                 sa.Integer,
@@ -562,6 +571,10 @@ class UserAnalyticsEvent(Base):
     # relationships (optional, but handy)
     user: so.Mapped[Optional["User"]] = so.relationship('User', backref=so.backref('analytic_events', passive_deletes=True))
     template: so.Mapped[Optional["AdminReportTemplate"]] = so.relationship('AdminReportTemplate', backref=so.backref('analytic_events', passive_deletes=True))
+    user_template: so.Mapped[Optional["UserReportTemplate"]] = so.relationship(
+        'UserReportTemplate',
+        backref=so.backref('analytic_events', passive_deletes=True)
+    )
     classification_system: so.Mapped[Optional["ClassificationSystem"]] = so.relationship('ClassificationSystem', backref=so.backref('analytic_events', passive_deletes=True))
     protocol: so.Mapped[Optional["ImagingProtocol"]] = so.relationship('ImagingProtocol', backref=so.backref('analytic_events', passive_deletes=True))
     normal_measurement: so.Mapped[Optional["NormalMeasurement"]] = so.relationship('NormalMeasurement', backref=so.backref('analytic_events', passive_deletes=True))

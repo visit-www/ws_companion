@@ -1,0 +1,504 @@
+{% extends "base.html" %}
+
+{% block title %}Case Workspace – Clinical Question{% endblock %}
+
+{% block content %}
+<div class="container mt-4 protocol-rich-text">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Case Workspace</h1>
+    <div class="text-muted small text-end">
+      {% if case.modality_enum or case.body_part_enum or case.indication %}
+        <div>
+          <strong>Study:</strong>
+          {% if case.modality_enum or case.body_part_enum %}
+            {{ case.modality_enum.value if case.modality_enum else "?" }}
+            {{ case.body_part_enum.value.replace('_', ' ').title() if case.body_part_enum else "" }}
+          {% else %}
+            —
+          {% endif %}
+        </div>
+        <div><strong>Indication:</strong> {{ case.indication or "—" }}</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item">
+        <a href="{{ url_for('main_routes.index') }}">Home</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        Case Workspace
+      </li>
+    </ol>
+  </nav>
+
+  <div class="row">
+    <!-- Left: Clinical Question Panel -->
+    <div class="col-lg-8">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header">
+          <h2 class="h5 mb-0">1. Clinical Question Panel</h2>
+        </div>
+        <div class="card-body">
+          <p class="text-muted small mb-3">
+            Capture the indication, suspected study, and core question. This anchors all downstream tools.
+          </p>
+
+          <form method="get"
+                action="{{ url_for('main_routes.case_workspace') }}"
+                class="row g-3">
+
+            <!-- Indication / history -->
+            <div class="col-12">
+              <label for="indication" class="form-label fw-semibold">
+                Indication / Clinical History
+              </label>
+              <textarea id="indication"
+                        name="indication"
+                        rows="2"
+                        class="form-control"
+                        placeholder="e.g. RUQ pain, fever, ?acute cholecystitis">{{ case.indication }}</textarea>
+            </div>
+
+            <!-- Modality -->
+            <div class="col-md-6">
+              <label for="modality" class="form-label fw-semibold">Modality</label>
+              <select id="modality" name="modality" class="form-select">
+                <option value="">Select modality</option>
+                {% for m in modality_choices %}
+                  <option value="{{ m.name }}"
+                    {% if case.modality_enum and case.modality_enum == m %}selected{% endif %}>
+                    {{ m.value }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Body part -->
+            <div class="col-md-6">
+              <label for="body_part" class="form-label fw-semibold">Body part</label>
+              <select id="body_part" name="body_part" class="form-select">
+                <option value="">Select body part</option>
+                {% for b in body_part_choices %}
+                  <option value="{{ b.name }}"
+                    {% if case.body_part_enum and case.body_part_enum == b %}selected{% endif %}>
+                    {{ b.value.replace('_', ' ').title() }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <!-- Core clinical question -->
+            <div class="col-12">
+              <label for="core_question" class="form-label fw-semibold">
+                Core Question
+              </label>
+              <input type="text"
+                     id="core_question"
+                     name="core_question"
+                     class="form-control"
+                     placeholder="?PE, ?HCC characterisation, ?acute stroke"
+                     value="{{ case.core_question }}">
+              <div class="form-text">
+                Short keyword-style question that should steer the whole workspace.
+              </div>
+            </div>
+
+            <div class="col-12 d-flex justify-content-end">
+              <button type="submit" class="btn btn-outline-success">
+                Update Workspace
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- DDx and Pattern helper panel -->
+        <div class="card shadow-sm mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="h6 mb-0">2. Pattern &amp; DDX Helper</h2>
+            <span class="badge bg-light text-muted small">
+            Use while scrolling images
+            </span>
+        </div>
+        <div class="card-body">
+            <p class="text-muted small mb-3">
+            Use this panel while you scroll images to crystallise the pattern and a tight
+            differential list. Think: <strong>Pattern → Shortlist → Leading diagnosis + can’t-miss</strong>.
+            </p>
+
+            <form class="row g-3">
+            <!-- Key imaging pattern -->
+            <div class="col-12">
+                <label class="form-label fw-semibold" for="imaging_pattern">
+                Key imaging pattern
+                </label>
+                <textarea id="imaging_pattern"
+                        class="form-control"
+                        rows="2"
+                        placeholder="e.g. Solitary ring-enhancing lesion in right frontal lobe with marked vasogenic oedema and minimal mass effect."></textarea>
+                <div class="form-text">
+                One-sentence pattern description your future self will instantly recognise.
+                </div>
+            </div>
+
+            <!-- DDX shortlist -->
+            <div class="col-md-6">
+                <label class="form-label fw-semibold" for="ddx_shortlist">
+                Differential shortlist (3–5 items)
+                </label>
+                <textarea id="ddx_shortlist"
+                        class="form-control"
+                        rows="4"
+                        placeholder="1) Metastasis (favoured)&#10;2) High-grade glioma&#10;3) Abscess (less likely)..."></textarea>
+            </div>
+
+            <!-- Imaging clues / pearls -->
+            <div class="col-md-6">
+                <label class="form-label fw-semibold" for="ddx_clues">
+                Imaging clues / reporting pearls
+                </label>
+                <textarea id="ddx_clues"
+                        class="form-control"
+                        rows="4"
+                        placeholder="Look for: central restricted diffusion, smooth thin wall, satellite lesions, haemorrhagic components, MR perfusion pattern..."></textarea>
+            </div>
+
+            <!-- Can’t-miss diagnoses -->
+            <div class="col-md-6">
+                <label class="form-label fw-semibold" for="cant_miss">
+                Can’t-miss diagnoses / red flags
+                </label>
+                <textarea id="cant_miss"
+                        class="form-control"
+                        rows="2"
+                        placeholder="e.g. Epidural abscess, impending cord compression, testicular torsion, acute mesenteric ischaemia..."></textarea>
+            </div>
+
+            <!-- Suggested next steps -->
+            <div class="col-md-6">
+                <label class="form-label fw-semibold" for="suggested_next_steps">
+                Suggested next steps for the report
+                </label>
+                <textarea id="suggested_next_steps"
+                        class="form-control"
+                        rows="2"
+                        placeholder="State leading diagnosis, list key differentials, recommend MRI with contrast / follow-up / MDT discussion as appropriate."></textarea>
+            </div>
+
+            <div class="col-12">
+                <div class="small text-muted">
+                Later in the roadmap: this panel will auto-pull <strong>checklists</strong> and
+                <strong>report templates</strong> based on your clinical question, modality and body part.
+                </div>
+            </div>
+            </form>
+        </div>
+        </div>
+
+        <!-- Section 3: Diagnosis & Impression Prep -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="h6 mb-0">3. Diagnosis &amp; Impression Prep</h2>
+            <span class="badge bg-light text-muted small">
+              Auto-build impression from your inputs
+            </span>
+          </div>
+
+          <div class="card-body">
+            <p class="text-muted small mb-3">
+              This section synthesises your clinical question, imaging pattern, and DDX into a structured
+              radiologist-style impression. Later, this will auto‑populate from your entries in Sections 1 and 2.
+            </p>
+
+            <form class="row g-3">
+
+              <!-- Leading Diagnosis -->
+              <div class="col-12">
+                <label class="form-label fw-semibold" for="leading_diagnosis">
+                  Leading diagnosis
+                </label>
+                <textarea id="leading_diagnosis"
+                          class="form-control"
+                          rows="2"
+                          placeholder="e.g. Favoured diagnosis: Metastasis from presumed lung primary..."></textarea>
+              </div>
+
+              <!-- Supportive Imaging Findings -->
+              <div class="col-12">
+                <label class="form-label fw-semibold" for="supportive_findings">
+                  Supportive imaging findings
+                </label>
+                <textarea id="supportive_findings"
+                          class="form-control"
+                          rows="3"
+                          placeholder="e.g. Irregular peripheral enhancement, vasogenic oedema out of proportion to mass effect, multiplicity..."></textarea>
+              </div>
+
+              <!-- Alternative Considerations -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold" for="alt_considerations">
+                  Alternative considerations (DDX)
+                </label>
+                <textarea id="alt_considerations"
+                          class="form-control"
+                          rows="3"
+                          placeholder="e.g. High‑grade glioma, abscess (less likely)..."></textarea>
+              </div>
+
+              <!-- Red Flags -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold" for="red_flags">
+                  Red flags to mention
+                </label>
+                <textarea id="red_flags"
+                          class="form-control"
+                          rows="3"
+                          placeholder="e.g. Mass effect approaching ventricular surface, risk of herniation, impending cord compression..."></textarea>
+              </div>
+
+              <!-- Recommended next steps -->
+              <div class="col-12">
+                <label class="form-label fw-semibold" for="impression_next_steps">
+                  Recommended next steps
+                </label>
+                <textarea id="impression_next_steps"
+                          class="form-control"
+                          rows="2"
+                          placeholder="e.g. Recommend MRI brain with perfusion, oncology referral, tissue sampling if clinically appropriate..."></textarea>
+              </div>
+
+              <div class="col-12 small text-muted">
+                Future roadmap: This impression builder will auto‑assemble from Sections 1–2 and allow “one‑click insert”
+                into your structured report template.
+              </div>
+
+            </form>
+          </div>
+        </div>
+
+        <!-- Section 4: Measurement Panel -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="h6 mb-0">4. Measurement Panel</h2>
+            <span class="badge bg-light text-muted small">Smart measurement helper</span>
+          </div>
+
+          <div class="card-body">
+            <p class="text-muted small mb-3">
+              Add key measurements relevant to this case. Later stages will auto-pull normal ranges
+              from the NormalMeasurement module and compute normal vs abnormal.
+            </p>
+
+            <form class="row g-3">
+              <!-- Measurement name -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold" for="measurement_name">
+                  Measurement name
+                </label>
+                <input id="measurement_name"
+                       type="text"
+                       class="form-control"
+                       placeholder="e.g. CBD diameter, AP canal, aortic root, LVOT...">
+              </div>
+
+              <!-- User measurement -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold" for="measurement_value">
+                  Your measured value
+                </label>
+                <input id="measurement_value"
+                      type="text"
+                      class="form-control"
+                      placeholder="e.g. 7 mm, 23 mm, 3.4 cm">
+              </div>
+
+              <!-- How to measure -->
+              <div class="col-12">
+                <label class="form-label fw-semibold" for="measurement_how">
+                  How to measure
+                </label>
+                <textarea id="measurement_how"
+                          class="form-control"
+                          rows="2"
+                          placeholder="e.g. Measure inner-to-inner at the level of the porta hepatis during quiet respiration..."></textarea>
+              </div>
+
+              <!-- Normal range -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold" for="measurement_normal">
+                  Normal range
+                </label>
+                <input id="measurement_normal"
+                       type="text"
+                       class="form-control"
+                       placeholder="e.g. 0–6 mm; auto-populated later">
+              </div>
+
+              <!-- Interpretation -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold" for="measurement_interpretation">
+                  Interpretation
+                </label>
+                <input id="measurement_interpretation"
+                      type="text"
+                      class="form-control"
+                      placeholder="e.g. Mildly enlarged / Normal / Markedly increased">
+              </div>
+
+              <!-- Pearls -->
+              <div class="col-12">
+                <label class="form-label fw-semibold" for="measurement_pearl">
+                  Measurement pearls
+                </label>
+                <textarea id="measurement_pearl"
+                          class="form-control"
+                          rows="2"
+                          placeholder="e.g. Avoid tangential cuts; confirm on coronal plane; ensure patient is not rotated..."></textarea>
+              </div>
+
+              <div class="col-12 small text-muted">
+                Future roadmap: will connect to the NormalMeasurement database, auto-suggest measurements,
+                validate against age/sex‑matched ranges, and allow one‑click insertion into the report.
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Section 5: Checklist & Pitfalls -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="h6 mb-0">5. Checklist &amp; Pitfalls</h2>
+            <span class="badge bg-light text-muted small">Don’t-miss items</span>
+          </div>
+
+          <div class="card-body">
+            <p class="text-muted small mb-3">
+              Use this section to capture must‑check items and common pitfalls for this case. Later, this will auto‑load
+              modality/body‑part specific checklists.
+            </p>
+
+            <form class="row g-3">
+              <!-- Checklist items -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold" for="case_checklist_items">
+                  Checklist items
+                </label>
+                <textarea id="case_checklist_items"
+                          class="form-control"
+                          rows="5"
+                          placeholder="e.g. For CT head trauma: basal cisterns, herniation, temporal bone, venous sinuses, orbit, cervical spine..."></textarea>
+                <div class="form-text">
+                  Bullet‑style list of things you want to be sure you’ve checked.
+                </div>
+              </div>
+
+              <!-- Pitfalls / don’t-miss -->
+              <div class="col-md-6">
+                <label class="form-label fw-semibold" for="case_pitfalls">
+                  Pitfalls &amp; don’t‑miss findings
+                </label>
+                <textarea id="case_pitfalls"
+                          class="form-control"
+                          rows="5"
+                          placeholder="e.g. Subtle subdural along falx, early insular ribbon loss, small pneumothorax, tiny ureteric stones..."></textarea>
+                <div class="form-text">
+                  Things that are easy to overlook but clinically important.
+                </div>
+              </div>
+
+              <!-- Communication / MDT notes -->
+              <div class="col-12">
+                <label class="form-label fw-semibold" for="case_mdt_notes">
+                  Communication / MDT notes
+                </label>
+                <textarea id="case_mdt_notes"
+                          class="form-control"
+                          rows="2"
+                          placeholder="e.g. Flag for stroke MDT, urgent clinician phone call, add to teaching file, follow‑up imaging plan..."></textarea>
+              </div>
+
+              <div class="col-12 small text-muted">
+                Future roadmap: This panel will sync with predefined checklists and allow you to tick items off,
+                then push a summary into your final report or teaching file.
+              </div>
+            </form>
+          </div>
+        </div>
+    </div>
+
+    <!-- Right: Auto-suggestions + summary -->
+    <div class="col-lg-4">
+      <!-- Auto-suggested tools -->
+      <div class="card shadow-sm mb-3">
+        <div class="card-header">
+          <h3 class="h6 mb-0">Auto-suggested tools</h3>
+        </div>
+        <div class="card-body small">
+          <p class="text-muted mb-2">
+            Based on modality, body part and core question.
+          </p>
+
+          <h6 class="fw-semibold">Imaging protocols</h6>
+          {% if suggested_protocols %}
+            <ul class="list-unstyled mb-3">
+              {% for p in suggested_protocols %}
+                <li class="mb-1">
+                  {{ p.name }}
+                  <div class="text-muted small">
+                    {{ p.modality.value }} – {{ p.body_part.value.replace('_', ' ').title() }}
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-muted">No matching protocols yet.</p>
+          {% endif %}
+
+          <h6 class="fw-semibold mt-3">Report templates</h6>
+          {% if suggested_templates %}
+            <ul class="list-unstyled mb-3">
+              {% for t in suggested_templates %}
+                <li class="mb-1">{{ t.title }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-muted">No templates suggested yet.</p>
+          {% endif %}
+
+          <h6 class="fw-semibold mt-3">Checklists</h6>
+          {% if suggested_checklists %}
+            <ul class="list-unstyled mb-0">
+              {% for item in suggested_checklists %}
+                <li class="mb-1">{{ item }}</li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="text-muted mb-0">Checklist integration coming later.</p>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Current case summary -->
+      <div class="card shadow-sm">
+        <div class="card-header">
+          <h3 class="h6 mb-0">Current case summary</h3>
+        </div>
+        <div class="card-body small">
+          <div><strong>Indication:</strong> {{ case.indication or "—" }}</div>
+          <div>
+            <strong>Study:</strong>
+            {% if case.modality_enum or case.body_part_enum %}
+              {{ case.modality_enum.value if case.modality_enum else "?" }}
+              {{ case.body_part_enum.value.replace('_', ' ').title() if case.body_part_enum else "" }}
+            {% else %}
+              —
+            {% endif %}
+          </div>
+          <div><strong>Core question:</strong> {{ case.core_question or "—" }}</div>
+        </div>
+      </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,240 @@
+{% extends "base.html" %}
+
+{% block title %}{{ m.name }} – Normal measurement{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+  <div class="row justify-content-center">
+    <div class="col-12 col-lg-8">
+      <!-- Breadcrumb + Search in Same Row -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="m-0">
+          <ol class="breadcrumb small mb-0">
+            <li class="breadcrumb-item">
+              <a href="{{ url_for('main_routes.radiology_tools') }}">Radiology Tools</a>
+            </li>
+            <li class="breadcrumb-item">
+              <a href="{{ url_for('main_routes.measurement_library') }}">Measurements Library</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+              {{ m.name }}
+            </li>
+          </ol>
+        </nav>
+
+        <!-- Search bar (right aligned) -->
+        <div class="ms-3" style="width: 260px;">
+          <div class="position-relative">
+            <input id="measurement-quick-search"
+                  type="text"
+                  class="form-control form-control-sm"
+                  placeholder="Search measurements…">
+            <div id="measurement-quick-suggestions"
+                class="list-group position-absolute w-100 shadow-sm"
+                style="z-index: 1050; display: none; max-height: 260px; overflow-y: auto;">
+            </div>
+          </div>
+        </div>
+
+      </div>
+      <div class="card shadow-sm">
+        <div class="card-body">
+          
+          <!-- Header -->
+          <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-3">
+            <div>
+              <h1 class="h4 mb-1">{{ m.name }}</h1>
+              <p class="mb-0 text-muted small">
+                {{ m.body_part.value if m.body_part else '' }}
+                {% if m.modality %} · {{ m.modality.value }}{% endif %}
+              </p>
+            </div>
+          </div>
+
+          <!-- Key facts + How to measure row -->
+          <div class="row g-3 mb-3 protocol-rich-text">
+            <!-- Normal range -->
+            <div class="col-12 col-md-6">
+              <div class="border rounded-3 p-3 h-100">
+                <div class="text-muted text-uppercase small mb-1">Normal range</div>
+                <div class="fw-semibold">
+                  {% if m.min_value is not none and m.max_value is not none %}
+                    {{ m.min_value }} – {{ m.max_value }} {{ m.unit or '' }}
+                  {% elif m.max_value is not none %}
+                    ≤ {{ m.max_value }} {{ m.unit or '' }}
+                  {% elif m.min_value is not none %}
+                    ≥ {{ m.min_value }} {{ m.unit or '' }}
+                  {% else %}
+                    <span class="text-muted">Not specified</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            <!-- How / when to measure (moved to top row) -->
+            <div class="col-12 col-md-6 protocol-rich-text">
+              <div class="border rounded-3 p-3 h-100">
+                <div class="text-muted text-uppercase small mb-1">How / when to measure</div>
+                <div class="protocol-rich-text small text-start">
+                  {% if m.context %}
+                    {{ m.context|safe }}
+                  {% else %}
+                    <span class="text-muted">No measurement instructions available.</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Rich text sections -->
+          <div class="accordion" id="measurementDetailAccordion">
+
+            {% if m.reference_text %}
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingReference">
+                <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseReference" aria-expanded="false" aria-controls="collapseReference">
+                  Interpretation
+                </button>
+              </h2>
+              <div id="collapseReference" class="accordion-collapse collapse" aria-labelledby="headingReference"
+                   data-bs-parent="#measurementDetailAccordion">
+                <div class="accordion-body protocol-rich-text small text-start">
+                  {{ m.reference_text|safe }}
+                </div>
+              </div>
+            </div>
+            {% endif %}
+
+            {% if m.reference_doi %}
+            <div class="accordion-item">
+              <h2 class="accordion-header" id="headingSource">
+                <button class="accordion-button collapsed py-2" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseSource" aria-expanded="false" aria-controls="collapseSource">
+                  Refrences/Sources
+                </button>
+              </h2>
+              <div id="collapseSource" class="accordion-collapse collapse" aria-labelledby="headingSource"
+                   data-bs-parent="#measurementDetailAccordion">
+                <div class="accordion-body small">
+                  <a href="{{ m.reference_doi }}" target="_blank" rel="noopener">
+                    {{ m.reference_doi }}
+                  </a>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+          </div>
+
+          <!-- Age / Sex block moved down -->
+          <div class="mt-4">
+            <div class="text-muted text-uppercase small mb-1">Age / sex</div>
+            <div class="fw-semibold small">
+              {{ m.age_group or 'Any' }}
+              {% if m.sex %} · {{ m.sex }}{% endif %}
+            </div>
+          </div>
+
+          <!-- Tags row (moved to bottom) -->
+          <div class="mt-4">
+            <div class="text-muted text-uppercase small mb-1">Tags</div>
+            {% if m.tags %}
+              <div class="d-flex flex-wrap gap-2">
+                {% for tag in m.tags.split(',') %}
+                  {% set cleaned = tag.strip() %}
+                  {% if cleaned %}
+                    <span class="badge rounded-pill bg-primary-subtle text-dark border">{{ cleaned }}</span>
+                  {% endif %}
+                {% endfor %}
+              </div>
+            {% else %}
+              <span class="text-muted small">None</span>
+            {% endif %}
+          </div>
+        <script>
+        (function () {
+          const input = document.getElementById('measurement-quick-search');
+          const suggestions = document.getElementById('measurement-quick-suggestions');
+          if (!input || !suggestions) {
+            return;
+          }
+
+          let debounceTimer = null;
+
+          function clearSuggestions() {
+            suggestions.innerHTML = '';
+            suggestions.style.display = 'none';
+          }
+
+          function renderSuggestions(results) {
+            if (!results.length || input.value.trim().length < 2) {
+              clearSuggestions();
+              return;
+            }
+            suggestions.innerHTML = '';
+            results.forEach(m => {
+              const a = document.createElement('a');
+              a.href = m.url;
+              a.className = 'list-group-item list-group-item-action';
+              a.innerHTML = `
+                <div class="d-flex justify-content-between">
+                  <div>
+                    <strong>${m.name}</strong><br>
+                    <small class="text-muted">${m.body_part || ''} · ${m.modality || ''}</small>
+                  </div>
+                  <div class="text-end">
+                    <small>${m.display_range || ''}</small>
+                  </div>
+                </div>
+              `;
+              suggestions.appendChild(a);
+            });
+            suggestions.style.display = 'block';
+          }
+
+          async function fetchSuggestions() {
+            const q = input.value.trim();
+            if (q.length < 2) {
+              clearSuggestions();
+              return;
+            }
+            try {
+              const params = new URLSearchParams({ q, limit: 10 });
+              const resp = await fetch('/measurements/api/search?' + params.toString());
+              if (!resp.ok) {
+                clearSuggestions();
+                return;
+              }
+              const data = await resp.json();
+              renderSuggestions(data.results || []);
+            } catch (e) {
+              clearSuggestions();
+            }
+          }
+
+          input.addEventListener('input', () => {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(fetchSuggestions, 200);
+          });
+
+          input.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Escape') {
+              clearSuggestions();
+            }
+          });
+
+          document.addEventListener('click', (ev) => {
+            if (!suggestions.contains(ev.target) && ev.target !== input) {
+              clearSuggestions();
+            }
+          });
+        })();
+        </script>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -92,8 +92,15 @@ def create_app():
     
     # Import models and add to Flask-Admin here to avoid circular import
     with app.app_context():
-        from .models import User, Content, UserData, Reference, UserFeedback, UserContentState, UserProfile, UserReportTemplate, AdminReportTemplate,CategoryNames, ModuleNames,InteractionTypeEnum
-        from .admin_views import MyModelView,UserModelView,ExtendModelView,ReferenceAdmin, ImagingProtocolAdmin # Import both MyModelView  and UserModelView and RefrenceAdmin
+        from .models import User, Content, UserData, Reference, UserFeedback, UserContentState, UserProfile, UserReportTemplate, AdminReportTemplate, CategoryNames, ModuleNames, InteractionTypeEnum
+        from .admin_views import (
+            MyModelView,
+            UserModelView,
+            ExtendModelView,
+            ReferenceAdmin,
+            ImagingProtocolAdmin,
+            NormalMeasurementAdmin,
+        )
 
     # Register Models in Flask-Admin
     # Register admin-related models with MyModelView
@@ -105,6 +112,7 @@ def create_app():
     flask_admin.add_view(ExtendModelView(ClassificationSystem, db.session, endpoint='classification_systems', name='Classification Systems'))
 # Imaging protocols
     flask_admin.add_view(ImagingProtocolAdmin(ImagingProtocol, db.session,endpoint='imaging_protocols', name='Imaging Protocols'))
+    flask_admin.add_view(NormalMeasurementAdmin(NormalMeasurement, db.session, endpoint='normal_measurements', name='Normal Measurements'))
     # Register user-related models with ModelView
     flask_admin.add_view(UserModelView(User, db.session, endpoint='users'))
     flask_admin.add_view(ExtendModelView(UserData, db.session, endpoint='user_data'))
@@ -127,6 +135,7 @@ def create_app():
     # User routes
     from .user_routes import app_user_bp
     app.register_blueprint(app_user_bp, url_prefix='/app_user')  # Register with url_prefix if it's for the content navigation site
+    
     #----------------------------------------------------------------
     # Functions to manage user ideletimout, warning times and session timeouts :
     def update_last_activity():
