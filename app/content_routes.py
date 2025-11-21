@@ -373,7 +373,7 @@ def get_template(template_id: int):
         return jsonify(data)
 
     # HTML render – for now, reuse generic viewer later or make a specific page
-    return render_template("templates/template_detail.html", template=template)
+    return render_template("radiology_templates/template_detail.html", template=template)
 # *-------------------------------------------------------------------------
 # Staging & classification systems – list
 # -------------------------------------------------------------------------

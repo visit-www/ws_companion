@@ -1,6 +1,19 @@
 from flask import Blueprint, render_template, jsonify, request, flash, send_from_directory, redirect, url_for
 from flask_wtf.csrf import generate_csrf
-from .models import Content, User, AdminReportTemplate, ClassificationSystem, ImagingProtocol, db, CategoryNames, UserData, Reference, ModalityEnum, BodyPartEnum, NormalMeasurement, UserReportTemplate
+from .models import (
+    Content,
+    User,
+    AdminReportTemplate,
+    UserReportTemplate,
+    ClassificationSystem,
+    CategoryNames,
+    UserData,
+    Reference,
+    ModalityEnum,
+    BodyPartEnum,
+    ImagingProtocol,
+    NormalMeasurement,
+)
 from . import db
 from sqlalchemy import or_
 from flask_cors import CORS
@@ -152,6 +165,7 @@ def site_search():
     measurement_results = (
         db.session.query(NormalMeasurement)
         .filter(
+            NormalMeasurement.is_active.is_(True),
             or_(
                 NormalMeasurement.name.ilike(like_pattern),
                 NormalMeasurement.context.ilike(like_pattern),
@@ -255,6 +269,31 @@ def radiology_tools():
         ImagingProtocol.body_part,
         ImagingProtocol.name,
     ).all()
+        # Normal measurements
+    nm_q = db.session.query(NormalMeasurement).filter(
+        NormalMeasurement.is_active.is_(True)
+    )
+
+    if selected_modality is not None:
+        nm_q = nm_q.filter(NormalMeasurement.modality == selected_modality)
+
+    if selected_body_part is not None:
+        nm_q = nm_q.filter(NormalMeasurement.body_part == selected_body_part)
+
+    if query:
+        like = f"%{query}%"
+        nm_q = nm_q.filter(
+            or_(
+                NormalMeasurement.name.ilike(like),
+                NormalMeasurement.tags.ilike(like),
+            )
+        )
+
+    normal_measurements = nm_q.order_by(
+        NormalMeasurement.modality,
+        NormalMeasurement.body_part,
+        NormalMeasurement.name,
+    ).all()
 
     # Provide enums for dropdowns
     modality_choices = list(ModalityEnum)
@@ -265,12 +304,221 @@ def radiology_tools():
         templates=templates,
         classifications=classifications,
         protocols=protocols,
+        normal_measurements=normal_measurements,
         modality_choices=modality_choices,
         body_part_choices=body_part_choices,
         selected_modality=selected_modality,
         selected_body_part=selected_body_part,
         query=query,
     )
+
+# *---------------------------------------------------------------
+# Normal measurement library routes
+# *---------------------------------------------------------------
+
+@main_bp.route('/measurements')
+@login_required
+def measurement_library():
+    """
+    Radiology Measurement Library landing page.
+    - Renders the search UI.
+    - Results and autocomplete are powered by the JSON API below.
+    """
+    # Enums are passed so the template can build body-part / modality filters
+    return render_template(
+        'normal_measurements/measurements_list.html',
+        BodyPartEnum=BodyPartEnum,
+        ModalityEnum=ModalityEnum,
+    )
+
+
+@main_bp.route('/measurements/<int:measurement_id>')
+@login_required
+def measurement_detail(measurement_id):
+    """
+    Pretty detail view for a single normal measurement.
+    """
+    measurement = (
+        db.session.query(NormalMeasurement)
+        .filter(
+            NormalMeasurement.id == measurement_id,
+            NormalMeasurement.is_active.is_(True),
+        )
+        .first()
+    )
+    if not measurement:
+        # 404 if not found or inactive
+        return abort(404)
+
+    return render_template('normal_measurements/measurements_detail.html', m=measurement)
+
+
+@main_bp.route('/measurements/api/search')
+@login_required
+def measurements_api_search():
+    """
+    JSON endpoint for live search & autocomplete of normal measurements.
+
+    Query params:
+      - q: free-text query
+      - body_part: BodyPartEnum value (optional)
+      - modality: ModalityEnum value (optional)
+      - diagnosis: text to match in tags (optional)
+      - limit: max results (default 20)
+    """
+    q = (request.args.get('q') or '').strip()
+    body_part = (request.args.get('body_part') or '').strip()
+    modality = (request.args.get('modality') or '').strip()
+    diagnosis = (request.args.get('diagnosis') or '').strip()
+
+    try:
+        limit = int(request.args.get('limit', 20))
+    except ValueError:
+        limit = 20
+
+    query = db.session.query(NormalMeasurement).filter(
+        NormalMeasurement.is_active.is_(True)
+    )
+
+    if q:
+        like = f'%{q}%'
+        query = query.filter(
+            or_(
+                NormalMeasurement.name.ilike(like),
+                NormalMeasurement.context.ilike(like),
+                NormalMeasurement.reference_text.ilike(like),
+                NormalMeasurement.tags.ilike(like),
+            )
+        )
+
+    if body_part:
+        query = query.filter(NormalMeasurement.body_part == body_part)
+
+    if modality:
+        query = query.filter(NormalMeasurement.modality == modality)
+
+    if diagnosis:
+        like_diag = f'%{diagnosis}%'
+        query = query.filter(NormalMeasurement.tags.ilike(like_diag))
+
+    results = (
+        query.order_by(NormalMeasurement.name.asc())
+        .limit(limit)
+        .all()
+    )
+
+    def serialize(m):
+        # Build display range nicely
+        if m.min_value is not None and m.max_value is not None:
+            display_range = f"{m.min_value} – {m.max_value} {m.unit or ''}".strip()
+        elif m.max_value is not None:
+            display_range = f"≤ {m.max_value} {m.unit or ''}".strip()
+        elif m.min_value is not None:
+            display_range = f"≥ {m.min_value} {m.unit or ''}".strip()
+        else:
+            display_range = m.unit or ''
+
+        return {
+            "id": m.id,
+            "name": m.name,
+            "body_part": getattr(m.body_part, "value", m.body_part),
+            "modality": getattr(m.modality, "value", m.modality),
+            "age_group": m.age_group,
+            "sex": m.sex,
+            "unit": m.unit,
+            "display_range": display_range,
+            "tags": m.tags,
+            "context": m.context,
+            "url": url_for('main_routes.measurement_detail', measurement_id=m.id),
+        }
+
+    return jsonify({"results": [serialize(m) for m in results]})
+
+#* ----------------------------------------------------------------
+# Reporting/Case wrokspace routes
+# Section 1: CLinical Question panel.
+# Section 2:
+# Section 3:
+
+# Section 8:
+#* ---------------------------------------------------------------- 
+@main_bp.route("/case_workspace", methods=["GET"])
+@login_required
+def case_workspace():
+    """
+    Central Case Workspace screen.
+
+    Query params (all optional; can also be set via the form in the template):
+      - modality: ModalityEnum.name (e.g. CT, MRI, X_RAY)
+      - body_part: BodyPartEnum.name (e.g. LUNG, NEURO)
+      - indication: free-text clinical history
+      - core_question: short core clinical question (?PE, ?HCC, etc.)
+    """
+
+    indication = (request.args.get("indication") or "").strip()
+    modality_name = request.args.get("modality")  # e.g. "CT"
+    body_part_name = request.args.get("body_part")  # e.g. "LUNG"
+    core_question = (request.args.get("core_question") or "").strip()
+
+    modality_enum = None
+    body_part_enum = None
+
+    if modality_name:
+        try:
+            modality_enum = ModalityEnum[modality_name]
+        except KeyError:
+            flash("Unknown modality selected; please re-select.", "warning")
+
+    if body_part_name:
+        try:
+            body_part_enum = BodyPartEnum[body_part_name]
+        except KeyError:
+            flash("Unknown body part selected; please re-select.", "warning")
+
+    # Case context object passed to the template
+    case_context = {
+        "indication": indication,
+        "core_question": core_question,
+        "modality_enum": modality_enum,
+        "body_part_enum": body_part_enum,
+    }
+
+    # --- Auto-suggestions (thin slice for now) ----------------------
+    suggested_protocols = []
+    suggested_templates = []
+    suggested_checklists = []  # placeholder for future checklist model
+
+    if modality_enum and body_part_enum:
+        # Protocol suggestions
+        suggested_protocols = (
+            ImagingProtocol.query
+            .filter_by(modality=modality_enum, body_part=body_part_enum)
+            .order_by(ImagingProtocol.name.asc())
+            .limit(5)
+            .all()
+        )
+
+        # Report template suggestions
+        suggested_templates = (
+            AdminReportTemplate.query
+            .filter_by(modality=modality_enum, body_part=body_part_enum)
+            .order_by(AdminReportTemplate.title.asc())
+            .limit(5)
+            .all()
+        )
+
+        # Later: suggested_checklists from a Checklist/DiagnosisGuide model
+
+    return render_template(
+        "case_workspace/case_workspace.html",
+        case=case_context,
+        modality_choices=list(ModalityEnum),
+        body_part_choices=list(BodyPartEnum),
+        suggested_protocols=suggested_protocols,
+        suggested_templates=suggested_templates,
+        suggested_checklists=suggested_checklists,
+    )
+
 
 #!----------------------------------------------------------------
 # Place holder routes for maain page navigations :
