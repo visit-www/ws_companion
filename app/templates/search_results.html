@@ -131,10 +131,10 @@
                     <div class="accordion-body">
                         <div class="list-group list-group-flush">
                             {% for item in content_results %}
-                            <a href="{{ url_for('content_routes.view_content',
+                            <a href="{{ url_for('content_routes.view_document',
                                                 category=item.category,
                                                 module=item.module,
-                                                content_id=item.id) }}"
+                                                id=item.id) }}"
                                class="list-group-item list-group-item-action"
                                target="_blank" rel="noopener noreferrer">
                                 <div class="d-flex w-100 justify-content-between">
@@ -411,7 +411,7 @@
                         <ul class="list-group list-group-flush">
                             {% for m in measurement_results %}
                             <a
-                                href="{{ url_for('main_routes.site_search', q=m.name) }}"
+                                href="{{ url_for('main_routes.measurement_detail', measurement_id=m.id) }}"
                                 class="list-group-item list-group-item-action"
                                 target="_blank" rel="noopener noreferrer"
                             >
@@ -423,8 +423,22 @@
                                             {{ m.modality.value if m.modality else '' }}
                                         </small>
                                     </div>
-                                    {% if m.unit %}
-                                    <small class="text-muted">Unit: {{ m.unit }}</small>
+                                    {% if m.min_value is not none and m.max_value is not none %}
+                                    <small class="text-muted">
+                                        Normal: {{ m.min_value }} – {{ m.max_value }} {{ m.unit or '' }}
+                                    </small>
+                                    {% elif m.max_value is not none %}
+                                    <small class="text-muted">
+                                        Normal: ≤ {{ m.max_value }} {{ m.unit or '' }}
+                                    </small>
+                                    {% elif m.min_value is not none %}
+                                    <small class="text-muted">
+                                        Normal: ≥ {{ m.min_value }} {{ m.unit or '' }}
+                                    </small>
+                                    {% elif m.unit %}
+                                    <small class="text-muted">
+                                        Unit: {{ m.unit }}
+                                    </small>
                                     {% endif %}
                                 </div>
                                 {% if m.context %}

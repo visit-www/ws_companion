@@ -52,7 +52,7 @@ class Config:
     MAIL_USE_TLS = True
     MAIL_USERNAME = os.getenv('BREVO_SMTP_USERNAME')
     MAIL_PASSWORD = os.getenv('BREVO_SMTP_KEY')  # no hard-coded secret
-    MAIL_DEFAULT_SENDER = ('My Workstation Companion App', 'support@wscompanion.com')
+    MAIL_DEFAULT_SENDER = ('My Workstation Companion App', 'wscompanionapp@gmail.com')
     SECURITY_PASSWORD_SALT = '25df2a0675d39147e5e8f1bf75550f2a'
     MAIL_MAX_EMAILS = None
     MAIL_ASCII_ATTACHMENTS = False

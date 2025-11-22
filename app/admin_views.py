@@ -11,7 +11,7 @@ from datetime import datetime, timezone
 from sqlalchemy import inspect, or_
 
 from . import db
-from .models import Content, Reference, User
+from .models import Content, Reference, User, NormalMeasurement, BodyPartEnum, ModalityEnum
 from config import ANONYMOUS_USER_ID, userdir
 
 # ExtendModelView class for general model handling
@@ -465,4 +465,102 @@ class ImagingProtocolAdmin(ExtendModelView):
 
         # Let the parent do any default prefill work as well (optional)
         return super().on_form_prefill(form, id)
-    
+# *-------------------------------------------------------------------------------------
+# normal measurments admin views:
+
+class NormalMeasurementAdmin(ModelView):
+    # List view
+    column_list = (
+        'name', 'body_part', 'modality',
+        'min_value', 'max_value', 'unit',
+        'age_group', 'sex', 'is_active',
+        'created_at'
+    )
+    column_searchable_list = ('name', 'tags', 'context', 'reference_text')
+    column_filters = ('body_part', 'modality', 'age_group', 'sex', 'is_active')
+
+    form_columns = (
+        'name',
+        'body_part',
+        'modality',
+        'min_value',
+        'max_value',
+        'unit',
+        'age_group',
+        'sex',
+        'context',
+        'reference_text',
+        'reference_doi',
+        'tags',
+        'is_active',
+    )
+
+    form_args = {
+        'name': {
+            'label': 'Measurement name',
+            'render_kw': {
+                'placeholder': 'e.g. Appendix diameter, CBD calibre, Main PA diameter'
+            }
+        },
+        'context': {
+            'label': 'How / when to measure',
+            'render_kw': {
+                'placeholder': (
+                    'e.g. Measure outer wall-to-outer wall in axial CT at portal venous phase '
+                    'at the level of the tracheal bifurcation. Also note what value is abnormal '
+                    'and why it matters clinically.'
+                )
+            },
+            'description': (
+                'Plain text or HTML. Describe EXACTLY how you measure and when to apply this.'
+            )
+        },
+        'reference_text': {
+            'label': 'Reference / interpretation notes',
+            'render_kw': {
+                'placeholder': (
+                    'Key lines from guideline or article; how to interpret high/low values.'
+                )
+            },
+            'description': 'Plain text or HTML; you can paste quotes, short paragraphs, and links.'
+        },
+        'reference_doi': {
+            'label': 'DOI / URL',
+            'render_kw': {
+                'placeholder': 'e.g. 10.1148/radiol.2018180736 or https://doi.org/...'
+            }
+        },
+        'tags': {
+            'label': 'Search tags',
+            'render_kw': {
+                'placeholder': (
+                    'Comma-separated: e.g. appendicitis, RLQ pain, acute abdomen, paediatric, US.'
+                )
+            },
+            'description': 'Used by workstation search & live suggestions.'
+        },
+        'age_group': {
+            'label': 'Age group',
+            'render_kw': {
+                'placeholder': 'e.g. adult, paediatric, neonate, 50–70y'
+            }
+        },
+        'sex': {
+            'label': 'Sex',
+            'render_kw': {
+                'placeholder': 'male / female / any'
+            }
+        },
+        'unit': {
+            'label': 'Unit',
+            'render_kw': {
+                'placeholder': 'e.g. mm, cm, m/s'
+            }
+        }
+    }
+
+    form_widget_args = {
+        'reference_text': {'rows': 5},
+        'context': {'rows': 3},
+        'tags': {'rows': 2},
+    }
