@@ -2,8 +2,25 @@
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from flask import current_app
 import json
+import re
 from datetime import datetime, timezone
-from .models import db,Content,ImagingProtocol, ClassificationSystem, User, UserData, UserContentState, AdminReportTemplate, ClassificationSystem,ClassificationCategoryEnum, ModuleNames, BodyPartEnum, ModalityEnum
+from .models import (
+    db,
+    Content,
+    ImagingProtocol,
+    ClassificationSystem,
+    User,
+    UserData,
+    UserContentState,
+    AdminReportTemplate,
+    UserReportTemplate,
+    ClassificationCategoryEnum,
+    ModuleNames,
+    BodyPartEnum,
+    ModalityEnum,
+    CategoryNames,
+)
+from sqlalchemy import or_
 import os
 from config import basedir,ADMIN_EMAIL, ADMIN_PASSWORD,ANONYMOUS_EMAIL,ANONYMOUS_PASSWORD,ANONYMOUS_USER_ID
 # *-------------------------------------------------------------------------
@@ -171,7 +188,7 @@ def add_default_admin_templates():
             "modality": ModalityEnum.MRI,
             "body_part": BodyPartEnum.NEURO,
             "module": ModuleNames.NEURORADIOLOGY,
-            "category": "Reporting Template",
+            "category": CategoryNames.REPORT_TEMPLATE,
             "tags": "mri, brain, neuro, routine",
             "file": None,
             "filepath": None,
@@ -181,7 +198,7 @@ def add_default_admin_templates():
             "modality": ModalityEnum.CT,
             "body_part": BodyPartEnum.LUNG,
             "module": ModuleNames.CHEST,
-            "category": "Reporting Template",
+            "category": CategoryNames.REPORT_TEMPLATE,
             "tags": "ct, chest, ctpa, pulmonary embolism",
             "file": None,
             "filepath": None,
@@ -191,7 +208,7 @@ def add_default_admin_templates():
             "modality": ModalityEnum.CT,
             "body_part": BodyPartEnum.MISCELLANEOUS,
             "module": ModuleNames.ABDOMINAL,
-            "category": "Reporting Template",
+            "category": CategoryNames.REPORT_TEMPLATE,
             "tags": "ct, abdomen, pelvis, acute abdomen, emergency",
             "file": None,
             "filepath": None,
@@ -201,7 +218,7 @@ def add_default_admin_templates():
             "modality": ModalityEnum.X_RAY,
             "body_part": BodyPartEnum.LUNG,
             "module": ModuleNames.CHEST,
-            "category": "Reporting Template",
+            "category": CategoryNames.REPORT_TEMPLATE,
             "tags": "xray, chest, preop, general",
             "file": None,
             "filepath": None,
@@ -235,6 +252,142 @@ def add_default_admin_templates():
         print(f"Admin templates seeded: {created}")
     else:
         print("Admin templates already present, no new templates added.")
+
+# Helper function to fetch user and admin templates for a given modality/body part/user
+def get_case_templates(modality, body_part, user_id=None, limit=8, core_question: str | None = None):
+    """
+    Return (user_templates, admin_templates) for a given modality and body_part.
+
+    - User templates are filtered by user_id (if provided) and ordered by most recently updated.
+    - Admin templates are filtered by modality/body_part and is_active=True, ordered by name.
+    """
+    # If absolutely no driver is provided, bail out early
+    if not (modality or body_part or core_question):
+        return [], []
+
+    # User-specific templates
+    user_templates_query = db.session.query(UserReportTemplate)
+    if modality:
+        user_templates_query = user_templates_query.filter_by(modality=modality)
+    if body_part:
+        user_templates_query = user_templates_query.filter_by(body_part=body_part)
+    if user_id:
+        user_templates_query = user_templates_query.filter_by(user_id=user_id)
+
+    # Optional token-based refinement for user templates using the core question
+    if core_question:
+        user_token_filters = _build_token_filters(
+            [
+                UserReportTemplate.template_name,
+                UserReportTemplate.tags,
+            ],
+            core_question,
+        )
+        for cond in user_token_filters:
+            user_templates_query = user_templates_query.filter(cond)
+
+    user_templates = (
+        user_templates_query
+        .order_by(UserReportTemplate.updated_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    # Global admin templates
+    admin_templates_query = db.session.query(AdminReportTemplate).filter(
+        AdminReportTemplate.is_active.is_(True)
+    )
+    if modality:
+        admin_templates_query = admin_templates_query.filter_by(modality=modality)
+    if body_part:
+        admin_templates_query = admin_templates_query.filter_by(body_part=body_part)
+
+    if core_question:
+        admin_token_filters = _build_token_filters(
+            [
+                AdminReportTemplate.template_name,
+                AdminReportTemplate.tags,
+            ],
+            core_question,
+        )
+        for cond in admin_token_filters:
+            admin_templates_query = admin_templates_query.filter(cond)
+
+    admin_templates = (
+        admin_templates_query
+        .order_by(AdminReportTemplate.template_name.asc())
+        .limit(limit)
+        .all()
+    )
+
+    return user_templates, admin_templates
+
+ # *--------------------------------------------------
+ # Internal helper: build AND-of-OR token filters for smarter text matching
+def _build_token_filters(columns, text: str | None):
+    """
+    Given a list of SQLAlchemy columns and a free-text string,
+    return a list of OR(...) conditions, one per token.
+
+    Each token condition is:
+        OR(col1 ILIKE '%token%', col2 ILIKE '%token%', ...)
+
+    These conditions are intended to be AND-ed together in the query.
+    """
+    if not text:
+        return []
+
+    # Split on non-word characters, drop very short tokens
+    tokens = [t.strip() for t in re.split(r"\W+", text) if len(t.strip()) >= 2]
+    if not tokens:
+        return []
+
+    from sqlalchemy import or_ as _or
+
+    conditions = []
+    for token in tokens:
+        like = f"%{token}%"
+        conditions.append(
+            _or(*(col.ilike(like) for col in columns))
+        )
+    return conditions
+
+# Utility function to get classification/ staging system results in case workspace
+def get_case_classifications(modality, body_part, core_question: str | None = None, limit: int = 8):
+    """
+    Return a list of ClassificationSystem objects relevant to this case.
+
+    Primary filter: modality and/or body_part.
+    Secondary (optional) filter: free-text match on name, short_code, and tags using the core_question.
+    """
+    # Require at least one driver: modality, body_part or core_question
+    if not (modality or body_part or core_question):
+        return []
+
+    query = db.session.query(ClassificationSystem)
+    if modality:
+        query = query.filter_by(modality=modality)
+    if body_part:
+        query = query.filter_by(body_part=body_part)
+    token_filters = _build_token_filters(
+        [
+            ClassificationSystem.name,
+            ClassificationSystem.short_code,
+            ClassificationSystem.description,
+            ClassificationSystem.version,
+        ],
+        core_question,
+    )
+    for cond in token_filters:
+        query = query.filter(cond)
+
+    return (
+        query
+        .order_by(ClassificationSystem.name.asc())
+        .limit(limit)
+        .all()
+    )
+
 
 # Utility function to add default classifications:
 def add_default_classification_systems():
