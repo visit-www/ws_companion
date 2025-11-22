@@ -245,10 +245,10 @@ class AdminReportTemplate(Base):
     file: so.Mapped[str] = sa.Column(sa.String(255), nullable=True)  # Path to the uploaded file
     filepath: so.Mapped[str] = sa.Column(sa.String(255), nullable=True)  # Physical location on disk
     tags: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)  # Comma-separated or JSON format
-    category: so.Mapped[str] = sa.Column(
-        sa.String, 
-        nullable=True, 
-        index=True, 
+    category: so.Mapped[Optional[CategoryNames]] = sa.Column(
+        sa.Enum(CategoryNames, name='category_name'),
+        nullable=True,
+        index=True,
     )
     module: so.Mapped[Optional[ModuleNames]] = sa.Column(
         sa.Enum(ModuleNames, name='module_name'), 
@@ -609,8 +609,6 @@ class UserReportTemplate(Base):
     template_name: so.Mapped[str] = sa.Column(sa.String(255), nullable=True, unique=True, index=True)
     tags: so.Mapped[str] = sa.Column(sa.Text, nullable=True)  # Store tags as comma-separated or JSON format
     is_public: so.Mapped[bool] = sa.Column(sa.Boolean, default=False, nullable=True, index=True)
-    created_at = sa.Column(sa.DateTime, default=datetime.now(timezone.utc))
-    updated_at = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc))
 
     # Foreign keys and relationships
     user_id: so.Mapped[uuid.UUID] = sa.Column(sa.UUID(as_uuid=True), sa.ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'), nullable=False, index=True)
@@ -625,6 +623,25 @@ class UserReportTemplate(Base):
     template_text: so.Mapped[str] = sa.Column(sa.Text, nullable=True)  # For storing copy-paste text of the template
     file: so.Mapped[str] = sa.Column(sa.String(255), nullable=True)  # Path to the uploaded file (docx, txt only)
     filepath: so.Mapped[str] = sa.Column(sa.String(255), nullable=True)  # Path where the file is stored on disk
+    
+    template_type: so.Mapped[TemplateTypeEnum] = sa.Column(
+    sa.Enum(TemplateTypeEnum, name='template_type_enum'),
+    nullable=False,
+    default=TemplateTypeEnum.STRUCTURED,
+    index=True,
+    )
+    
+    admin_template_id: so.Mapped[Optional[int]] = sa.Column(
+    sa.Integer,
+    sa.ForeignKey('admin_report_templates.id', ondelete='SET NULL', onupdate='CASCADE'),
+    nullable=True,
+    index=True,
+    )
+
+    admin_template: so.Mapped[Optional["AdminReportTemplate"]] = so.relationship(
+        "AdminReportTemplate",
+        backref=so.backref("user_variants", lazy="dynamic")
+    )
 
     # Timestamp columns
     created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), nullable=False)
