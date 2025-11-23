@@ -3,8 +3,26 @@
 {% block title %}Report Templates{% endblock %}
 
 {% block content %}
-    <h2 class="m-3">Report Templates: {{template_title}}</h2>
+    <h2 class="m-3">Report Templates: {{ template_title }}</h2>
+    {% if admin_template %}
+    <div class="m-3 small text-muted">
+        Using WSCompanion template:
+        <strong>{{ admin_template.template_name }}</strong>
+        {% if admin_template.modality and admin_template.body_part %}
+            – {{ admin_template.modality.value }}
+            · {{ admin_template.body_part.value.replace('_', ' ').title() }}
+        {% endif %}
+        {% if admin_template.tags %}
+            · Tags: {{ admin_template.tags }}
+        {% endif %}
+    </div>
+    {% endif %}
     <hr>
+    {# Determine mode and ensure sections/values are always defined #}
+    {% set mode = template_mode if template_mode is defined else 'edit' %}
+    {% set is_edit = (mode == 'edit') %}
+    {% set _sections = sections if sections is defined and sections else [] %}
+    {% set _section_values = section_values if section_values is defined and section_values else {} %}
     <div class="table-responsive m-3">
         <table class="table table-bordered m-auto">
             <thead>
@@ -80,51 +98,43 @@
                     </td>
                 </tr>
 
-                <!-- Clinical Information Section -->
+                {# Section-driven report body rows #}
+                {% for section in _sections %}
                 <tr>
-                    <td class="bg-light w-auto"><h5>Clinical Information</h5></td>
-                    <td class="w-75">
-                        <textarea id="clinical_info" class="form-control" placeholder="Enter clinical information">{{clinical_info}}</textarea>
+                    <td class="bg-light w-auto">
+                        <h5>{{ section.label or section.id|capitalize }}</h5>
                     </td>
-                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
-                </tr> 
-                <!-- Comparison Section -->
-                <tr>
-                    <td class="bg-light w-auto"><h5>Comparison</h5></td>
                     <td class="w-75">
-                        <textarea id="comparison" class="form-control" placeholder="Enter comparison information">{{comparison}}</textarea>
+                        {% set sec_id = section.id %}
+                        {% set value = _section_values.get(sec_id, section.default_text or '') %}
+                        {% if is_edit %}
+                            <textarea
+                                id="{{ sec_id }}"
+                                class="form-control"
+                                data-section-id="{{ sec_id }}"
+                                placeholder="{{ section.placeholder or '' }}"
+                            >{{ value }}</textarea>
+                        {% else %}
+                            <div class="form-control-plaintext">
+                                {% if section.rich %}
+                                    {{ value|safe }}
+                                {% else %}
+                                    {{ value }}
+                                {% endif %}
+                            </div>
+                        {% endif %}
                     </td>
-                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
+                    <td class="w-auto bg-light">
+                        <button
+                            type="button"
+                            class="btn btn-outline-primary export-section-btn"
+                            data-section-id="{{ sec_id }}"
+                        >
+                            Export Data
+                        </button>
+                    </td>
                 </tr>
-                <!-- Observations Section -->   
-                <tr>
-                    <td class="bg-light w-auto"><h5>Observations</h5></td>
-                    <td class="w-75">
-                        <select id="observation_select" class="form-control mb-2">
-                            <option value="">Select observation template</option>
-                            <option value="obs1">Observation 1</option>
-                            <option value="obs2">Observation 2</option>
-                        </select>
-                        <textarea id="observation_text" class="form-control" placeholder="Enter detailed observations">{{observations}}</textarea>
-                    </td>
-                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
-                </tr>
-                <!-- Conclusion Section -->
-                <tr>
-                    <td class="bg-light w-auto"><h5>Conclusions</h5></td>
-                    <td class="w-75">
-                        <textarea id="conclusion" class="form-control" placeholder="Enter conclusions">{{conclusions}}</textarea>
-                    </td>
-                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
-                </tr>
-                <!-- Recommendation Section -->
-                <tr>
-                    <td class="bg-light w-auto"><h5>Recommendations</h5></td>
-                    <td class="w-75">
-                        <textarea id="recommendation" class="form-control" placeholder="Enter recommendations">{{recommendations}}</textarea>
-                    </td>
-                    <td class="w-auto bg-light"><a class="btn btn-outline-primary" href="#">Export Data</a></td>
-                </tr>
+                {% endfor %}
             </tbody>
         </table>
     </div>

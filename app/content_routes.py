@@ -11,6 +11,7 @@ from .models import (
     Content,
     Reference,
     AdminReportTemplate,
+    UserReportTemplate,
     ClassificationSystem,
     ImagingProtocol,
     ModalityEnum,
@@ -158,9 +159,49 @@ def view_document(category, id):
     file_url = url_for('content_routes.serve_file', filepath=document.filepath)
     file_name = f"Reading {document.title.capitalize()}" if document.title else "You are reading Document"
     file_path = os.path.join(basedir, document.filepath)
-    # Check if the file is a report template (.docx)
-    if category=='report_template'.upper():
-        return render_template('smart_report_viewer.html',references=references)
+    # Check if the file is a report template and, if so, route to the appropriate template detail view
+    # We treat this as an indirection layer: Content rows with report_template category can point
+    # to either an AdminReportTemplate or a UserReportTemplate via query parameters.
+    # Expected query params:
+    #   owner=admin|user  (defaults to 'admin' if omitted)
+    #   admin_template_id=<int>  or  user_template_id=<int>
+    #
+    # Example:
+    #   /report_template/123?owner=admin&amp;admin_template_id=5
+    #   /report_template/123?owner=user&amp;user_template_id=12
+    doc_category_name = None
+    if hasattr(document, "category"):
+        # Category may be an Enum or a plain string
+        doc_category_name = getattr(document.category, "name", None) or getattr(
+            document.category,
+            "value",
+            None,
+        ) or str(document.category)
+
+    if doc_category_name and str(doc_category_name).upper() == "REPORT_TEMPLATE":
+        owner = request.args.get("owner", "admin").lower()
+
+        if owner == "user":
+            user_template_id = request.args.get("user_template_id", type=int)
+            if user_template_id:
+                return redirect(
+                    url_for(
+                        "content_routes.get_user_template",
+                        template_id=user_template_id,
+                    )
+                )
+        else:
+            admin_template_id = request.args.get("admin_template_id", type=int)
+            if admin_template_id:
+                return redirect(
+                    url_for(
+                        "content_routes.get_template",
+                        template_id=admin_template_id,
+                    )
+                )
+
+        # Fallback: if no IDs provided, keep the previous behaviour and open the generic smart_report_viewer
+        return render_template("smart_report_viewer.html", references=references)
     # Check if the file is a Mermaid diagram (.mmd)
     elif document.file.endswith('.mmd'):
         # Read the content of the Mermaid .mmd file
@@ -335,7 +376,7 @@ def list_templates():
         return jsonify({"templates": data})
 
     # HTML view – use a simple template for now (we can design it later)
-    return render_template("templates/templates_list.html", templates=templates)
+    return render_template("radiology_templates/templates_list.html", templates=templates)
 
 # *-------------------------------------------------------------------------
 #Template detail: GET /content/templates/<id>
@@ -374,6 +415,51 @@ def get_template(template_id: int):
 
     # HTML render – for now, reuse generic viewer later or make a specific page
     return render_template("radiology_templates/template_detail.html", template=template)
+
+# *-------------------------------------------------------------------------
+# User report templates – detail
+# -------------------------------------------------------------------------
+
+@content_routes_bp.route("/user_templates/<int:template_id>", methods=["GET"])
+@login_required
+def get_user_template(template_id: int):
+    """
+    Get a single user report template.
+    Returns JSON if ?format=json, otherwise renders the user_template_detail.html page.
+    """
+    template = (
+        db.session.query(UserReportTemplate)
+        .filter_by(id=template_id)
+        .first()
+    )
+    if template is None:
+        abort(404)
+
+    if wants_json_response():
+        data = {
+            "id": template.id,
+            "name": template.template_name,
+            "modality": template.modality.value if template.modality else None,
+            "body_part": template.body_part.value if template.body_part else None,
+            "category": template.category,
+            "module": template.module.value if getattr(template, "module", None) else None,
+            "tags": template.tags,
+            "template_type": template.template_type.value if getattr(template, "template_type", None) else None,
+            "is_public": template.is_public,
+            "user_id": str(template.user_id) if getattr(template, "user_id", None) else None,
+            "file": template.file,
+            "filepath": template.filepath,
+            "created_at": template.created_at.isoformat() if template.created_at else None,
+            "updated_at": template.updated_at.isoformat() if template.updated_at else None,
+            "definition": template.definition_json,
+        }
+        return jsonify(data)
+
+    # HTML render – user-owned template detail
+    return render_template(
+        "radiology_templates/user_template_detail.html",
+        template=template,
+    )
 # *-------------------------------------------------------------------------
 # Staging & classification systems – list
 # -------------------------------------------------------------------------

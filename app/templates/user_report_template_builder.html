@@ -1,0 +1,442 @@
+
+
+{% extends "base.html" %}
+
+{% block title %}Build your own report template{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <!-- Breadcrumb -->
+  <nav aria-label="breadcrumb" class="mb-3">
+    <ol class="breadcrumb mb-0">
+      <li class="breadcrumb-item">
+        <a href="{{ url_for('main_routes.index') }}">Home</a>
+      </li>
+      <li class="breadcrumb-item active" aria-current="page">
+        New report template
+      </li>
+    </ol>
+  </nav>
+
+  <!-- Page header -->
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+      <h2 class="h4 mb-1">Create your own report template</h2>
+      <p class="text-muted mb-0">
+        Define a reusable structure for your reports. All fields are plain text; the system will
+        convert them into rich structured JSON in the background.
+      </p>
+    </div>
+    <div class="text-end">
+      <span class="badge bg-secondary">User template builder</span>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Main form column -->
+    <div class="col-lg-8">
+    <form method="POST" action="{{ url_for('app_user.create_user_report_template') }}" id="user-template-builder-form"
+        novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <!-- Template metadata card -->
+        <div class="card shadow-sm mb-3">
+          <div class="card-header bg-light">
+            <h5 class="card-title mb-0">Template details</h5>
+          </div>
+          <div class="card-body">
+            <!-- Template name + suggestions -->
+            <div class="mb-3 position-relative">
+              <label for="template_name" class="form-label">Template name</label>
+            <input type="text" class="form-control" id="template_name" name="template_name"
+                placeholder="e.g. CTPA – low clot burden" required
+                data-suggest-url="{{ url_for('app_user.suggest_templates_for_builder') }}"
+                data-load-url-template="{{ url_for('app_user.load_template_for_builder', template_id=0) }}">
+              <div class="form-text">
+                As you type, we’ll suggest similar templates from your library and the admin library.
+                You can choose to auto‑populate this form from an existing template.
+              </div>
+
+              <!-- Suggestions dropdown -->
+              <div id="template-suggestions"
+                   class="list-group position-absolute w-100 shadow-sm d-none"
+                   style="z-index: 1055; max-height: 260px; overflow-y: auto;">
+                {# Filled dynamically by JS #}
+              </div>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-md-4">
+                <label for="modality" class="form-label">Modality</label>
+                <select class="form-select" id="modality" name="modality">
+                  <option value="">Select modality</option>
+                  {% if modality_choices %}
+                    {% for value, label in modality_choices %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  {% else %}
+                    <option value="CT">CT</option>
+                    <option value="MRI">MRI</option>
+                    <option value="XR">X‑ray</option>
+                    <option value="US">Ultrasound</option>
+                    <option value="NM">Nuclear medicine</option>
+                  {% endif %}
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label for="body_part" class="form-label">Body part</label>
+                <select class="form-select" id="body_part" name="body_part">
+                  <option value="">Select body part</option>
+                  {% if body_part_choices %}
+                    {% for value, label in body_part_choices %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  {% else %}
+                    <option value="LUNG">Lung / chest</option>
+                    <option value="NEURO">Neuro</option>
+                    <option value="ABDOMEN">Abdomen</option>
+                    <option value="MSK">MSK</option>
+                    <option value="PEDIATRICS">Pediatrics</option>
+                  {% endif %}
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label for="template_type" class="form-label">Template type</label>
+                <select class="form-select" id="template_type" name="template_type">
+                  {% if template_type_choices %}
+                    <option value="">Select type</option>
+                    {% for value, label in template_type_choices %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  {% else %}
+                    <option value="FULL_REPORT" selected>Full report</option>
+                    <option value="SHORT_REPORT">Short report</option>
+                    <option value="CHECKLIST">Checklist</option>
+                  {% endif %}
+                </select>
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <label for="tags" class="form-label">Tags</label>
+              <input type="text"
+                     class="form-control"
+                     id="tags"
+                     name="tags"
+                     placeholder="e.g. pulmonary embolism, low clot burden, CTPA">
+              <div class="form-text">
+                Comma‑separated keywords. Used for search and intelligent suggestions in Case Workspace.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Clinical context & technique -->
+        <div class="card shadow-sm mb-3">
+          <div class="card-header bg-light">
+            <h5 class="card-title mb-0">Clinical context &amp; technique</h5>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="indication_text" class="form-label">Indication / Clinical history</label>
+              <textarea class="form-control"
+                        id="indication_text"
+                        name="indication_text"
+                        rows="4"
+                        placeholder="Indication and brief clinical context, e.g. ?Pulmonary embolism in haemodynamically stable patient with pleuritic chest pain and raised D-dimer."></textarea>
+              <div class="form-text">
+                Combine the indication line and key clinical history into one concise section.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="core_question_text" class="form-label">Core question</label>
+              <textarea class="form-control"
+                        id="core_question_text"
+                        name="core_question_text"
+                        rows="2"
+                        placeholder="What exactly are you answering for the referrer? e.g. Is there CT evidence of acute PE and RV strain?"></textarea>
+            </div>
+
+            <hr>
+
+            <div class="mb-3">
+              <label for="comparison_text" class="form-label">Comparison</label>
+              <textarea class="form-control"
+                        id="comparison_text"
+                        name="comparison_text"
+                        rows="2"
+                        placeholder="e.g. No relevant prior imaging available for comparison.&#10;Compared with CT chest dated [dd/mm/yyyy]."></textarea>
+              <div class="form-text">
+                You can include square‑bracket placeholders (e.g. <code>[dd/mm/yyyy]</code>) as visual prompts to edit before signing.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="technique_text" class="form-label">Technique</label>
+              <textarea class="form-control"
+                        id="technique_text"
+                        name="technique_text"
+                        rows="3"
+                        placeholder="e.g. CT pulmonary angiography performed with IV contrast, bolus‑tracked from lung apices to below diaphragm, thin‑slice axial reconstruction with multiplanar reformats."></textarea>
+              <div class="form-text">
+                This can often mirror the imaging protocol. The system will store it as a structured “technique” section.
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Findings & impression -->
+        <div class="card shadow-sm mb-3">
+          <div class="card-header bg-light">
+            <h5 class="card-title mb-0">Findings &amp; impression</h5>
+          </div>
+          <div class="card-body">
+            <div class="mb-3">
+              <label for="observations_text" class="form-label">Observations / Findings</label>
+              <textarea class="form-control"
+                        id="observations_text"
+                        name="observations_text"
+                        rows="8"
+                        placeholder="Structured observations, ideally organised by system or region (e.g. Pulmonary arteries, Right heart, Lung parenchyma, Pleura, Other findings)."></textarea>
+              <div class="form-text">
+                Plain text only. The backend will split and store this as a rich JSON section for smart reporting and Case Workspace.
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="conclusions_text" class="form-label">Conclusion / Impression</label>
+              <textarea class="form-control"
+                        id="conclusions_text"
+                        name="conclusions_text"
+                        rows="4"
+                        placeholder="Numbered impression lines summarising diagnosis and severity."></textarea>
+            </div>
+
+            <div class="mb-3">
+              <label for="recommendations_text" class="form-label">Recommendations</label>
+              <textarea class="form-control"
+                        id="recommendations_text"
+                        name="recommendations_text"
+                        rows="3"
+                        placeholder="Actionable advice for referrer (e.g. anticoagulate, consider echo, follow‑up imaging)."></textarea>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="d-flex justify-content-between align-items-center mb-5">
+          <a href="{{ url_for('app_user.list_user_templates') }}" class="btn btn-outline-secondary">
+            Cancel
+          </a>
+          <button type="submit" class="btn btn-primary">
+            Save template
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Sidebar / helper column -->
+    <div class="col-lg-4">
+      <!-- Live summary card -->
+      <div class="card shadow-sm mb-3">
+        <div class="card-header bg-light">
+          <h6 class="mb-0">Template summary</h6>
+        </div>
+        <div class="card-body small">
+          <p class="mb-1 text-muted">Name</p>
+          <p class="fw-semibold mb-2" id="summary-name">—</p>
+
+          <div class="d-flex flex-wrap gap-2 mb-2">
+            <span class="badge bg-outline border border-secondary text-secondary" id="summary-modality">Modality: —</span>
+            <span class="badge bg-outline border border-secondary text-secondary" id="summary-body-part">Body part: —</span>
+          </div>
+
+          <p class="mb-1 text-muted">Tags</p>
+          <p class="mb-0" id="summary-tags"><em>No tags yet</em></p>
+        </div>
+      </div>
+
+      <!-- Helper card -->
+      <div class="card shadow-sm">
+        <div class="card-header bg-light">
+          <h6 class="mb-0">How this builder works</h6>
+        </div>
+        <div class="card-body small">
+          <ul class="mb-2">
+            <li>All fields are stored as <strong>plain text</strong>.</li>
+            <li>The backend will parse these into a structured JSON definition compatible with admin templates.</li>
+            <li>Case Workspace and Smart Reporting will use these structured sections for suggestions and one‑click export.</li>
+          </ul>
+          <p class="mb-0 text-muted">
+            Advanced JSON editing is available only in the admin template editor. User templates stay simple and free‑text.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block script %}
+{{ super() }}
+<script>
+  (function () {
+    const nameInput = document.getElementById('template_name');
+    const modalitySelect = document.getElementById('modality');
+    const bodyPartSelect = document.getElementById('body_part');
+    const tagsInput = document.getElementById('tags');
+
+    const summaryName = document.getElementById('summary-name');
+    const summaryModality = document.getElementById('summary-modality');
+    const summaryBodyPart = document.getElementById('summary-body-part');
+    const summaryTags = document.getElementById('summary-tags');
+
+    const suggestionsBox = document.getElementById('template-suggestions');
+
+    const nameToLabel = (sel) => {
+      if (!sel) return '—';
+      const opt = sel.options[sel.selectedIndex];
+      return opt && opt.value ? opt.textContent : '—';
+    };
+
+    // Live summary updates
+    function updateSummary() {
+      summaryName.textContent = nameInput.value.trim() || '—';
+      summaryModality.textContent = 'Modality: ' + nameToLabel(modalitySelect);
+      summaryBodyPart.textContent = 'Body part: ' + nameToLabel(bodyPartSelect);
+
+      const tags = tagsInput.value.trim();
+      if (!tags) {
+        summaryTags.innerHTML = '<em>No tags yet</em>';
+      } else {
+        summaryTags.textContent = tags;
+      }
+    }
+
+    ['input', 'change'].forEach(evt => {
+      nameInput.addEventListener(evt, updateSummary);
+      modalitySelect.addEventListener(evt, updateSummary);
+      bodyPartSelect.addEventListener(evt, updateSummary);
+      tagsInput.addEventListener(evt, updateSummary);
+    });
+    updateSummary();
+
+    // Template name suggestions / auto-populate
+    let suggestTimeout = null;
+
+    function clearSuggestions() {
+      suggestionsBox.innerHTML = '';
+      suggestionsBox.classList.add('d-none');
+    }
+
+    async function fetchSuggestions(query) {
+      const url = nameInput.dataset.suggestUrl;
+      if (!url) return;
+
+      try {
+        const resp = await fetch(url + '?q=' + encodeURIComponent(query), {
+          headers: { 'Accept': 'application/json' }
+        });
+        console.log ("Suggest response status:", resp.status)
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const results = data.results || [];
+
+        if (!results.length) {
+          clearSuggestions();
+          return;
+        }
+
+        suggestionsBox.innerHTML = '';
+        results.forEach(item => {
+          const entry = document.createElement('button');
+          entry.type = 'button';
+          entry.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+          entry.dataset.templateId = item.id;
+          entry.dataset.origin = item.origin || 'admin';
+          entry.innerHTML = `
+            <span>
+              <strong>${item.name}</strong><br>
+              <small class="text-muted">${item.origin === 'user' ? 'Your template' : 'Admin library'} · ${item.modality || ''} ${item.body_part || ''}</small>
+            </span>
+            <span class="badge bg-light text-dark border">${item.origin === 'user' ? 'User' : 'Admin'}</span>
+          `;
+          entry.addEventListener('click', () => onSuggestionClick(item));
+          suggestionsBox.appendChild(entry);
+        });
+
+        suggestionsBox.classList.remove('d-none');
+      } catch (e) {
+        console.warn('Template suggestion error', e);
+      }
+    }
+
+    function onSuggestionClick(item) {
+      clearSuggestions();
+      const confirmMsg =
+        `Use existing template:\n\n` +
+        `${item.name} (${item.origin === 'user' ? 'your template' : 'admin template'})\n\n` +
+        `This will auto‑populate all fields and you can edit before saving.`;
+      if (!window.confirm(confirmMsg)) {
+        return;
+      }
+      loadTemplateIntoForm(item);
+    }
+
+    async function loadTemplateIntoForm(item) {
+      const tmplUrlTemplate = nameInput.dataset.loadUrlTemplate;
+      if (!tmplUrlTemplate) return;
+
+      // tmplUrlTemplate is something like "/user/templates/builder/load/0"
+      const base = tmplUrlTemplate.replace(/0$/, String(item.id));
+      const url = base + '?origin=' + encodeURIComponent(item.origin || 'admin');
+
+      try {
+        const resp = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        if (!resp.ok) return;
+        const data = await resp.json();
+
+        // Basic meta
+        if (data.modality) modalitySelect.value = data.modality;
+        if (data.body_part) bodyPartSelect.value = data.body_part;
+        if (data.tags) tagsInput.value = data.tags;
+        if (data.name) nameInput.value = data.name + ' (copy)';
+
+        // Sections (all expected as plain text from the API)
+        document.getElementById('indication_text').value = data.indication_text || '';
+        document.getElementById('core_question_text').value = data.core_question_text || '';
+        document.getElementById('comparison_text').value = data.comparison_text || '';
+        document.getElementById('technique_text').value = data.technique_text || '';
+        document.getElementById('observations_text').value = data.observations_text || '';
+        document.getElementById('conclusions_text').value = data.conclusions_text || '';
+        document.getElementById('recommendations_text').value = data.recommendations_text || '';
+
+        updateSummary();
+      } catch (e) {
+        console.warn('Template load error', e);
+      }
+    }
+
+    // Listen to typing in template name
+    nameInput.addEventListener('input', function () {
+      const query = this.value.trim();
+      if (!query || query.length < 2) {
+        clearSuggestions();
+        return;
+      }
+      if (suggestTimeout) {
+        clearTimeout(suggestTimeout);
+      }
+      suggestTimeout = setTimeout(() => fetchSuggestions(query), 250);
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function (event) {
+      if (!suggestionsBox.contains(event.target) && event.target !== nameInput) {
+        clearSuggestions();
+      }
+    });
+  })();
+</script>
+{% endblock %}
