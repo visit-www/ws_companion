@@ -20,9 +20,9 @@ from config import Config, basedir, userdir
 from app.models import (
     User, UserContentState, CategoryNames, ModuleNames,
     UserData, UserProfile, UserFeedback, UserReportTemplate,
-    CPDLog, CPDActivityType, UserCPDState, InteractionTypeEnum
+    CPDLog, CPDActivityType, UserCPDState, InteractionTypeEnum,AdminReportTemplate,ModalityEnum,BodyPartEnum,ClassificationCategoryEnum
 )
-from app.forms import LoginForm, AddCPDLogForm
+from app.forms import LoginForm, AddCPDLogForm,AddReportTemplateDesktop,AddReportTemplateMobile
 from app.util import (
     generate_password_reset_token, verify_password_reset_token,
     generate_otp_secret, generate_otp_token
@@ -1713,7 +1713,369 @@ def save_session_log():
 #reporting ad report template routes.
 #*-------------------------------------------------
 from app.forms import AddReportTemplateMobile, AddReportTemplateDesktop
-from app.models import UserReportTemplate
+from app.models import (
+    UserReportTemplate,
+    AdminReportTemplate,
+    TemplateTypeEnum,
+    ModalityEnum,
+    BodyPartEnum,
+)
+
+# *-------------------------------------------------
+# User report template library & builder
+# *-------------------------------------------------
+
+@app_user_bp.route("/report_templates", methods=["GET"])
+@login_required
+def list_user_templates():
+    """
+    List all report templates created by the current user.
+    """
+    templates = (
+        db.session.query(UserReportTemplate)
+        .filter_by(user_id=current_user.id)
+        .order_by(UserReportTemplate.updated_at.desc())
+        .all()
+    )
+    return render_template(
+        "user_report_templates.html",
+        templates=templates,
+    )
+
+
+@app_user_bp.route("/report_templates/new", methods=["GET", "POST"])
+@login_required
+def create_user_report_template():
+    """
+    User-facing builder for creating a new report template.
+
+    UI only exposes plain-text fields; this route converts those into a
+    structured definition_json compatible with the admin templates.
+    """
+    if request.method == "GET":
+        # Build choices for modality, body part, and template type
+        try:
+            modality_choices = [
+                (m.name, getattr(m, "value", m.name.title())) for m in ModalityEnum
+            ]
+        except Exception:
+            modality_choices = []
+
+        try:
+            body_part_choices = [
+                (b.name, getattr(b, "value", b.name.title())) for b in BodyPartEnum
+            ]
+        except Exception:
+            body_part_choices = []
+
+        try:
+            template_type_choices = [
+                (t.name, getattr(t, "value", t.name.title())) for t in TemplateTypeEnum
+            ]
+        except Exception:
+            template_type_choices = []
+
+        return render_template(
+            "user_report_template_builder.html",
+            modality_choices=modality_choices,
+            body_part_choices=body_part_choices,
+            template_type_choices=template_type_choices,
+        )
+
+    # POST: create the template
+    template_name = (request.form.get("template_name") or "").strip()
+    modality_raw = (request.form.get("modality") or "").strip() or None
+    body_part_raw = (request.form.get("body_part") or "").strip() or None
+    template_type_raw = (request.form.get("template_type") or "").strip() or None
+    tags_raw = (request.form.get("tags") or "").strip() or None
+
+    indication_text = (request.form.get("indication_text") or "").strip()
+    core_question_text = (request.form.get("core_question_text") or "").strip()
+    comparison_text = (request.form.get("comparison_text") or "").strip()
+    technique_text = (request.form.get("technique_text") or "").strip()
+    observations_text = (request.form.get("observations_text") or "").strip()
+    conclusions_text = (request.form.get("conclusions_text") or "").strip()
+    recommendations_text = (request.form.get("recommendations_text") or "").strip()
+
+    if not template_name:
+        flash("Please provide a template name.", "warning")
+        return redirect(url_for("app_user.create_user_report_template"))
+
+    # Convert string codes to enums where possible
+    modality_enum = None
+    if modality_raw:
+        try:
+            modality_enum = ModalityEnum[modality_raw]
+        except Exception:
+            modality_enum = None
+
+    body_part_enum = None
+    if body_part_raw:
+        try:
+            body_part_enum = BodyPartEnum[body_part_raw]
+        except Exception:
+            body_part_enum = None
+
+    template_type_enum = None
+    if template_type_raw:
+        try:
+            template_type_enum = TemplateTypeEnum[template_type_raw]
+        except Exception:
+            template_type_enum = None
+
+    if template_type_enum is None and hasattr(TemplateTypeEnum, "STRUCTURED"):
+        template_type_enum = TemplateTypeEnum.STRUCTURED
+
+    # Helper to build sections from plain text into a rich JSON definition
+    sections = []
+    order_counter = 10
+
+    def add_section(section_id, label, text, export_targets=None):
+        nonlocal order_counter
+        if not text:
+            return
+        sections.append(
+            {
+                "id": section_id,
+                "label": label,
+                "order": order_counter,
+                "type": "textarea",
+                "default_text": text,
+                "rich": False,
+                "export_targets": export_targets or [],
+            }
+        )
+        order_counter += 10
+
+    # Build the core reporting sections
+    add_section(
+        "indication",
+        "Indication/Clinical history",
+        indication_text,
+        ["smart_report.indication", "case_workspace.indication"],
+    )
+    add_section(
+        "core_question",
+        "Core question",
+        core_question_text,
+        ["smart_report.core_question", "case_workspace.core_question"],
+    )
+    add_section(
+        "comparison",
+        "Comparison",
+        comparison_text,
+        ["smart_report.comparison", "case_workspace.comparison"],
+    )
+    add_section(
+        "technique",
+        "Technique",
+        technique_text,
+        ["smart_report.technique", "case_workspace.technique"],
+    )
+    add_section(
+        "observations",
+        "Observations / Findings",
+        observations_text,
+        ["smart_report.observations", "case_workspace.observations"],
+    )
+    add_section(
+        "conclusions",
+        "Conclusion / Impression",
+        conclusions_text,
+        ["smart_report.conclusions", "case_workspace.impression"],
+    )
+    add_section(
+        "recommendations",
+        "Recommendations",
+        recommendations_text,
+        ["smart_report.recommendations", "case_workspace.recommendations"],
+    )
+
+    definition = {
+        "version": 1,
+        "meta": {
+            "template_name": template_name,
+            "modality": modality_raw,
+            "body_part": body_part_raw,
+            "template_type": template_type_raw or (
+                template_type_enum.name if template_type_enum else None
+            ),
+            "origin": "user",
+        },
+        "sections": sections,
+    }
+
+    # Create and persist the user template
+    user_template = UserReportTemplate(
+        user_id=current_user.id,
+        template_name=template_name,
+        modality=modality_enum,
+        body_part=body_part_enum,
+        category=getattr(CategoryNames, "REPORT_TEMPLATE", None),
+        module=None,
+        tags=tags_raw,
+        template_type=template_type_enum,
+        definition_json=definition,
+    )
+
+    db.session.add(user_template)
+    db.session.commit()
+    flash("Your report template has been saved.", "success")
+    return redirect(url_for("app_user.list_user_templates"))
+
+
+@app_user_bp.route("/report_templates/builder/suggest", methods=["GET"])
+@login_required
+def suggest_templates_for_builder():
+    """
+    Suggest existing templates (user + admin) whose names match the query.
+    Used by the user template builder when typing the template name.
+    """
+    query = (request.args.get("q") or "").strip()
+    if not query:
+        return jsonify({"results": []})
+
+    like_pattern = f"%{query}%"
+
+    user_matches = (
+        db.session.query(UserReportTemplate)
+        .filter(
+            UserReportTemplate.user_id == current_user.id,
+            UserReportTemplate.template_name.ilike(like_pattern),
+        )
+        .order_by(UserReportTemplate.updated_at.desc())
+        .limit(5)
+        .all()
+    )
+    admin_matches = (
+        db.session.query(AdminReportTemplate)
+        .filter(AdminReportTemplate.template_name.ilike(like_pattern))
+        .order_by(AdminReportTemplate.updated_at.desc())
+        .limit(5)
+        .all()
+    )
+
+    results = []
+    for t in user_matches:
+        results.append(
+            {
+                "id": t.id,
+                "name": t.template_name,
+                "origin": "user",
+                "modality": t.modality.name if getattr(t, "modality", None) else None,
+                "body_part": t.body_part.name if getattr(t, "body_part", None) else None,
+                "tags": t.tags,
+            }
+        )
+    for t in admin_matches:
+        results.append(
+            {
+                "id": t.id,
+                "name": t.template_name,
+                "origin": "admin",
+                "modality": t.modality.name if getattr(t, "modality", None) else None,
+                "body_part": t.body_part.name if getattr(t, "body_part", None) else None,
+                "tags": t.tags,
+            }
+        )
+
+    return jsonify({"results": results})
+
+
+@app_user_bp.route(
+    "/report_templates/builder/load/<int:template_id>", methods=["GET"]
+)
+@login_required
+def load_template_for_builder(template_id: int):
+    """
+    Load an existing template (admin or user) and return a plain-text representation
+    of its sections so the builder form can be auto-populated.
+    """
+    origin = (request.args.get("origin") or "admin").lower()
+    if origin == "user":
+        template = db.session.get(UserReportTemplate, template_id)
+    else:
+        template = db.session.get(AdminReportTemplate, template_id)
+
+    if not template:
+        return jsonify({"error": "Template not found"}), 404
+
+    # Base fields
+    response = {
+        "id": template.id,
+        "name": template.template_name,
+        "origin": origin,
+        "modality": template.modality.name if getattr(template, "modality", None) else None,
+        "body_part": template.body_part.name if getattr(template, "body_part", None) else None,
+        "tags": getattr(template, "tags", None),
+        "indication_text": "",
+        "clinical_history_text": "",
+        "core_question_text": "",
+        "comparison_text": "",
+        "technique_text": "",
+        "observations_text": "",
+        "conclusions_text": "",
+        "recommendations_text": "",
+    }
+
+    definition = getattr(template, "definition_json", None) or {}
+    sections = definition.get("sections") or []
+
+    # Helper to merge section text by id prefix
+    def set_if_not_empty(key, value):
+        if value and not response[key]:
+            response[key] = value
+
+    for s in sections:
+        sid = (s.get("id") or "").lower()
+        txt = s.get("default_text") or s.get("text") or ""
+        if not txt:
+            continue
+        if sid.startswith("indication"):
+            set_if_not_empty("indication_text", txt)
+        elif sid.startswith("core_question") or sid.startswith("question"):
+            set_if_not_empty("core_question_text", txt)
+        elif sid.startswith("comparison"):
+            set_if_not_empty("comparison_text", txt)
+        elif sid.startswith("technique"):
+            set_if_not_empty("technique_text", txt)
+        elif sid.startswith("observation") or sid.startswith("findings"):
+            set_if_not_empty("observations_text", txt)
+        elif sid.startswith("conclusion") or sid.startswith("impression"):
+            set_if_not_empty("conclusions_text", txt)
+        elif sid.startswith("recommendation") or sid.startswith("advice"):
+            set_if_not_empty("recommendations_text", txt)
+    
+    # Merge any separated clinical history into the single indication_text field for the builder UI
+    if response.get("clinical_history_text"):
+        if response.get("indication_text"):
+            response["indication_text"] = (
+                response["indication_text"].rstrip()
+                + "\n\n"
+                + response["clinical_history_text"].lstrip()
+            )
+        else:
+            response["indication_text"] = response["clinical_history_text"]
+
+    # Fallback: if no structured sections, try a single template_text field
+    if not any(
+        response[k]
+        for k in [
+            "indication_text",
+            "clinical_history_text",
+            "core_question_text",
+            "comparison_text",
+            "technique_text",
+            "observations_text",
+            "conclusions_text",
+            "recommendations_text",
+        ]
+    ):
+        fallback_text = getattr(template, "template_text", "") or ""
+        if fallback_text:
+            response["observations_text"] = fallback_text
+
+    return jsonify(response)
 
 @app_user_bp.route('/smart_report', methods=['GET', 'POST'])
 @login_required
@@ -1734,12 +2096,137 @@ def smart_report_dashboard():
     return render_template('smart_report_dashboard.html')
     
 
-# Use an existing admin template by ID
+
+# Use an existing WSCompanion (admin) template by ID and create/reuse a user copy
 @app_user_bp.route('/smart_report/template/<int:template_id>', methods=['GET'])
 @login_required
 def use_report_template(template_id):
-    # In future: load AdminReportTemplate by ID and pre-fill form
-    return render_template('smart_report_viewer.html', template_id=template_id)
+    # 1) Load the WSCompanion (admin) template
+    admin_template = db.session.get(AdminReportTemplate, template_id)
+    if not admin_template or not admin_template.is_active:
+        flash("The selected WSCompanion template is not available.", "warning")
+        return redirect(url_for("app_user.smart_report_dashboard"))
+
+    # 2) Check if the current user already has a linked user template for this admin template
+    user_template = (
+        db.session.query(UserReportTemplate)
+        .filter_by(
+            user_id=current_user.id,
+            admin_template_id=admin_template.id,
+        )
+        .order_by(UserReportTemplate.updated_at.desc())
+        .first()
+    )
+
+    # 3) If no user template exists yet, create a personal copy seeded from the admin template
+    if not user_template:
+        user_template = UserReportTemplate(
+            user_id=current_user.id,
+            template_name=admin_template.template_name,
+            modality=admin_template.modality,
+            body_part=admin_template.body_part,
+            category=admin_template.category,
+            module=admin_template.module,
+            tags=admin_template.tags,
+            file=admin_template.file,
+            filepath=admin_template.filepath,
+            admin_template_id=admin_template.id,
+        )
+        # Set template_type explicitly to STRUCTURED if the field exists
+        if hasattr(user_template, "template_type"):
+            user_template.template_type = TemplateTypeEnum.STRUCTURED
+
+        db.session.add(user_template)
+        db.session.commit()
+        flash("A personal copy of this WSCompanion template has been created for you.", "success")
+    else:
+        flash("Opening your saved version of this template.", "info")
+
+    # 4) Build section definition from admin_template.definition_json or a sensible default
+    definition = admin_template.definition_json or {
+        "version": 1,
+        "meta": {
+            "modality": admin_template.modality.value if getattr(admin_template, "modality", None) else None,
+            "body_part": admin_template.body_part.value if getattr(admin_template, "body_part", None) else None,
+            "template_purpose": admin_template.template_name,
+        },
+        "sections": [
+            {
+                "id": "clinical_info",
+                "label": "Clinical Information",
+                "order": 10,
+                "type": "textarea",
+                "default_text": "",
+                "rich": False,
+                "export_targets": ["smart_report.clinical_info", "case_workspace.clinical_info"],
+            },
+            {
+                "id": "comparison",
+                "label": "Comparison",
+                "order": 20,
+                "type": "textarea",
+                "default_text": "",
+                "rich": False,
+                "export_targets": ["smart_report.comparison", "case_workspace.comparison"],
+            },
+            {
+                "id": "findings",
+                "label": "Observations",
+                "order": 30,
+                "type": "textarea",
+                "default_text": "",
+                "rich": True,
+                "export_targets": ["smart_report.observations", "case_workspace.observations"],
+            },
+            {
+                "id": "impression",
+                "label": "Impression",
+                "order": 40,
+                "type": "textarea",
+                "default_text": "",
+                "rich": True,
+                "export_targets": ["smart_report.conclusions", "case_workspace.impression"],
+            },
+            {
+                "id": "recommendations",
+                "label": "Recommendations",
+                "order": 50,
+                "type": "textarea",
+                "default_text": "",
+                "rich": False,
+                "export_targets": ["smart_report.recommendations", "case_workspace.recommendations"],
+            },
+        ],
+    }
+
+    # Ensure sections is a list
+    sections = definition.get("sections", []) or []
+
+    # 5) Load user-specific section values (if any)
+    section_values = user_template.section_values_json or {}
+
+    # Make sure we at least have keys for all section IDs, falling back to default_text
+    normalized_values = {}
+    for section in sections:
+        sec_id = section.get("id")
+        if not sec_id:
+            continue
+        if sec_id in section_values and section_values[sec_id] is not None:
+            normalized_values[sec_id] = section_values[sec_id]
+        else:
+            normalized_values[sec_id] = section.get("default_text", "")
+
+    # 6) Render the smart report viewer with structured sections and values
+    return render_template(
+        "smart_report_viewer.html",
+        template_title=admin_template.template_name or "WSCompanion Template",
+        template_mode="edit",
+        template_source="user",
+        admin_template=admin_template,
+        user_template=user_template,
+        sections=sections,
+        section_values=normalized_values,
+    )
 
 
 # Paste a report and parse into structured form (AI-assisted)

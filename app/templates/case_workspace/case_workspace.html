@@ -470,8 +470,16 @@
             <ul class="list-unstyled mb-3">
               {% for t in suggested_user_templates %}
                 <li class="mb-1">
-                  {{ t.template_name }}
-                  <div class="text-muted small">My template</div>
+                  {% if t.admin_template_id %}
+                    <a href="{{ url_for('app_user.use_report_template', template_id=t.admin_template_id) }}"
+                       class="text-decoration-none">
+                      <div class="fw-semibold">{{ t.template_name }}</div>
+                      <div class="text-muted small">My template (linked to WSCompanion)</div>
+                    </a>
+                  {% else %}
+                    <div class="fw-semibold">{{ t.template_name }}</div>
+                    <div class="text-muted small">My template</div>
+                  {% endif %}
                 </li>
               {% endfor %}
             </ul>

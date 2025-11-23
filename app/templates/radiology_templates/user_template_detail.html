@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+
+{% block title %}Report Templates{% endblock %}
+
+{% block content %}
+<h2 class="m-3">Report Templates: {{ template_title }}</h2>
+{% if admin_template %}
+<div class="m-3 small text-muted">
+    Using WSCompanion template:
+    <strong>{{ admin_template.template_name }}</strong>
+    {% if admin_template.modality and admin_template.body_part %}
+    – {{ admin_template.modality.value }}
+    · {{ admin_template.body_part.value.replace('_', ' ').title() }}
+    {% endif %}
+    {% if admin_template.tags %}
+    · Tags: {{ admin_template.tags }}
+    {% endif %}
+</div>
+{% endif %}
+<hr>
+{# Determine mode and ensure sections/values are always defined #}
+{% set mode = template_mode if template_mode is defined else 'edit' %}
+{% set is_edit = (mode == 'edit') %}
+{% set _sections = sections if sections is defined and sections else [] %}
+{% set _section_values = section_values if section_values is defined and section_values else {} %}
+<div class="table-responsive m-3">
+    <table class="table table-bordered m-auto">
+        <thead>
+            <tr class="pastel-light-green">
+                <th class="w-auto">
+                    <h3>Report Section</h3>
+                </th>
+                <th>
+                    <h3>Data</h3>
+                </th>
+                <th>
+                    <h3>Export Data</h3>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Patient Information Section -->
+            <tr>
+                <td class="bg-light w-auto">
+                    <h5>Patient Information</h5>
+                </td>
+                <td class="w-75">
+                    <form>
+                        <div class="row g-3">
+                            <div class="col-6">
+                                <div class="form-group row g-2 m-auto">
+                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
+                                        <label for="patient_name">Name:</label>
+                                    </div>
+                                    <div class="col-10">
+                                        <input type="text" class="form-control" id="patient_name"
+                                            placeholder="Enter patient name">
+                                    </div>
+                                </div>
+                                <div class="form-group row g-2 m-auto">
+                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
+                                        <label for="patient_gender">Gender:</label>
+                                    </div>
+                                    <div class="col-10">
+                                        <input type="text" class="form-control" id="patient_gender"
+                                            placeholder="Enter gender">
+                                    </div>
+                                </div>
+                                <div class="form-group row g-2 m-auto">
+                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
+                                        <label for="patient_id">ID:</label>
+                                    </div>
+                                    <div class="col-10">
+                                        <input type="text" class="form-control" id="patient_id"
+                                            placeholder="Enter patient ID">
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="form-group row g-2 m-auto">
+                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
+                                        <label for="patient_age">Age:</label>
+                                    </div>
+                                    <div class="col-10">
+                                        <input type="text" class="form-control" id="patient_age"
+                                            placeholder="Enter age">
+                                    </div>
+                                </div>
+                                <div class="form-group row g-2 m-auto">
+                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
+                                        <label for="patient_dob">DOB:</label>
+                                    </div>
+                                    <div class="col-10">
+                                        <input type="text" class="form-control" id="patient_dob"
+                                            placeholder="Enter DOB">
+                                    </div>
+                                </div>
+                                <div class="form-group row g-2 m-auto">
+                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
+                                        <label for="patient_location">Location:</label>
+                                    </div>
+                                    <div class="col-10">
+                                        <input type="text" class="form-control" id="patient_location"
+                                            placeholder="Enter location">
+                                    </div>
+                                </div>
+                            </div>
+                    </form>
+                </td>
+                <td class="w-auto bg-light">
+                    <a class="btn btn-outline-primary" href="#">Export Data</a>
+                </td>
+            </tr>
+
+            {# Section-driven report body rows #}
+            {% for section in _sections %}
+            <tr>
+                <td class="bg-light w-auto">
+                    <h5>{{ section.label or section.id|capitalize }}</h5>
+                </td>
+                <td class="w-75">
+                    {% set sec_id = section.id %}
+                    {% set value = _section_values.get(sec_id, section.default_text or '') %}
+                    {% if is_edit %}
+                    <textarea id="{{ sec_id }}" class="form-control" data-section-id="{{ sec_id }}"
+                        placeholder="{{ section.placeholder or '' }}">{{ value }}</textarea>
+                    {% else %}
+                    <div class="form-control-plaintext">
+                        {% if section.rich %}
+                        {{ value|safe }}
+                        {% else %}
+                        {{ value }}
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </td>
+                <td class="w-auto bg-light">
+                    <button type="button" class="btn btn-outline-primary export-section-btn"
+                        data-section-id="{{ sec_id }}">
+                        Export Data
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Generate Report Button Section -->
+<div class="generate-report card bg-light">
+    <h5 class="card-header">Generate Report</h5>
+    <div class="card-body">
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="checkbox" id="report_type_pdf" value="pdf">
+            <label class="form-check-label" for="report_type_pdf">PDF</label>
+        </div>
+        <div class="form-check form-check-inline">
+            <input class="form-check-input" type="checkbox" id="report_type_word" value="word">
+            <label class="form-check-label" for="report_type_word">Word</label>
+        </div>
+        <button class="btn btn-primary w-auto m-5" id="generate_report_btn">Generate My Report</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block script %}
+{{super()}}
+<script>
+    document.getElementById('generate_report_btn').addEventListener('click', function () {
+        const patientName = document.getElementById('patient_name').value;
+        const patientGender = document.getElementById('patient_gender').value;
+        const patientID = document.getElementById('patient_id').value;
+        const patientAge = document.getElementById('patient_age').value;
+        const patientDOB = document.getElementById('patient_dob').value;
+        const patientLocation = document.getElementById('patient_location').value;
+
+        const clinicalInfo = document.getElementById('clinical_info').value;
+        const comparison = document.getElementById('comparison').value;
+        const observationSelect = document.getElementById('observation_select').value;
+        const observationText = document.getElementById('observation_text').value;
+        const conclusion = document.getElementById('conclusion').value;
+        const recommendation = document.getElementById('recommendation').value;
+
+        const reportTypePDF = document.getElementById('report_type_pdf').checked;
+        const reportTypeWord = document.getElementById('report_type_word').checked;
+
+        // Add logic to pass this data to the backend for report generation
+        console.log({
+            patientName,
+            patientGender,
+            patientID,
+            patientAge,
+            patientDOB,
+            patientLocation,
+            clinicalInfo,
+            comparison,
+            observationSelect,
+            observationText,
+            conclusion,
+            recommendation,
+            reportTypePDF,
+            reportTypeWord
+        });
+    });
+</script>
+{% endblock %}
