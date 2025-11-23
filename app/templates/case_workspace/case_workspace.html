@@ -451,10 +451,13 @@
             <ul class="list-unstyled mb-3">
               {% for p in suggested_protocols %}
                 <li class="mb-1">
-                  {{ p.name }}
-                  <div class="text-muted small">
-                    {{ p.modality.value }} – {{ p.body_part.value.replace('_', ' ').title() }}
-                  </div>
+                  <a href="{{ url_for('content_routes.get_protocol', protocol_id=p.id) }}"
+                     class="text-decoration-none">
+                    <div class="fw-semibold">{{ p.name }}</div>
+                    <div class="text-muted small">
+                      {{ p.modality.value }} – {{ p.body_part.value.replace('_', ' ').title() }}
+                    </div>
+                  </a>
                 </li>
               {% endfor %}
             </ul>
@@ -476,21 +479,24 @@
             <p class="text-muted mb-2">No personal templates yet.</p>
           {% endif %}
 
-                    <h6 class="fw-semibold mt-2">WSCompanion templates</h6>
-                    {% if suggested_admin_templates %}
-                    <ul class="list-unstyled mb-3">
-                      {% for t in suggested_admin_templates %}
-                      <li class="mb-1">
-                        {{ t.template_name }}
-                        <div class="text-muted small">
-                          {{ t.modality.value }} – {{ t.body_part.value.replace('_', ' ').title() }}
-                        </div>
-                      </li>
-                      {% endfor %}
-                    </ul>
-                    {% else %}
-                    <p class="text-muted mb-2">No matching WSCompanion templates yet.</p>
-                    {% endif %}
+          <h6 class="fw-semibold mt-2">WSCompanion templates</h6>
+          {% if suggested_admin_templates %}
+          <ul class="list-unstyled mb-3">
+            {% for t in suggested_admin_templates %}
+            <li class="mb-1">
+              <a href="{{ url_for('content_routes.get_template', template_id=t.id) }}"
+                 class="text-decoration-none">
+                <div class="fw-semibold">{{ t.template_name }}</div>
+                <div class="text-muted small">
+                  {{ t.modality.value }} – {{ t.body_part.value.replace('_', ' ').title() }}
+                </div>
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-muted mb-2">No matching WSCompanion templates yet.</p>
+          {% endif %}
                     
                     <h6 class="fw-semibold mt-3">Staging &amp; Classification</h6>
                     {% if suggested_classifications %}
