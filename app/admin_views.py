@@ -11,7 +11,16 @@ from datetime import datetime, timezone
 from sqlalchemy import inspect, or_
 
 from . import db
-from .models import Content, Reference, User, NormalMeasurement, BodyPartEnum, ModalityEnum
+from .models import (
+    Content,
+    Reference,
+    User,
+    NormalMeasurement,
+    BodyPartEnum,
+    ModalityEnum,
+    AdminReportTemplate,
+    ImagingProtocol,
+)
 from config import ANONYMOUS_USER_ID, userdir
 
 # ExtendModelView class for general model handling
@@ -467,6 +476,617 @@ class ImagingProtocolAdmin(ExtendModelView):
         return super().on_form_prefill(form, id)
 # *-------------------------------------------------------------------------------------
 # normal measurments admin views:
+
+# -------------------------------------------------------------------------------------
+# AdminReportTemplate custom admin view
+class AdminReportTemplateAdmin(ExtendModelView):
+    """
+    Custom admin for AdminReportTemplate that hides raw JSON and exposes
+    friendly fields for indication/clinical history and observations.
+    """
+
+    # Do not show raw JSON, file upload, or audit fields directly
+    form_excluded_columns = (
+        "definition_json",
+        "created_at",
+        "updated_at",
+        "user_report_templates",
+        "file",
+        "filepath",
+        "description",
+        "category",
+        "created_by_user_id",
+        "usage_count",
+    )
+
+    # Extra helper fields, more guided and with conclusions/recommendations, plus advanced JSON
+    form_extra_fields = {
+        "raw_sections_json": TextAreaField(
+            "Advanced: full JSON for sections",
+            description=(
+                "If you already have the full JSON for all sections (as a list or as "
+                '{"sections": [...]}), paste it here.\n'
+                "IMPORTANT:\n"
+                "- When this field is non-empty and valid JSON, it will be used to build the "
+                "template sections and the individual fields below (Indication, Clinical history, "
+                "Core question, Comparison, Technique, Observations, Conclusions, "
+                "Recommendations) will be ignored/overwritten for this save.\n"
+                "- Leave this empty if you prefer to build the template using the section fields below."
+            ),
+        ),
+        "indication_block": TextAreaField(
+            "Indication/Clinical history",
+            description=(
+                "Step 1 – What is the indication for the scan?\n"
+                "- Easiest: type plain text, e.g. \"?Pulmonary embolism\".\n"
+                "- You can also use inline HTML for emphasis if needed."
+            ),
+        ),
+        "core_question_block": TextAreaField(
+            "Core question",
+            description=(
+                "Step 3 – What is the key clinical question?\n"
+                "Example: \"Is there CT evidence of acute PE and any signs of right heart strain?\".\n"
+                "You can also use JSON if you want multiple core questions."
+            ),
+        ),
+        "comparison_block": TextAreaField(
+            "Comparison",
+            description=(
+                "Step 4 – Comparison with prior imaging.\n"
+                "- Plain text: e.g. \"No relevant prior imaging available for comparison.\".\n"
+                "- Or include placeholders in square brackets to force editing, e.g.:\n"
+                "  \"Compared with CT chest dated [dd/mm/yyyy].\""
+            ),
+        ),
+        "technique_block": TextAreaField(
+            "Technique",
+            description=(
+                "Step 5 – Technique description (how the study was acquired).\n"
+                "- This can often be auto-prefilled from the Imaging Protocol.\n"
+                "- You can edit it here as the default technique text for this template."
+            ),
+        ),
+        "observations_block": TextAreaField(
+            "Observations / Findings",
+            description=(
+                "Step 6 – Key imaging observations.\n"
+                "- Plain text or HTML → one combined observations section.\n"
+                "- JSON → multiple subsections (e.g. pulmonary arteries, RV strain, lung parenchyma).\n"
+                "Example JSON:\n"
+                "[\n"
+                "  {\"id\": \"pe_findings\", \"label\": \"Pulmonary arteries\", \"text\": \"Filling defects in...\"},\n"
+                "  {\"id\": \"rv_strain\", \"label\": \"Right heart / RV strain\", \"text\": \"RV:LV > 1, septal bowing...\"}\n"
+                "]"
+            ),
+        ),
+        "conclusions_block": TextAreaField(
+            "Conclusion / Impression",
+            description=(
+                "Step 7 – Your overall impression in radiologist language.\n"
+                "- Typically 2–5 numbered lines summarising the diagnosis and severity.\n"
+                "- You can also use JSON to define multiple impression subsections if needed."
+            ),
+        ),
+        "recommendations_block": TextAreaField(
+            "Recommendations",
+            description=(
+                "Step 8 – Actionable recommendations for the referrer.\n"
+                "- Plain text (e.g. anticoagulate, consider echo, follow-up imaging).\n"
+                "- Or JSON if you want structured recommendation subsections."
+            ),
+        ),
+    }
+
+    # Define a clinically logical field order for the form, with advanced JSON field above helpers
+    form_create_rules = form_edit_rules = [
+        "template_name",
+        "modality",
+        "body_part",
+        "module",
+        "tags",
+        "template_type",
+        "is_active",
+        "raw_sections_json",
+        rules.FieldSet(("indication_block",), "Indication/Clinical history"),
+        rules.FieldSet(("core_question_block",), "Core question"),
+        rules.FieldSet(("comparison_block",), "Comparison"),
+        rules.FieldSet(("technique_block",), "Technique"),
+        rules.FieldSet(("observations_block",), "Observations / Findings"),
+        rules.FieldSet(("conclusions_block",), "Conclusion / Impression"),
+        rules.FieldSet(("recommendations_block",), "Recommendations"),
+    ]
+
+    def _parse_sections_block(self, raw_value, default_section_id, default_label, default_order, default_export_targets):
+        """
+        Parse a textarea that may contain JSON or plain text.
+
+        - If JSON (list or {\"sections\": [...]}) is detected, convert each item into a section dict.
+        - Otherwise, treat the whole value as a single section.
+        """
+        sections = []
+        raw_value = (raw_value or "").strip()
+        if not raw_value:
+            return sections
+
+        # Try JSON first
+        if raw_value.startswith("{") or raw_value.startswith("["):
+            try:
+                parsed = json.loads(raw_value)
+                if isinstance(parsed, dict):
+                    parsed_list = parsed.get("sections", [])
+                else:
+                    parsed_list = parsed
+
+                for idx, item in enumerate(parsed_list):
+                    if not isinstance(item, dict):
+                        continue
+                    text = item.get("text") or item.get("default_text") or ""
+                    if not text:
+                        continue
+                    sec_id = item.get("id") or f"{default_section_id}_{idx+1}"
+                    label = item.get("label") or f"{default_label} {idx+1}"
+                    order = item.get("order") or default_order + idx
+                    rich = bool(item.get("rich", True))
+                    export_targets = item.get("export_targets", default_export_targets)
+
+                    sections.append(
+                        {
+                            "id": sec_id,
+                            "label": label,
+                            "order": order,
+                            "type": "textarea",
+                            "default_text": text,
+                            "rich": rich,
+                            "export_targets": export_targets,
+                        }
+                    )
+                return sections
+            except Exception:
+                # Fall back to treating as plain text if JSON parsing fails
+                pass
+
+        # Plain text / HTML: single section
+        is_rich = "<" in raw_value and ">" in raw_value
+        sections.append(
+            {
+                "id": default_section_id,
+                "label": default_label,
+                "order": default_order,
+                "type": "textarea",
+                "default_text": raw_value,
+                "rich": is_rich,
+                "export_targets": default_export_targets,
+            }
+        )
+        return sections
+
+    def on_model_change(self, form, model, is_created):
+        """
+        Build or update definition_json from the helper fields, or from advanced JSON if provided.
+        """
+        # Start from existing definition if any
+        definition = model.definition_json or {}
+        sections = definition.get("sections", []) or []
+
+        # Remove any previously generated indication, clinical history, core question, comparison, technique, observation, conclusion, or recommendation sections
+        indication_prefixes = ("indication", "indication_history")
+        clinical_history_prefixes = ("clinical_history",)
+        core_question_prefixes = ("core_question", "question")
+        comparison_prefixes = ("comparison",)
+        technique_prefixes = ("technique",)
+        observation_prefixes = ("observations", "findings", "pe_", "rv_", "lung_", "other_findings")
+        conclusion_prefixes = ("conclusion", "impression")
+        recommendation_prefixes = ("recommendation", "follow_up", "management")
+
+        filtered_sections = []
+        for s in sections:
+            sid = s.get("id", "")
+            if (
+                sid.startswith(indication_prefixes)
+                or sid.startswith(clinical_history_prefixes)
+                or sid.startswith(core_question_prefixes)
+                or sid.startswith(comparison_prefixes)
+                or sid.startswith(technique_prefixes)
+                or sid.startswith(observation_prefixes)
+                or sid.startswith(conclusion_prefixes)
+                or sid.startswith(recommendation_prefixes)
+            ):
+                continue
+            filtered_sections.append(s)
+
+        # If advanced JSON field is used, treat it as authoritative for sections
+        raw_json = None
+        if hasattr(form, "raw_sections_json") and form.raw_sections_json.data:
+            candidate = (form.raw_sections_json.data or "").strip()
+            if candidate:
+                try:
+                    parsed = json.loads(candidate)
+                    if isinstance(parsed, dict):
+                        parsed_sections = parsed.get("sections", [])
+                    else:
+                        parsed_sections = parsed
+
+                    # Only accept if it's a list of dict-like items
+                    if isinstance(parsed_sections, list):
+                        cleaned = []
+                        for item in parsed_sections:
+                            if isinstance(item, dict) and item.get("id") and item.get("default_text", item.get("text")):
+                                # Normalise: if 'text' exists but 'default_text' missing, promote it
+                                if "default_text" not in item and "text" in item:
+                                    item = dict(item)
+                                    item["default_text"] = item["text"]
+                                cleaned.append(item)
+                        raw_json = cleaned
+                except Exception:
+                    # If JSON is invalid, ignore this field and fall back to helper blocks
+                    flash(
+                        "Could not parse full sections JSON. Falling back to the individual section fields.",
+                        "warning",
+                    )
+
+        if raw_json is not None:
+            # Preserve non-section metadata, but override sections with the JSON list
+            definition["version"] = definition.get("version", 1)
+            definition["meta"] = definition.get("meta", {})
+            if hasattr(model, "modality") and model.modality is not None:
+                definition["meta"]["modality"] = getattr(model.modality, "value", str(model.modality))
+            if hasattr(model, "body_part") and model.body_part is not None:
+                definition["meta"]["body_part"] = getattr(model.body_part, "value", str(model.body_part))
+            definition["meta"]["template_purpose"] = model.template_name
+
+            # Combine preserved non-generated sections with the JSON provided ones
+            definition["sections"] = filtered_sections + raw_json
+            model.definition_json = definition or None
+            return super().on_model_change(form, model, is_created)
+
+        # Rebuild from helper fields (only if they contain data)
+        new_sections = []
+
+        if hasattr(form, "indication_block") and form.indication_block.data:
+            new_sections.extend(
+                self._parse_sections_block(
+                    form.indication_block.data,
+                    default_section_id="indication",
+                    default_label="Indication/Clinical history",
+                    default_order=10,
+                    default_export_targets=[
+                        "smart_report.clinical_info",
+                        "case_workspace.clinical_info",
+                    ],
+                )
+            )
+
+
+        if hasattr(form, "core_question_block") and form.core_question_block.data:
+            new_sections.extend(
+                self._parse_sections_block(
+                    form.core_question_block.data,
+                    default_section_id="core_question",
+                    default_label="Core question",
+                    default_order=20,
+                    default_export_targets=[
+                        "smart_report.core_question",
+                        "case_workspace.core_question",
+                    ],
+                )
+            )
+
+        if hasattr(form, "comparison_block") and form.comparison_block.data:
+            new_sections.extend(
+                self._parse_sections_block(
+                    form.comparison_block.data,
+                    default_section_id="comparison",
+                    default_label="Comparison",
+                    default_order=30,
+                    default_export_targets=[
+                        "smart_report.comparison",
+                        "case_workspace.comparison",
+                    ],
+                )
+            )
+
+        if hasattr(form, "technique_block") and form.technique_block.data:
+            new_sections.extend(
+                self._parse_sections_block(
+                    form.technique_block.data,
+                    default_section_id="technique",
+                    default_label="Technique",
+                    default_order=40,
+                    default_export_targets=[
+                        "smart_report.technique",
+                        "case_workspace.technique",
+                    ],
+                )
+            )
+
+        if hasattr(form, "observations_block") and form.observations_block.data:
+            new_sections.extend(
+                self._parse_sections_block(
+                    form.observations_block.data,
+                    default_section_id="observations",
+                    default_label="Observations",
+                    default_order=50,
+                    default_export_targets=[
+                        "smart_report.observations",
+                        "case_workspace.observations",
+                    ],
+                )
+            )
+
+        if hasattr(form, "conclusions_block") and form.conclusions_block.data:
+            new_sections.extend(
+                self._parse_sections_block(
+                    form.conclusions_block.data,
+                    default_section_id="conclusion",
+                    default_label="Conclusion / Impression",
+                    default_order=80,
+                    default_export_targets=[
+                        "smart_report.conclusions",
+                        "case_workspace.impression",
+                    ],
+                )
+            )
+
+        if hasattr(form, "recommendations_block") and form.recommendations_block.data:
+            new_sections.extend(
+                self._parse_sections_block(
+                    form.recommendations_block.data,
+                    default_section_id="recommendations",
+                    default_label="Recommendations",
+                    default_order=90,
+                    default_export_targets=[
+                        "smart_report.recommendations",
+                        "case_workspace.recommendations",
+                    ],
+                )
+            )
+
+        # Combine preserved sections with newly generated ones
+        definition["version"] = definition.get("version", 1)
+        definition["meta"] = definition.get("meta", {})
+        # Optionally sync basic meta from model
+        if hasattr(model, "modality") and model.modality is not None:
+            definition["meta"]["modality"] = getattr(model.modality, "value", str(model.modality))
+        if hasattr(model, "body_part") and model.body_part is not None:
+            definition["meta"]["body_part"] = getattr(model.body_part, "value", str(model.body_part))
+        definition["meta"]["template_purpose"] = model.template_name
+
+        definition["sections"] = filtered_sections + new_sections
+
+        model.definition_json = definition or None
+
+        # Proceed with normal save
+        return super().on_model_change(form, model, is_created)
+
+    def on_form_prefill(self, form, id):
+        """
+        Populate helper fields from definition_json when editing an existing template.
+        """
+        model = self.get_one(id)
+        if not model:
+            return
+
+        definition = model.definition_json or {}
+        sections = definition.get("sections", []) or []
+
+        # Gather current sections by clinical grouping
+        indication_sections = []
+        clinical_history_sections = []
+        core_question_sections = []
+        comparison_sections = []
+        technique_sections = []
+        observation_sections = []
+        conclusion_sections = []
+        recommendation_sections = []
+
+        indication_prefixes = ("indication", "indication_history")
+        clinical_history_prefixes = ("clinical_history",)
+        core_question_prefixes = ("core_question", "question")
+        comparison_prefixes = ("comparison",)
+        technique_prefixes = ("technique",)
+        observation_prefixes = ("observations", "findings", "pe_", "rv_", "lung_", "other_findings")
+        conclusion_prefixes = ("conclusion", "impression")
+        recommendation_prefixes = ("recommendation", "follow_up", "management")
+
+        for s in sections:
+            sid = s.get("id", "")
+            if sid.startswith(indication_prefixes):
+                indication_sections.append(s)
+            elif sid.startswith(clinical_history_prefixes):
+                clinical_history_sections.append(s)
+            elif sid.startswith(core_question_prefixes):
+                core_question_sections.append(s)
+            elif sid.startswith(comparison_prefixes):
+                comparison_sections.append(s)
+            elif sid.startswith(technique_prefixes):
+                technique_sections.append(s)
+            elif sid.startswith(observation_prefixes):
+                observation_sections.append(s)
+            elif sid.startswith(conclusion_prefixes):
+                conclusion_sections.append(s)
+            elif sid.startswith(recommendation_prefixes):
+                recommendation_sections.append(s)
+
+        # Prefill indication_block as JSON if multiple sections exist, otherwise as plain text
+        if indication_sections:
+            if len(indication_sections) == 1:
+                # Single section: show just the text for easy editing
+                form.indication_block.data = indication_sections[0].get("default_text", "")
+            else:
+                # Multiple sections: show a JSON list
+                items = []
+                for s in indication_sections:
+                    items.append(
+                        {
+                            "id": s.get("id"),
+                            "label": s.get("label"),
+                            "text": s.get("default_text", ""),
+                            "export_targets": s.get("export_targets", []),
+                            "order": s.get("order"),
+                            "rich": s.get("rich", True),
+                        }
+                    )
+                form.indication_block.data = json.dumps(items, indent=2)
+
+        # Prefill clinical_history_block
+        if clinical_history_sections:
+            if len(clinical_history_sections) == 1:
+                form.clinical_history_block.data = clinical_history_sections[0].get("default_text", "")
+            else:
+                items = []
+                for s in clinical_history_sections:
+                    items.append(
+                        {
+                            "id": s.get("id"),
+                            "label": s.get("label"),
+                            "text": s.get("default_text", ""),
+                            "export_targets": s.get("export_targets", []),
+                            "order": s.get("order"),
+                            "rich": s.get("rich", True),
+                        }
+                    )
+                form.clinical_history_block.data = json.dumps(items, indent=2)
+
+        # Prefill core_question_block
+        if core_question_sections:
+            if len(core_question_sections) == 1:
+                form.core_question_block.data = core_question_sections[0].get("default_text", "")
+            else:
+                items = []
+                for s in core_question_sections:
+                    items.append(
+                        {
+                            "id": s.get("id"),
+                            "label": s.get("label"),
+                            "text": s.get("default_text", ""),
+                            "export_targets": s.get("export_targets", []),
+                            "order": s.get("order"),
+                            "rich": s.get("rich", True),
+                        }
+                    )
+                form.core_question_block.data = json.dumps(items, indent=2)
+
+        # Prefill observations_block similarly
+        if observation_sections:
+            if len(observation_sections) == 1:
+                form.observations_block.data = observation_sections[0].get("default_text", "")
+            else:
+                items = []
+                for s in observation_sections:
+                    items.append(
+                        {
+                            "id": s.get("id"),
+                            "label": s.get("label"),
+                            "text": s.get("default_text", ""),
+                            "export_targets": s.get("export_targets", []),
+                            "order": s.get("order"),
+                            "rich": s.get("rich", True),
+                        }
+                    )
+                form.observations_block.data = json.dumps(items, indent=2)
+
+        # Prefill comparison_block
+        if comparison_sections:
+            if len(comparison_sections) == 1:
+                form.comparison_block.data = comparison_sections[0].get("default_text", "")
+            else:
+                items = []
+                for s in comparison_sections:
+                    items.append(
+                        {
+                            "id": s.get("id"),
+                            "label": s.get("label"),
+                            "text": s.get("default_text", ""),
+                            "export_targets": s.get("export_targets", []),
+                            "order": s.get("order"),
+                            "rich": s.get("rich", True),
+                        }
+                    )
+                form.comparison_block.data = json.dumps(items, indent=2)
+        else:
+            # Default comparison text if nothing exists yet
+            if hasattr(form, "comparison_block") and not form.comparison_block.data:
+                form.comparison_block.data = (
+                    "No relevant prior imaging available for comparison.\n"
+                    "Compared with [modality / study type] dated [dd/mm/yyyy] (if applicable)."
+                )
+
+        # Prefill technique_block
+        if technique_sections:
+            if len(technique_sections) == 1:
+                form.technique_block.data = technique_sections[0].get("default_text", "")
+            else:
+                items = []
+                for s in technique_sections:
+                    items.append(
+                        {
+                            "id": s.get("id"),
+                            "label": s.get("label"),
+                            "text": s.get("default_text", ""),
+                            "export_targets": s.get("export_targets", []),
+                            "order": s.get("order"),
+                            "rich": s.get("rich", True),
+                        }
+                    )
+                form.technique_block.data = json.dumps(items, indent=2)
+        else:
+            # Try to prefill technique from ImagingProtocol if available and if form is empty
+            if hasattr(form, "technique_block") and not form.technique_block.data:
+                try:
+                    # Match on modality/body_part if these exist on the model
+                    q = db.session.query(ImagingProtocol)
+                    if hasattr(model, "modality") and model.modality is not None:
+                        q = q.filter(ImagingProtocol.modality == model.modality)
+                    if hasattr(model, "body_part") and model.body_part is not None:
+                        q = q.filter(ImagingProtocol.body_part == model.body_part)
+                    protocol = q.first()
+                    if protocol and getattr(protocol, "technique_text", None):
+                        form.technique_block.data = protocol.technique_text
+                except Exception:
+                    # Fail silently if no protocol available
+                    pass
+
+        # Prefill conclusions_block
+        if conclusion_sections:
+            if len(conclusion_sections) == 1:
+                form.conclusions_block.data = conclusion_sections[0].get("default_text", "")
+            else:
+                items = []
+                for s in conclusion_sections:
+                    items.append(
+                        {
+                            "id": s.get("id"),
+                            "label": s.get("label"),
+                            "text": s.get("default_text", ""),
+                            "export_targets": s.get("export_targets", []),
+                            "order": s.get("order"),
+                            "rich": s.get("rich", True),
+                        }
+                    )
+                form.conclusions_block.data = json.dumps(items, indent=2)
+
+        # Prefill recommendations_block
+        if recommendation_sections:
+            if len(recommendation_sections) == 1:
+                form.recommendations_block.data = recommendation_sections[0].get("default_text", "")
+            else:
+                items = []
+                for s in recommendation_sections:
+                    items.append(
+                        {
+                            "id": s.get("id"),
+                            "label": s.get("label"),
+                            "text": s.get("default_text", ""),
+                            "export_targets": s.get("export_targets", []),
+                            "order": s.get("order"),
+                            "rich": s.get("rich", True),
+                        }
+                    )
+                form.recommendations_block.data = json.dumps(items, indent=2)
+
+        # Let the parent do any default prefill work as well
+        return super().on_form_prefill(form, id)
 
 class NormalMeasurementAdmin(ModelView):
     # List view

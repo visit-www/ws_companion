@@ -32,16 +32,114 @@
         <p class="mt-2"><strong>Tags:</strong> {{ template.tags }}</p>
       {% endif %}
 
-      {% if template.filepath %}
+      {# Structured section view from definition_json (if present) #}
+      {% set definition = template.definition_json or {} %}
+      {% set _sections = definition.get('sections', []) %}
+      {% if _sections %}
+        {# Sort once by order #}
+        {% set ordered_sections = _sections|sort(attribute='order') %}
+
+        {# Group sections into clinical buckets based on their IDs #}
+        {% set ns = namespace(
+          indication=[],
+          clinical_history=[],
+          core_question=[],
+          comparison=[],
+          technique=[],
+          observations=[],
+          conclusions=[],
+          recommendations=[],
+          other=[]
+        ) %}
+
+        {% for section in ordered_sections %}
+          {% set sid = (section.id or '') %}
+          {% if sid.startswith('indication') or sid.startswith('indication_history') %}
+            {% set ns.indication = ns.indication + [section] %}
+          {% elif sid.startswith('clinical_history') %}
+            {% set ns.clinical_history = ns.clinical_history + [section] %}
+          {% elif sid.startswith('core_question') or sid.startswith('question') %}
+            {% set ns.core_question = ns.core_question + [section] %}
+          {% elif sid.startswith('comparison') %}
+            {% set ns.comparison = ns.comparison + [section] %}
+          {% elif sid.startswith('technique') %}
+            {% set ns.technique = ns.technique + [section] %}
+          {% elif sid.startswith('observations') or sid.startswith('findings') or sid.startswith('pe_') or sid.startswith('rv_') or sid.startswith('lung_') or sid.startswith('other_findings') %}
+            {% set ns.observations = ns.observations + [section] %}
+          {% elif sid.startswith('conclusion') or sid.startswith('impression') %}
+            {% set ns.conclusions = ns.conclusions + [section] %}
+          {% elif sid.startswith('recommendation') or sid.startswith('follow_up') or sid.startswith('management') %}
+            {% set ns.recommendations = ns.recommendations + [section] %}
+          {% else %}
+            {% set ns.other = ns.other + [section] %}
+          {% endif %}
+        {% endfor %}
+
         <hr>
-        <p class="mb-2">This template has an associated file.</p>
-        <a href="{{ url_for('content_routes.serve_template_file', template_id=template.id) }}"
-           class="btn btn-primary" target="_blank">
-          Open Template File
-        </a>
-      {% else %}
-        <p class="text-muted mt-3">No file attached to this template yet.</p>
+        <h5 class="mt-3"><mark>Template structure</mark></h5>
+        <div class="text-start" style="margin-left: 0; padding-left: 0; text-indent: 0;">
+
+          {# Helper rendering block: given a title and a list of sections, show them nicely #}
+          {% macro render_section_group(title, sections) %}
+            {% if sections %}
+              <div class="mb-3" style="margin-left: 0; padding-left: 0;">
+                <h5 class="mb-2 text-start">{{ title }}</h5>
+                
+                {% for section in sections %}
+                  {% set label = section.label or (section.id or '')|capitalize %}
+                  {% set text = section.default_text or '' %}
+                  <div class="mb-2">
+                    {# Only show the individual label if there are multiple sections in this group #}
+                    {% if sections|length > 1 %}
+                      <h6 class="mb-1 text-start">{{ label }}</h6>
+                    {% endif %}
+                    <p class="text-opacity-75 mt-2 text-start"
+                      style="white-space: pre-wrap; margin: 0 !important; padding: 0 !important; text-indent: 0 !important;">
+                      <p>
+                        {% if section.rich %}
+                          {{ text|safe }}
+                        {% else %}
+                          {{ text }}
+                        {% endif %}
+                      </p>
+                    </p>
+                  </div>
+                {% endfor %}
+                <hr class="mt-3 mb-0">
+              </div>
+            {% endif %}
+          {% endmacro %}
+
+          {{ render_section_group("Indication", ns.indication) }}
+          {{ render_section_group("Clinical history", ns.clinical_history) }}
+          {{ render_section_group("Core question", ns.core_question) }}
+          {{ render_section_group("Comparison", ns.comparison) }}
+          {{ render_section_group("Technique", ns.technique) }}
+          {{ render_section_group("Observations / Findings", ns.observations) }}
+          {{ render_section_group("Conclusion / Impression", ns.conclusions) }}
+          {{ render_section_group("Recommendations", ns.recommendations) }}
+
+          {# Any other sections that don't fall into the main groups #}
+          {{ render_section_group("Other sections", ns.other) }}
+        </div>
       {% endif %}
+
+      {# Actions for this admin template #}
+      <div class="mt-3 d-flex flex-wrap gap-2">
+        <a href="{{ url_for('app_user.use_report_template', template_id=template.id) }}"
+           class="btn btn-success">
+          Use this template (create my copy)
+        </a>
+
+        {% if current_user.is_authenticated and current_user.is_admin %}
+          {# Assumes Flask-Admin is mounted at 'admin.index' #}
+          <a href="{{ url_for('admin.index') }}"
+             class="btn btn-outline-secondary">
+            Edit in admin
+          </a>
+        {% endif %}
+      </div>
+
     </div>
   </div>
 </div>

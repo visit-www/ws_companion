@@ -256,6 +256,8 @@ class AdminReportTemplate(Base):
         index=True
     )
     description: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
+    # JSON structure for sectioned template definition (clinical info, findings, impression, etc.)
+    definition_json: so.Mapped[Optional[dict]] = sa.Column(sa.JSON, nullable=True)
 
     template_type: so.Mapped[TemplateTypeEnum] = sa.Column(
         sa.Enum(TemplateTypeEnum, name='template_type_enum'),
@@ -276,6 +278,12 @@ class AdminReportTemplate(Base):
     )
     created_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), nullable=False)
     updated_at: so.Mapped[datetime] = sa.Column(sa.DateTime, default=datetime.now(timezone.utc), onupdate=datetime.now(timezone.utc), nullable=False)
+
+    user_templates: so.Mapped[list["UserReportTemplate"]] = so.relationship(
+        "UserReportTemplate",
+        back_populates="admin_template",
+        lazy="dynamic",
+    )
 
     def __repr__(self):
         return f"<AdminReportTemplate(id={self.id}, template_name='{self.template_name}')>"
@@ -623,6 +631,8 @@ class UserReportTemplate(Base):
     template_text: so.Mapped[str] = sa.Column(sa.Text, nullable=True)  # For storing copy-paste text of the template
     file: so.Mapped[str] = sa.Column(sa.String(255), nullable=True)  # Path to the uploaded file (docx, txt only)
     filepath: so.Mapped[str] = sa.Column(sa.String(255), nullable=True)  # Path where the file is stored on disk
+    # JSON structure storing user-specific values for each template section
+    section_values_json: so.Mapped[Optional[dict]] = sa.Column(sa.JSON, nullable=True)
     
     template_type: so.Mapped[TemplateTypeEnum] = sa.Column(
     sa.Enum(TemplateTypeEnum, name='template_type_enum'),
@@ -640,7 +650,7 @@ class UserReportTemplate(Base):
 
     admin_template: so.Mapped[Optional["AdminReportTemplate"]] = so.relationship(
         "AdminReportTemplate",
-        backref=so.backref("user_variants", lazy="dynamic")
+        back_populates="user_templates",
     )
 
     # Timestamp columns

@@ -1,0 +1,16 @@
+{
+    "user": {
+        "id": "19c7d1c7-db20-469a-8d55-8a9071d35fd1",
+        "username": "testuser",
+        "password": "pbkdf2:sha256:600000$BHzbZ3RTD7TvsVyh$821c0d9d2ee756c9b3c7af9ccf4eaef2e5687e58e7a0760e3b9563586359ea81",
+        "email": "somemail@gmail.come",
+        "is_paid": false,
+        "is_admin": false,
+        "status": "active",
+        "created_at": "2025-11-23 07:55:05.414680",
+        "totp_secret": null,
+        "recovery_phone": null,
+        "recovery_email": null
+    },
+    "profile": null
+}

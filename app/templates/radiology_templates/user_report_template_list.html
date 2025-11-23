@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}My report templates{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0">
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('main_routes.index') }}">Home</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                My report templates
+            </li>
+        </ol>
+    </nav>
+
+    <!-- Header + New template button -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <h2 class="h4 mb-1">My report templates</h2>
+            <p class="text-muted mb-0">
+                Templates you’ve created for reusable structured reporting.
+            </p>
+        </div>
+        <div>
+            <a href="{{ url_for('app_user.create_user_report_template') }}" class="btn btn-primary">
+                + New template
+            </a>
+        </div>
+    </div>
+
+    {% if templates %}
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">Modality</th>
+                            <th scope="col">Body part</th>
+                            <th scope="col">Tags</th>
+                            <th scope="col">Last updated</th>
+                            <th scope="col" class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in templates %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('content_routes.get_user_template', template_id=t.id) }}">
+                                    {{ t.template_name }}
+                                </a>
+                            </td>
+                            <td>
+                                {{ t.modality.name if t.modality else "—" }}
+                            </td>
+                            <td>
+                                {{ t.body_part.name if t.body_part else "—" }}
+                            </td>
+                            <td class="small text-muted">
+                                {% if t.tags %}
+                                {{ t.tags }}
+                                {% else %}
+                                <em>None</em>
+                                {% endif %}
+                            </td>
+                            <td class="small text-muted">
+                                {% if t.updated_at %}
+                                {{ t.updated_at.strftime("%Y-%m-%d %H:%M") }}
+                                {% else %}
+                                —
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{{ url_for('content_routes.get_user_template', template_id=t.id) }}"
+                                    class="btn btn-sm btn-outline-primary">
+                                    View
+                                </a>
+                                {# later we can add: "Use in Smart Report", "Duplicate", "Delete" #}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        You don’t have any report templates yet.
+        <a href="{{ url_for('app_user.create_user_report_template') }}" class="alert-link">
+            Create your first template.
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
