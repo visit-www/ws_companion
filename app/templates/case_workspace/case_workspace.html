@@ -470,16 +470,17 @@
             <ul class="list-unstyled mb-3">
               {% for t in suggested_user_templates %}
                 <li class="mb-1">
-                  {% if t.admin_template_id %}
-                    <a href="{{ url_for('app_user.use_report_template', template_id=t.admin_template_id) }}"
-                       class="text-decoration-none">
-                      <div class="fw-semibold">{{ t.template_name }}</div>
-                      <div class="text-muted small">My template (linked to WSCompanion)</div>
-                    </a>
-                  {% else %}
+                  <a href="{{ url_for('app_user.user_template_detail', template_id=t.id,case_workspace_url=url_for('main_routes.case_workspace')) }}"
+                     class="text-decoration-none">
                     <div class="fw-semibold">{{ t.template_name }}</div>
-                    <div class="text-muted small">My template</div>
-                  {% endif %}
+                    <div class="text-muted small">
+                      {% if t.admin_template_id %}
+                        My template (linked to WSCompanion)
+                      {% else %}
+                        My template
+                      {% endif %}
+                    </div>
+                  </a>
                 </li>
               {% endfor %}
             </ul>

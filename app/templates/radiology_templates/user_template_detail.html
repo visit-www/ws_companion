@@ -1,206 +1,201 @@
-{% extends 'base.html' %}
-
-{% block title %}Report Templates{% endblock %}
-
+{% extends "base.html" %}
 {% block content %}
-<h2 class="m-3">Report Templates: {{ template_title }}</h2>
-{% if admin_template %}
-<div class="m-3 small text-muted">
-    Using WSCompanion template:
-    <strong>{{ admin_template.template_name }}</strong>
-    {% if admin_template.modality and admin_template.body_part %}
-    – {{ admin_template.modality.value }}
-    · {{ admin_template.body_part.value.replace('_', ' ').title() }}
-    {% endif %}
-    {% if admin_template.tags %}
-    · Tags: {{ admin_template.tags }}
-    {% endif %}
-</div>
-{% endif %}
-<hr>
-{# Determine mode and ensure sections/values are always defined #}
-{% set mode = template_mode if template_mode is defined else 'edit' %}
-{% set is_edit = (mode == 'edit') %}
-{% set _sections = sections if sections is defined and sections else [] %}
-{% set _section_values = section_values if section_values is defined and section_values else {} %}
-<div class="table-responsive m-3">
-    <table class="table table-bordered m-auto">
-        <thead>
-            <tr class="pastel-light-green">
-                <th class="w-auto">
-                    <h3>Report Section</h3>
-                </th>
-                <th>
-                    <h3>Data</h3>
-                </th>
-                <th>
-                    <h3>Export Data</h3>
-                </th>
-            </tr>
-        </thead>
-        <tbody>
-            <!-- Patient Information Section -->
-            <tr>
-                <td class="bg-light w-auto">
-                    <h5>Patient Information</h5>
-                </td>
-                <td class="w-75">
-                    <form>
-                        <div class="row g-3">
-                            <div class="col-6">
-                                <div class="form-group row g-2 m-auto">
-                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
-                                        <label for="patient_name">Name:</label>
-                                    </div>
-                                    <div class="col-10">
-                                        <input type="text" class="form-control" id="patient_name"
-                                            placeholder="Enter patient name">
-                                    </div>
-                                </div>
-                                <div class="form-group row g-2 m-auto">
-                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
-                                        <label for="patient_gender">Gender:</label>
-                                    </div>
-                                    <div class="col-10">
-                                        <input type="text" class="form-control" id="patient_gender"
-                                            placeholder="Enter gender">
-                                    </div>
-                                </div>
-                                <div class="form-group row g-2 m-auto">
-                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
-                                        <label for="patient_id">ID:</label>
-                                    </div>
-                                    <div class="col-10">
-                                        <input type="text" class="form-control" id="patient_id"
-                                            placeholder="Enter patient ID">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-6">
-                                <div class="form-group row g-2 m-auto">
-                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
-                                        <label for="patient_age">Age:</label>
-                                    </div>
-                                    <div class="col-10">
-                                        <input type="text" class="form-control" id="patient_age"
-                                            placeholder="Enter age">
-                                    </div>
-                                </div>
-                                <div class="form-group row g-2 m-auto">
-                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
-                                        <label for="patient_dob">DOB:</label>
-                                    </div>
-                                    <div class="col-10">
-                                        <input type="text" class="form-control" id="patient_dob"
-                                            placeholder="Enter DOB">
-                                    </div>
-                                </div>
-                                <div class="form-group row g-2 m-auto">
-                                    <div class="col-2 text-success d-flex align-items-start fw-bold pe-3">
-                                        <label for="patient_location">Location:</label>
-                                    </div>
-                                    <div class="col-10">
-                                        <input type="text" class="form-control" id="patient_location"
-                                            placeholder="Enter location">
-                                    </div>
-                                </div>
-                            </div>
-                    </form>
-                </td>
-                <td class="w-auto bg-light">
-                    <a class="btn btn-outline-primary" href="#">Export Data</a>
-                </td>
-            </tr>
+<div class="container mt-4">
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-1">
+            {% if case_workspace_url is defined and case_workspace_url %}
+            <li class="breadcrumb-item">
+                <a href="{{ case_workspace_url }}">Case Workspace</a>
+            </li>
+            {% endif %}
+            <li class="breadcrumb-item">
+                <a href="{{ url_for('app_user.list_user_templates') }}">My templates</a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">
+                {{ template_title }}
+            </li>
+        </ol>
+    </nav>
+    <h1 class="h3">{{ template_title }}</h1>
+    <div class="d-flex flex-wrap align-items-center justify-content-between mb-3 gap-2">
+        <div>
+            <a href="{{ url_for('app_user.list_user_templates') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> View all templates
+            </a>
+        </div>
+        {% if admin_templates is defined %}
+        <div class="d-flex align-items-center gap-2">
+            <label for="admin_template_select" class="form-label mb-0 small text-muted">
+                Browse admin templates:
+            </label>
+            <select id="admin_template_select" class="form-select form-select-sm" style="min-width: 260px;">
+                <option value="">Select admin template…</option>
+                {% for t in admin_templates %}
+                <option value="{{ url_for('content_routes.get_template', template_id=t.id) }}"
+                        {% if admin_templates and admin_templates.id == t.id %}selected{% endif %}>
+                    {{ t.template_name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        {% endif %}
+    </div>
 
-            {# Section-driven report body rows #}
-            {% for section in _sections %}
-            <tr>
-                <td class="bg-light w-auto">
-                    <h5>{{ section.label or section.id|capitalize }}</h5>
-                </td>
-                <td class="w-75">
-                    {% set sec_id = section.id %}
-                    {% set value = _section_values.get(sec_id, section.default_text or '') %}
-                    {% if is_edit %}
-                    <textarea id="{{ sec_id }}" class="form-control" data-section-id="{{ sec_id }}"
-                        placeholder="{{ section.placeholder or '' }}">{{ value }}</textarea>
-                    {% else %}
-                    <div class="form-control-plaintext">
-                        {% if section.rich %}
-                        {{ value|safe }}
+    {# Section-driven report body #}
+    {% if sections %}
+    <div class="row">
+        <div class="col-12">
+            {% for section in sections %}
+            {% set sec_id = section.id %}
+            {% set label = section.label or sec_id|replace('_', ' ')|title %}
+            {% set value = section_values.get(sec_id, section.default_text or '') %}
+            <div class="card mb-3">
+                <div class="card-header fw-semibold">
+                    {{ label }}
+                </div>
+                <div class="card-body">
+                    <div class="section-rendered text-start" data-section-id="{{ sec_id }}">
+                        {% if value %}
+                        <pre class="mb-0 small">{{ value }}</pre>
                         {% else %}
-                        {{ value }}
+                        <span class="text-muted small">No content yet.</span>
                         {% endif %}
                     </div>
-                    {% endif %}
-                </td>
-                <td class="w-auto bg-light">
-                    <button type="button" class="btn btn-outline-primary export-section-btn"
-                        data-section-id="{{ sec_id }}">
-                        Export Data
-                    </button>
-                </td>
-            </tr>
+                    <textarea class="d-none section-raw" data-section-id="{{ sec_id }}">{{ value }}</textarea>
+                </div>
+            </div>
             {% endfor %}
-        </tbody>
-    </table>
-</div>
-
-<!-- Generate Report Button Section -->
-<div class="generate-report card bg-light">
-    <h5 class="card-header">Generate Report</h5>
-    <div class="card-body">
-        <div class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" id="report_type_pdf" value="pdf">
-            <label class="form-check-label" for="report_type_pdf">PDF</label>
         </div>
-        <div class="form-check form-check-inline">
-            <input class="form-check-input" type="checkbox" id="report_type_word" value="word">
-            <label class="form-check-label" for="report_type_word">Word</label>
-        </div>
-        <button class="btn btn-primary w-auto m-5" id="generate_report_btn">Generate My Report</button>
     </div>
+    {% else %}
+    <div class="alert alert-warning mt-3">
+        No sections defined for this template. Please check the template definition in WSCompanion admin.
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
 
 {% block script %}
-{{super()}}
+{{ super() }}
 <script>
-    document.getElementById('generate_report_btn').addEventListener('click', function () {
-        const patientName = document.getElementById('patient_name').value;
-        const patientGender = document.getElementById('patient_gender').value;
-        const patientID = document.getElementById('patient_id').value;
-        const patientAge = document.getElementById('patient_age').value;
-        const patientDOB = document.getElementById('patient_dob').value;
-        const patientLocation = document.getElementById('patient_location').value;
-
-        const clinicalInfo = document.getElementById('clinical_info').value;
-        const comparison = document.getElementById('comparison').value;
-        const observationSelect = document.getElementById('observation_select').value;
-        const observationText = document.getElementById('observation_text').value;
-        const conclusion = document.getElementById('conclusion').value;
-        const recommendation = document.getElementById('recommendation').value;
-
-        const reportTypePDF = document.getElementById('report_type_pdf').checked;
-        const reportTypeWord = document.getElementById('report_type_word').checked;
-
-        // Add logic to pass this data to the backend for report generation
-        console.log({
-            patientName,
-            patientGender,
-            patientID,
-            patientAge,
-            patientDOB,
-            patientLocation,
-            clinicalInfo,
-            comparison,
-            observationSelect,
-            observationText,
-            conclusion,
-            recommendation,
-            reportTypePDF,
-            reportTypeWord
+(function () {
+    function attachAdminTemplateSelector() {
+        const select = document.getElementById('admin_template_select');
+        if (!select) {
+            return;
+        }
+        select.addEventListener('change', function () {
+            if (this.value) {
+                window.location.href = this.value;
+            }
         });
+    }
+
+    function escapeHtml(str) {
+        return str
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function formatSectionText(raw) {
+        if (!raw) {
+            return "";
+        }
+        const lines = raw.split(/\r?\n/);
+        const htmlParts = [];
+        let currentPara = [];
+        let inList = false;
+
+        function flushPara() {
+            if (currentPara.length) {
+                const text = escapeHtml(currentPara.join(" "));
+                htmlParts.push('<p class="mb-1 small">' + text + '</p>');
+                currentPara = [];
+            }
+        }
+
+        function startList() {
+            if (!inList) {
+                htmlParts.push('<ul class="mb-1 ps-4 small">');
+                inList = true;
+            }
+        }
+
+        function endList() {
+            if (inList) {
+                htmlParts.push('</ul>');
+                inList = false;
+            }
+        }
+
+        lines.forEach(function (line) {
+            const trimmed = line.trim();
+            if (!trimmed) {
+                // blank line: end paragraph and list
+                flushPara();
+                endList();
+                return;
+            }
+
+            if (/^[-•]/.test(trimmed)) {
+                // bullet point
+                flushPara();
+                startList();
+                const itemText = escapeHtml(trimmed.replace(/^[-•]\s*/, ""));
+                htmlParts.push("<li>" + itemText + "</li>");
+            } else {
+                // part of a paragraph
+                endList();
+                currentPara.push(trimmed);
+            }
+        });
+
+        flushPara();
+        endList();
+
+        return htmlParts.join("\n");
+    }
+
+    function applyPlaceholderHighlight(html) {
+        if (!html) {
+            return html;
+        }
+        // Highlight [placeholder] segments in the rendered HTML
+        return html.replace(/\[([^\]]+)\]/g, '<span class="placeholder-highlight">[$1]</span>');
+    }
+
+    function renderSections() {
+        const raws = document.querySelectorAll(".section-raw");
+        raws.forEach(function (textarea) {
+            const secId = textarea.getAttribute("data-section-id");
+            const target = document.querySelector('.section-rendered[data-section-id="' + secId + '"]');
+            if (!target) {
+                return;
+            }
+            const raw = textarea.value || "";
+            const formatted = formatSectionText(raw);
+            if (formatted) {
+                target.innerHTML = applyPlaceholderHighlight(formatted);
+            } else {
+                target.innerHTML = '<span class="text-muted small">No content yet.</span>';
+            }
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        attachAdminTemplateSelector();
+        renderSections();
     });
+})();
 </script>
+<style>
+.placeholder-highlight {
+    background-color: rgba(255, 215, 0, 0.4);
+    padding: 0 2px;
+    border-radius: 2px;
+}
+</style>
 {% endblock %}

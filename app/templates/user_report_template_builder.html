@@ -285,6 +285,7 @@
     const nameInput = document.getElementById('template_name');
     const modalitySelect = document.getElementById('modality');
     const bodyPartSelect = document.getElementById('body_part');
+    const templateTypeSelect = document.getElementById('template_type');
     const tagsInput = document.getElementById('tags');
 
     const summaryName = document.getElementById('summary-name');
@@ -400,6 +401,7 @@
         // Basic meta
         if (data.modality) modalitySelect.value = data.modality;
         if (data.body_part) bodyPartSelect.value = data.body_part;
+        if (data.template_type) templateTypeSelect.value = data.template_type;
         if (data.tags) tagsInput.value = data.tags;
         if (data.name) nameInput.value = data.name + ' (copy)';
 
