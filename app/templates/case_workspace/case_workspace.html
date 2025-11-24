@@ -436,14 +436,14 @@
 
     <!-- Right: Auto-suggestions + summary -->
     <div class="col-lg-4">
-      <!-- Auto-suggested tools -->
+      <!-- Case Navigator: smart tools -->
       <div class="card shadow-sm mb-3">
         <div class="card-header">
-          <h3 class="h6 mb-0">Auto-suggested tools</h3>
+          <h3 class="h6 mb-0">Case Navigator – Smart Tools</h3>
         </div>
         <div class="card-body small">
           <p class="text-muted mb-2">
-            Suggestions are based on any combination of modality, body part and core question.
+            Suggestions are based on your clinical history, modality, body part, and core question.
           </p>
 
           <h6 class="fw-semibold">Imaging protocols</h6>
@@ -505,6 +505,28 @@
           </ul>
           {% else %}
           <p class="text-muted mb-2">No matching WSCompanion templates yet.</p>
+          {% endif %}
+
+          <h6 class="fw-semibold mt-3">Normal measurements</h6>
+          {% if suggested_measurements %}
+          <ul class="list-unstyled mb-3">
+            {% for m in suggested_measurements %}
+            <li class="mb-1">
+              <div class="fw-semibold">{{ m.name }}</div>
+              <div class="text-muted small">
+                {% if m.modality %}{{ m.modality.value }}{% endif %}
+                {% if m.body_part %} – {{ m.body_part.value.replace('_', ' ').title() }}{% endif %}
+              </div>
+              {% if m.context %}
+              <div class="text-muted small">
+                {{ m.context }}
+              </div>
+              {% endif %}
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <p class="text-muted mb-2">No measurements suggested yet.</p>
           {% endif %}
                     
                     <h6 class="fw-semibold mt-3">Staging &amp; Classification</h6>
