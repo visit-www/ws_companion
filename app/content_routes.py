@@ -413,7 +413,6 @@ def get_template(template_id: int):
         }
         return jsonify(data)
 
-    # HTML render – for now, reuse generic viewer later or make a specific page
     return render_template("radiology_templates/template_detail.html", template=template)
 
 # *-------------------------------------------------------------------------
@@ -425,7 +424,9 @@ def get_template(template_id: int):
 def get_user_template(template_id: int):
     """
     Get a single user report template.
-    Returns JSON if ?format=json, otherwise renders the user_template_detail.html page.
+
+    - If ?format=json or Accept: application/json -> return JSON
+    - Otherwise -> redirect to the canonical user template detail page in app_user blueprint.
     """
     template = (
         db.session.query(UserReportTemplate)
@@ -455,10 +456,9 @@ def get_user_template(template_id: int):
         }
         return jsonify(data)
 
-    # HTML render – user-owned template detail
-    return render_template(
-        "radiology_templates/user_template_detail.html",
-        template=template,
+    # HTML request – delegate to canonical user workspace view
+    return redirect(
+        url_for("app_user.user_template_detail", template_id=template.id)
     )
 # *-------------------------------------------------------------------------
 # Staging & classification systems – list
