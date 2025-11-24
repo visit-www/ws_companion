@@ -5,7 +5,9 @@
         <ol class="breadcrumb mb-1">
             {% if case_workspace_url is defined and case_workspace_url %}
             <li class="breadcrumb-item">
-                <a href="{{ case_workspace_url }}">Case Workspace</a>
+                <a href="{{ case_workspace_url }}" target="_blank" rel="noopener">
+                    Case Workspace
+                </a>
             </li>
             {% endif %}
             <li class="breadcrumb-item">
@@ -22,6 +24,11 @@
             <a href="{{ url_for('app_user.list_user_templates') }}" class="btn btn-sm btn-outline-secondary">
                 <i class="bi bi-arrow-left"></i> View all templates
             </a>
+        </div>
+        <div>
+            <button type="button" id="toggle_edit_mode" class="btn btn-sm btn-primary">
+                <i class="bi bi-pencil-square"></i> Edit template
+            </button>
         </div>
         {% if admin_templates is defined %}
         <div class="d-flex align-items-center gap-2">
@@ -43,30 +50,54 @@
 
     {# Section-driven report body #}
     {% if sections %}
-    <div class="row">
-        <div class="col-12">
-            {% for section in sections %}
-            {% set sec_id = section.id %}
-            {% set label = section.label or sec_id|replace('_', ' ')|title %}
-            {% set value = section_values.get(sec_id, section.default_text or '') %}
-            <div class="card mb-3">
-                <div class="card-header fw-semibold">
-                    {{ label }}
-                </div>
-                <div class="card-body">
-                    <div class="section-rendered text-start" data-section-id="{{ sec_id }}">
-                        {% if value %}
-                        <pre class="mb-0 small">{{ value }}</pre>
-                        {% else %}
-                        <span class="text-muted small">No content yet.</span>
-                        {% endif %}
+    <form id="edit_template_form" method="POST">
+        {% if csrf_token is defined %}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% endif %}
+        <div class="row">
+            <div class="col-12">
+                {% for section in sections %}
+                {% set sec_id = section.id %}
+                {% set label = section.label or sec_id|replace('_', ' ')|title %}
+                {% set value = section_values.get(sec_id, section.default_text or '') %}
+                <div class="card mb-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold">{{ label }}</span>
+                        <button type="button"
+                                class="btn btn-sm btn-outline-secondary copy-section-btn"
+                                data-section-id="{{ sec_id }}">
+                            <i class="bi bi-clipboard"></i>
+                            Copy to Case Workspace
+                        </button>
                     </div>
-                    <textarea class="d-none section-raw" data-section-id="{{ sec_id }}">{{ value }}</textarea>
+                    <div class="card-body">
+                        <div class="section-rendered text-start" data-section-id="{{ sec_id }}" contenteditable="false" tabindex="-1">
+                            {% if value %}
+                            <pre class="mb-0 small">{{ value }}</pre>
+                            {% else %}
+                            <span class="text-muted small">No content yet.</span>
+                            {% endif %}
+                        </div>
+                        <textarea
+                            class="d-none section-raw form-control"
+                            data-section-id="{{ sec_id }}"
+                            name="sections[{{ sec_id }}]"
+                            rows="6"
+                        >{{ value }}</textarea>
+                    </div>
                 </div>
+                {% endfor %}
             </div>
-            {% endfor %}
         </div>
-    </div>
+        <div id="edit_template_actions" class="mt-3 d-none">
+            <button type="submit" class="btn btn-success btn-sm">
+                <i class="bi bi-save"></i> Save changes
+            </button>
+            <button type="button" id="cancel_edit_btn" class="btn btn-outline-secondary btn-sm ms-2">
+                Cancel
+            </button>
+        </div>
+    </form>
     {% else %}
     <div class="alert alert-warning mt-3">
         No sections defined for this template. Please check the template definition in WSCompanion admin.
@@ -185,9 +216,178 @@
         });
     }
 
+    function attachCopyButtons() {
+        const buttons = document.querySelectorAll('.copy-section-btn');
+        if (!buttons.length) {
+            return;
+        }
+
+        function copyTextToClipboard(text) {
+            if (!text) {
+                alert('No content to copy from this section.');
+                return;
+            }
+
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text)
+                    .then(function () {
+                        alert('Section copied to clipboard. You can now paste it into the Case Workspace.');
+                    })
+                    .catch(function () {
+                        // Fallback if clipboard API fails
+                        fallbackCopy(text);
+                    });
+            } else {
+                fallbackCopy(text);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const tempTextarea = document.createElement('textarea');
+            tempTextarea.value = text;
+            tempTextarea.style.position = 'fixed';
+            tempTextarea.style.left = '-9999px';
+            document.body.appendChild(tempTextarea);
+            tempTextarea.focus();
+            tempTextarea.select();
+            try {
+                document.execCommand('copy');
+                alert('Section copied to clipboard. You can now paste it into the Case Workspace.');
+            } catch (err) {
+                alert('Unable to copy this section automatically. Please select and copy manually.');
+            }
+            document.body.removeChild(tempTextarea);
+        }
+
+        buttons.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                const secId = btn.getAttribute('data-section-id');
+                const source = document.querySelector('.section-raw[data-section-id="' + secId + '"]');
+                if (!source) {
+                    alert('Could not find section content to copy.');
+                    return;
+                }
+                const rawText = source.value || '';
+                copyTextToClipboard(rawText);
+            });
+        });
+    }
+
+    function syncRenderedToTextareas() {
+        const blocks = document.querySelectorAll('.section-rendered');
+        blocks.forEach(function (block) {
+            const secId = block.getAttribute('data-section-id');
+            if (!secId) {
+                return;
+            }
+            const textarea = document.querySelector('.section-raw[data-section-id="' + secId + '"]');
+            if (!textarea) {
+                return;
+            }
+            // Use innerText so we get a plain-text version (with [ ] if present)
+            const text = block.innerText || '';
+            textarea.value = text;
+        });
+    }
+
+    function initEditMode() {
+        const toggleBtn = document.getElementById('toggle_edit_mode');
+        const form = document.getElementById('edit_template_form');
+        const actions = document.getElementById('edit_template_actions');
+        if (!toggleBtn || !form || !actions) {
+            return;
+        }
+
+        let editing = false;
+
+        function setEditingState(state) {
+            editing = state;
+            const renderedBlocks = document.querySelectorAll('.section-rendered');
+
+            if (editing) {
+                renderedBlocks.forEach(function (el) {
+                    el.setAttribute('contenteditable', 'true');
+                    el.classList.add('section-editing');
+                });
+                actions.classList.remove('d-none');
+                toggleBtn.innerHTML = '<i class="bi bi-x-circle"></i> Exit edit mode';
+            } else {
+                // Sync any in-place edits back into the hidden textareas
+                syncRenderedToTextareas();
+                renderedBlocks.forEach(function (el) {
+                    el.setAttribute('contenteditable', 'false');
+                    el.classList.remove('section-editing');
+                });
+                actions.classList.add('d-none');
+                toggleBtn.innerHTML = '<i class="bi bi-pencil-square"></i> Edit template';
+                // Re-render formatted view from updated raw text
+                renderSections();
+            }
+        }
+
+        // Expose a helper so other handlers (e.g., placeholder clicks) can toggle edit mode
+        window._setTemplateEditingState = function (state) {
+            setEditingState(state);
+        };
+
+        toggleBtn.addEventListener('click', function () {
+            setEditingState(!editing);
+        });
+
+        const cancelBtn = document.getElementById('cancel_edit_btn');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', function () {
+                // Reload page to discard unsaved edits
+                window.location.reload();
+            });
+        }
+
+        // Ensure we sync in-place edits back to textareas before submitting
+        form.addEventListener('submit', function () {
+            syncRenderedToTextareas();
+        });
+    }
+
+    function attachPlaceholderClicks() {
+        const placeholders = document.querySelectorAll('.section-rendered .placeholder-highlight');
+        if (!placeholders.length) {
+            return;
+        }
+
+        placeholders.forEach(function (phSpan) {
+            phSpan.addEventListener('click', function () {
+                const sectionEl = phSpan.closest('.section-rendered');
+                if (!sectionEl) {
+                    return;
+                }
+
+                // Turn on edit mode if it's not already
+                if (typeof window._setTemplateEditingState === 'function') {
+                    window._setTemplateEditingState(true);
+                }
+
+                // Focus the section and place the caret at the end of the placeholder span
+                sectionEl.focus();
+                try {
+                    const range = document.createRange();
+                    range.selectNodeContents(phSpan);
+                    range.collapse(false); // caret at end of span
+                    const sel = window.getSelection();
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                } catch (e) {
+                    // Fallback: just focus section if Range/Selection APIs fail
+                }
+            });
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         attachAdminTemplateSelector();
+        initEditMode();
         renderSections();
+        attachCopyButtons();
+        attachPlaceholderClicks();
     });
 })();
 </script>
@@ -196,6 +396,12 @@
     background-color: rgba(255, 215, 0, 0.4);
     padding: 0 2px;
     border-radius: 2px;
+}
+.section-rendered.section-editing {
+    border: 1px dashed rgba(0, 0, 0, 0.2);
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+    min-height: 2rem;
 }
 </style>
 {% endblock %}

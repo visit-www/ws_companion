@@ -2105,7 +2105,7 @@ def smart_report_dashboard():
 
 
 # Use an existing WSCompanion (admin) template by ID and create/reuse a user copy
-@app_user_bp.route("/user/report-templates/<int:template_id>", methods=["GET"])
+@app_user_bp.route("/user/report-templates/<int:template_id>", methods=["GET", "POST"])
 @login_required
 def user_template_detail(template_id: int):
     """
@@ -2135,6 +2135,42 @@ def user_template_detail(template_id: int):
         .order_by(AdminReportTemplate.template_name.asc())
         .all()
     )
+    # Section values: last saved content for each section (may be empty)
+    section_values = getattr(user_template, "section_values_json", None) or {}
+    admin_template = None  # placeholder; can be wired to a specific admin template in future
+
+    # POST: handle "Save template" from user_template_detail.html
+    if request.method == "POST":
+        # Collect updated section text from fields named sections[<sec_id>]
+        updated_sections = {
+            key[9:-1]: value
+            for key, value in request.form.items()
+            if key.startswith("sections[") and key.endswith("]")
+        }
+
+        if updated_sections:
+            # Merge with any existing values so we don't accidentally wipe other keys
+            section_values.update(updated_sections)
+
+            # Persist updated section values on the user template
+            user_template.section_values_json = section_values
+            user_template.updated_at = datetime.now(UTC)
+
+            db.session.add(user_template)
+            db.session.commit()
+            flash("Template updated successfully.", "success")
+        else:
+            flash("No section changes received to save.", "warning")
+
+        # Preserve the Case Workspace URL if present
+        case_workspace_url = request.args.get("case_workspace_url")
+        return redirect(
+            url_for(
+                "app_user.user_template_detail",
+                template_id=template_id,
+                case_workspace_url=case_workspace_url,
+            )
+        )
 
     # --------
     # Build sections
@@ -2165,9 +2201,6 @@ def user_template_detail(template_id: int):
         except Exception:
             sections = None
 
-    # Section values: last saved content for each section (may be empty)
-    section_values = getattr(user_template, "section_values_json", None) or {}
-    
     # Optional return link back to Case Workspace
     case_workspace_url = request.args.get("case_workspace_url")
     
