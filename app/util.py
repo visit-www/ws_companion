@@ -19,6 +19,7 @@ from .models import (
     BodyPartEnum,
     ModalityEnum,
     CategoryNames,
+    NormalMeasurement,
 )
 from sqlalchemy import or_
 import os
@@ -253,8 +254,73 @@ def add_default_admin_templates():
     else:
         print("Admin templates already present, no new templates added.")
 
+# Internal helper to clean free-text search queries for case-aware search
+def _clean_search_text(raw_text: str | None):
+    """
+    Normalise a free-text search string by:
+      - tokenising with _tokenize
+      - removing very common stopwords (e.g. 'is', 'there', 'the', etc.)
+    Returns a space-joined string of remaining tokens, or an empty string if none.
+    """
+    if not raw_text:
+        return ""
+
+    tokens = _tokenize(raw_text)
+    # Very small, conservative stopword list aimed at question phrases
+    stopwords = {
+        "is",
+        "are",
+        "am",
+        "was",
+        "were",
+        "be",
+        "being",
+        "been",
+        "the",
+        "a",
+        "an",
+        "of",
+        "in",
+        "on",
+        "at",
+        "to",
+        "for",
+        "with",
+        "and",
+        "or",
+        "if",
+        "any",
+        "what",
+        "why",
+        "how",
+        "there",
+        "this",
+        "that",
+        "these",
+        "those",
+        "does",
+        "do",
+        "did",
+        "has",
+        "have",
+        "had",
+        "cause",
+        "causes",
+    }
+    filtered = [t for t in tokens if t not in stopwords]
+    if not filtered:
+        return ""
+    return " ".join(filtered)
+
 # Helper function to fetch user and admin templates for a given modality/body part/user
-def get_case_templates(modality, body_part, user_id=None, limit=8, core_question: str | None = None):
+def get_case_templates(
+    modality,
+    body_part,
+    user_id=None,
+    limit=8,
+    indication: str | None = None,
+    core_question: str | None = None,
+):
     """
     Return (user_templates, admin_templates) for a given modality and body_part.
 
@@ -262,7 +328,7 @@ def get_case_templates(modality, body_part, user_id=None, limit=8, core_question
     - Admin templates are filtered by modality/body_part and is_active=True, ordered by name.
     """
     # If absolutely no driver is provided, bail out early
-    if not (modality or body_part or core_question):
+    if not (modality or body_part or core_question or indication):
         return [], []
 
     # User-specific templates
@@ -274,17 +340,28 @@ def get_case_templates(modality, body_part, user_id=None, limit=8, core_question
     if user_id:
         user_templates_query = user_templates_query.filter_by(user_id=user_id)
 
-    # Optional token-based refinement for user templates using the core question
-    if core_question:
+    # Optional token-based refinement for user templates:
+    # - If core_question is present, use it as the primary driver.
+    # - Otherwise, fall back to indication text.
+    if core_question and core_question.strip():
+        raw_user_search_text = core_question.strip()
+    elif indication and indication.strip():
+        raw_user_search_text = indication.strip()
+    else:
+        raw_user_search_text = ""
+
+    user_search_text = _clean_search_text(raw_user_search_text)
+
+    if user_search_text:
         user_token_filters = _build_token_filters(
             [
                 UserReportTemplate.template_name,
                 UserReportTemplate.tags,
             ],
-            core_question,
+            user_search_text,
         )
-        for cond in user_token_filters:
-            user_templates_query = user_templates_query.filter(cond)
+        if user_token_filters:
+            user_templates_query = user_templates_query.filter(or_(*user_token_filters))
 
     user_templates = (
         user_templates_query
@@ -302,16 +379,25 @@ def get_case_templates(modality, body_part, user_id=None, limit=8, core_question
     if body_part:
         admin_templates_query = admin_templates_query.filter_by(body_part=body_part)
 
-    if core_question:
+    if core_question and core_question.strip():
+        raw_admin_search_text = core_question.strip()
+    elif indication and indication.strip():
+        raw_admin_search_text = indication.strip()
+    else:
+        raw_admin_search_text = ""
+
+    admin_search_text = _clean_search_text(raw_admin_search_text)
+
+    if admin_search_text:
         admin_token_filters = _build_token_filters(
             [
                 AdminReportTemplate.template_name,
                 AdminReportTemplate.tags,
             ],
-            core_question,
+            admin_search_text,
         )
-        for cond in admin_token_filters:
-            admin_templates_query = admin_templates_query.filter(cond)
+        if admin_token_filters:
+            admin_templates_query = admin_templates_query.filter(or_(*admin_token_filters))
 
     admin_templates = (
         admin_templates_query
@@ -321,6 +407,18 @@ def get_case_templates(modality, body_part, user_id=None, limit=8, core_question
     )
 
     return user_templates, admin_templates
+
+# *--------------------------------------------------
+# Internal helper: simple tokenizer used by case-aware search
+def _tokenize(text: str | None):
+    """
+    Normalise and split free-text into tokens.
+    Used by Case Workspace smart search for clinical indication/core question.
+    """
+    if not text:
+        return []
+    tokens = re.split(r"\W+", text.lower())
+    return [t for t in tokens if len(t) >= 2]
 
  # *--------------------------------------------------
  # Internal helper: build AND-of-OR token filters for smarter text matching
@@ -352,41 +450,236 @@ def _build_token_filters(columns, text: str | None):
         )
     return conditions
 
+# *--------------------------------------------------
+# Case Workspace helpers for NormalMeasurement
+def get_case_measurements(
+    modality: ModalityEnum | None,
+    body_part: BodyPartEnum | None,
+    indication: str | None = None,
+    core_question: str | None = None,
+    limit: int = 8,
+):
+    """
+    Smart measurement suggestions for Case Workspace (Phase 1).
+    Strategy:
+    - Structural filters (modality/body_part) first.
+    - core_question is the PRIMARY textual driver.
+    - indication only used when core_question is empty.
+    - If core_question exists but NO measurement matches primary tokens → return [].
+    - Prevent unrelated measurements (e.g., appendix) from leaking into lung studies.
+    """
+
+    # Require at least one driver
+    if not (modality or body_part or indication or core_question):
+        return []
+
+    # Start from active measurements
+    query = db.session.query(NormalMeasurement).filter(
+        NormalMeasurement.is_active.is_(True)
+    )
+
+    # Structural filters
+    if modality is not None:
+        query = query.filter(NormalMeasurement.modality == modality)
+    if body_part is not None:
+        query = query.filter(NormalMeasurement.body_part == body_part)
+
+    candidates = query.all()
+
+    # If nothing structurally matched AND no structural inputs, widen broadly
+    if not candidates and not (modality or body_part):
+        candidates = (
+            db.session.query(NormalMeasurement)
+            .filter(NormalMeasurement.is_active.is_(True))
+            .all()
+        )
+
+    # Still nothing → return []
+    if not candidates:
+        return []
+
+    # Clean text inputs
+    cleaned_core = _clean_search_text(core_question) if core_question else ""
+    cleaned_indication = _clean_search_text(indication) if indication else ""
+
+    # Decide primary vs secondary tokens
+    if cleaned_core:
+        primary_tokens = _tokenize(cleaned_core)        # strongest
+        secondary_tokens = _tokenize(cleaned_indication)
+        has_core = True
+    else:
+        primary_tokens = _tokenize(cleaned_indication)  # softer
+        secondary_tokens = []
+        has_core = False
+
+    has_primary_text = bool(primary_tokens)
+
+    scored_core_matches = []
+    scored_fallback = []
+
+    for meas in candidates:
+        text_blob_parts = [
+            meas.name or "",
+            meas.context or "",
+            meas.tags or "",
+            meas.reference_text or "",
+        ]
+        text_blob = " ".join(text_blob_parts).lower()
+        blob_tokens = set(_tokenize(text_blob))
+
+        score = 0
+
+        # Structural weighting
+        if modality is not None and meas.modality == modality:
+            score += 5
+        if body_part is not None and meas.body_part == body_part:
+            score += 5
+
+        # Primary (core OR indication)
+        primary_matches = 0
+        for tok in primary_tokens:
+            if tok and tok in blob_tokens:
+                primary_matches += 1
+        score += primary_matches * 4
+
+        # Secondary (indication only when core exists)
+        secondary_matches = 0
+        for tok in secondary_tokens:
+            if tok and tok in blob_tokens:
+                secondary_matches += 1
+        score += secondary_matches * 1
+
+        # If we have core text and this measurement has NO primary matches → reject
+        if has_core and primary_matches == 0:
+            continue
+
+        # Reject items with no textual match at all when primary text exists
+        if has_primary_text and (primary_matches + secondary_matches) == 0:
+            continue
+
+        if score > 0:
+            if has_core:
+                scored_core_matches.append((score, meas))
+            else:
+                scored_fallback.append((score, meas))
+
+    # If core_question exists and we have core matches → return them
+    if scored_core_matches:
+        scored_core_matches.sort(key=lambda item: (-item[0], item[1].name or ""))
+        return [m for score, m in scored_core_matches[:limit]]
+
+    # If core_question exists but no core matches → return []
+    if has_core:
+        return []
+
+    # No core → use fallback if available
+    if scored_fallback:
+        scored_fallback.sort(key=lambda item: (-item[0], item[1].name or ""))
+        return [m for score, m in scored_fallback[:limit]]
+
+    # Final fallback: structural-only
+    return sorted(
+        candidates,
+        key=lambda m: (
+            m.modality.name if m.modality else "",
+            m.body_part.name if m.body_part else "",
+            m.name or "",
+        ),
+    )[:limit]
+
+# *--------------------------------------------------
+# Case Workspace helpers for Checklists (placeholder)
+def get_case_checklists(
+    modality: ModalityEnum | None,
+    body_part: BodyPartEnum | None,
+    indication: str | None = None,
+    core_question: str | None = None,
+    limit: int = 8,
+):
+    """
+    Placeholder for future checklist model.
+
+    Once a Checklist model exists (e.g. with modality/body_part/tags/indication fields),
+    this function should mirror the Phase 1 ranking logic used for protocols and
+    measurements (structural filters + clinical/core_question tokens).
+
+    For now, returns an empty list so callers can safely iterate.
+    """
+    return []
+
 # Utility function to get classification/ staging system results in case workspace
-def get_case_classifications(modality, body_part, core_question: str | None = None, limit: int = 8):
+def get_case_classifications(
+    modality,
+    body_part,
+    indication: str | None = None,
+    core_question: str | None = None,
+    limit: int = 8,
+):
     """
     Return a list of ClassificationSystem objects relevant to this case.
 
     Primary filter: modality and/or body_part.
     Secondary (optional) filter: free-text match on name, short_code, and tags using the core_question.
     """
-    # Require at least one driver: modality, body_part or core_question
-    if not (modality or body_part or core_question):
+    # Require at least one driver: modality, body_part, indication or core_question
+    if not (modality or body_part or core_question or indication):
         return []
 
-    query = db.session.query(ClassificationSystem)
+    # Base query: only modality/body_part filters
+    base_query = db.session.query(ClassificationSystem)
     if modality:
-        query = query.filter_by(modality=modality)
+        base_query = base_query.filter_by(modality=modality)
     if body_part:
-        query = query.filter_by(body_part=body_part)
-    token_filters = _build_token_filters(
-        [
-            ClassificationSystem.name,
-            ClassificationSystem.short_code,
-            ClassificationSystem.description,
-            ClassificationSystem.version,
-        ],
-        core_question,
-    )
-    for cond in token_filters:
-        query = query.filter(cond)
+        base_query = base_query.filter_by(body_part=body_part)
 
-    return (
+    if core_question and core_question.strip():
+        raw_search_text_cls = core_question.strip()
+    elif indication and indication.strip():
+        raw_search_text_cls = indication.strip()
+    else:
+        raw_search_text_cls = ""
+
+    search_text_cls = _clean_search_text(raw_search_text_cls)
+
+    query = base_query
+
+    # Apply token filters only if there is meaningful search text
+    if search_text_cls:
+        token_filters = _build_token_filters(
+            [
+                ClassificationSystem.name,
+                ClassificationSystem.short_code,
+                ClassificationSystem.description,
+                ClassificationSystem.version,
+            ],
+            search_text_cls,
+        )
+        if token_filters:
+            query = query.filter(or_(*token_filters))
+
+    results = (
         query
         .order_by(ClassificationSystem.name.asc())
         .limit(limit)
         .all()
     )
+
+    # Fallback: if text-based filtering returned nothing but we had search text,
+    # return the base modality/body_part-filtered set ONLY when modality/body_part are present.
+    # If there is no structural driver (no modality/body_part), avoid returning "all" classifications
+    # for non-matching clinical/core text and instead return an empty list.
+    if not results and search_text_cls:
+        if modality or body_part:
+            results = (
+                base_query
+                .order_by(ClassificationSystem.name.asc())
+                .limit(limit)
+                .all()
+            )
+        else:
+            results = []
+
+    return results
 
 
 # Utility function to add default classifications:
