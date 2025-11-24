@@ -1710,7 +1710,7 @@ def save_session_log():
     return redirect(url_for('app_user.productivity_dashboard'))
 
 #*-------------------------------------------------
-#reporting ad report template routes.
+#reporting and report template routes.
 #*-------------------------------------------------
 from app.forms import AddReportTemplateMobile, AddReportTemplateDesktop
 from app.models import (
@@ -1725,21 +1725,33 @@ from app.models import (
 # User report template library & builder
 # *-------------------------------------------------
 
+
 @app_user_bp.route("/report_templates", methods=["GET"])
 @login_required
 def list_user_templates():
     """
-    List all report templates created by the current user.
+    Library view for report templates visible to the current user.
+
+    - User templates: created by this user (editable)
+    - Admin templates: WSCompanion master templates (read-only), shown alongside
     """
-    templates = (
+    user_templates = (
         db.session.query(UserReportTemplate)
         .filter_by(user_id=current_user.id)
         .order_by(UserReportTemplate.updated_at.desc())
         .all()
     )
+
+    admin_templates = (
+        db.session.query(AdminReportTemplate)
+        .order_by(AdminReportTemplate.template_name.asc())
+        .all()
+    )
+
     return render_template(
-        "user_report_templates.html",
-        templates=templates,
+        "radiology_templates/user_report_template_list.html",
+        user_templates=user_templates,
+        admin_templates=admin_templates,
     )
 
 
@@ -2000,6 +2012,10 @@ def load_template_for_builder(template_id: int):
     if not template:
         return jsonify({"error": "Template not found"}), 404
 
+    definition = getattr(template, "definition_json", None) or {}
+    sections = definition.get("sections") or []
+    meta = definition.get("meta") or {}
+
     # Base fields
     response = {
         "id": template.id,
@@ -2007,9 +2023,13 @@ def load_template_for_builder(template_id: int):
         "origin": origin,
         "modality": template.modality.name if getattr(template, "modality", None) else None,
         "body_part": template.body_part.name if getattr(template, "body_part", None) else None,
+        "template_type": (
+            template.template_type.name
+            if getattr(template, "template_type", None)
+            else (meta.get("template_type") or None)
+        ),
         "tags": getattr(template, "tags", None),
         "indication_text": "",
-        "clinical_history_text": "",
         "core_question_text": "",
         "comparison_text": "",
         "technique_text": "",
@@ -2017,9 +2037,6 @@ def load_template_for_builder(template_id: int):
         "conclusions_text": "",
         "recommendations_text": "",
     }
-
-    definition = getattr(template, "definition_json", None) or {}
-    sections = definition.get("sections") or []
 
     # Helper to merge section text by id prefix
     def set_if_not_empty(key, value):
@@ -2031,38 +2048,28 @@ def load_template_for_builder(template_id: int):
         txt = s.get("default_text") or s.get("text") or ""
         if not txt:
             continue
-        if sid.startswith("indication"):
+
+        # Map common section ID patterns to builder fields
+        if sid.startswith(("indication", "clinical_info", "history")):
             set_if_not_empty("indication_text", txt)
-        elif sid.startswith("core_question") or sid.startswith("question"):
+        elif sid.startswith("core_question") or ("core" in sid and "question" in sid):
             set_if_not_empty("core_question_text", txt)
-        elif sid.startswith("comparison"):
+        elif sid.startswith("comparison") or "prior" in sid:
             set_if_not_empty("comparison_text", txt)
-        elif sid.startswith("technique"):
+        elif sid.startswith("technique") or "protocol" in sid:
             set_if_not_empty("technique_text", txt)
-        elif sid.startswith("observation") or sid.startswith("findings"):
+        elif sid.startswith(("observation", "findings")):
             set_if_not_empty("observations_text", txt)
-        elif sid.startswith("conclusion") or sid.startswith("impression"):
+        elif sid.startswith(("conclusion", "impression")):
             set_if_not_empty("conclusions_text", txt)
-        elif sid.startswith("recommendation") or sid.startswith("advice"):
+        elif sid.startswith(("recommendation", "advice")):
             set_if_not_empty("recommendations_text", txt)
-    
-    # Merge any separated clinical history into the single indication_text field for the builder UI
-    if response.get("clinical_history_text"):
-        if response.get("indication_text"):
-            response["indication_text"] = (
-                response["indication_text"].rstrip()
-                + "\n\n"
-                + response["clinical_history_text"].lstrip()
-            )
-        else:
-            response["indication_text"] = response["clinical_history_text"]
 
     # Fallback: if no structured sections, try a single template_text field
     if not any(
         response[k]
         for k in [
             "indication_text",
-            "clinical_history_text",
             "core_question_text",
             "comparison_text",
             "technique_text",
@@ -2098,134 +2105,81 @@ def smart_report_dashboard():
 
 
 # Use an existing WSCompanion (admin) template by ID and create/reuse a user copy
-@app_user_bp.route('/smart_report/template/<int:template_id>', methods=['GET'])
+@app_user_bp.route("/user/report-templates/<int:template_id>", methods=["GET"])
 @login_required
-def use_report_template(template_id):
-    # 1) Load the WSCompanion (admin) template
-    admin_template = db.session.get(AdminReportTemplate, template_id)
-    if not admin_template or not admin_template.is_active:
-        flash("The selected WSCompanion template is not available.", "warning")
-        return redirect(url_for("app_user.smart_report_dashboard"))
+def user_template_detail(template_id: int):
+    """
+    Canonical HTML viewer for a single user report template.
 
-    # 2) Check if the current user already has a linked user template for this admin template
+    - Used from Case Workspace ("Your templates for this case")
+    - Also used when navigating directly from the user template library.
+    """
+    # Load the user template
     user_template = (
         db.session.query(UserReportTemplate)
-        .filter_by(
-            user_id=current_user.id,
-            admin_template_id=admin_template.id,
-        )
-        .order_by(UserReportTemplate.updated_at.desc())
+        .filter_by(id=template_id)
         .first()
     )
+    if user_template is None:
+        flash("Template not found.", "danger")
+        return redirect(url_for("app_user.list_user_templates"))
 
-    # 3) If no user template exists yet, create a personal copy seeded from the admin template
-    if not user_template:
-        user_template = UserReportTemplate(
-            user_id=current_user.id,
-            template_name=admin_template.template_name,
-            modality=admin_template.modality,
-            body_part=admin_template.body_part,
-            category=admin_template.category,
-            module=admin_template.module,
-            tags=admin_template.tags,
-            file=admin_template.file,
-            filepath=admin_template.filepath,
-            admin_template_id=admin_template.id,
-        )
-        # Set template_type explicitly to STRUCTURED if the field exists
-        if hasattr(user_template, "template_type"):
-            user_template.template_type = TemplateTypeEnum.STRUCTURED
+    # Basic ownership / visibility guard:
+    if user_template.user_id != current_user.id and not getattr(user_template, "is_public", False):
+        flash("You do not have access to this template.", "danger")
+        return redirect(url_for("app_user.list_user_templates"))
 
-        db.session.add(user_template)
-        db.session.commit()
-        flash("A personal copy of this WSCompanion template has been created for you.", "success")
-    else:
-        flash("Opening your saved version of this template.", "info")
+    # Linked admin template (if any)
+    admin_templates = (
+        db.session.query(AdminReportTemplate)
+        .order_by(AdminReportTemplate.template_name.asc())
+        .all()
+    )
 
-    # 4) Build section definition from admin_template.definition_json or a sensible default
-    definition = admin_template.definition_json or {
-        "version": 1,
-        "meta": {
-            "modality": admin_template.modality.value if getattr(admin_template, "modality", None) else None,
-            "body_part": admin_template.body_part.value if getattr(admin_template, "body_part", None) else None,
-            "template_purpose": admin_template.template_name,
-        },
-        "sections": [
-            {
-                "id": "clinical_info",
-                "label": "Clinical Information",
-                "order": 10,
-                "type": "textarea",
-                "default_text": "",
-                "rich": False,
-                "export_targets": ["smart_report.clinical_info", "case_workspace.clinical_info"],
-            },
-            {
-                "id": "comparison",
-                "label": "Comparison",
-                "order": 20,
-                "type": "textarea",
-                "default_text": "",
-                "rich": False,
-                "export_targets": ["smart_report.comparison", "case_workspace.comparison"],
-            },
-            {
-                "id": "findings",
-                "label": "Observations",
-                "order": 30,
-                "type": "textarea",
-                "default_text": "",
-                "rich": True,
-                "export_targets": ["smart_report.observations", "case_workspace.observations"],
-            },
-            {
-                "id": "impression",
-                "label": "Impression",
-                "order": 40,
-                "type": "textarea",
-                "default_text": "",
-                "rich": True,
-                "export_targets": ["smart_report.conclusions", "case_workspace.impression"],
-            },
-            {
-                "id": "recommendations",
-                "label": "Recommendations",
-                "order": 50,
-                "type": "textarea",
-                "default_text": "",
-                "rich": False,
-                "export_targets": ["smart_report.recommendations", "case_workspace.recommendations"],
-            },
-        ],
-    }
+    # --------
+    # Build sections
+    # --------
+    sections = None
 
-    # Ensure sections is a list
-    sections = definition.get("sections", []) or []
+    # 1) Prefer user_template.definition_json (per-user copy of template structure)
+    if getattr(user_template, "definition_json", None):
+        try:
+            definition_obj = (
+                user_template.definition_json
+                if isinstance(user_template.definition_json, dict)
+                else json.loads(user_template.definition_json)
+            )
+            sections = definition_obj.get("sections") or None
+        except Exception:
+            sections = None
 
-    # 5) Load user-specific section values (if any)
-    section_values = user_template.section_values_json or {}
+    # 2) Fallback: linked admin template definition_json
+    if sections is None and admin_template and getattr(admin_template, "definition_json", None):
+        try:
+            admin_def = (
+                admin_template.definition_json
+                if isinstance(admin_template.definition_json, dict)
+                else json.loads(admin_template.definition_json)
+            )
+            sections = admin_def.get("sections") or None
+        except Exception:
+            sections = None
 
-    # Make sure we at least have keys for all section IDs, falling back to default_text
-    normalized_values = {}
-    for section in sections:
-        sec_id = section.get("id")
-        if not sec_id:
-            continue
-        if sec_id in section_values and section_values[sec_id] is not None:
-            normalized_values[sec_id] = section_values[sec_id]
-        else:
-            normalized_values[sec_id] = section.get("default_text", "")
-
-    # 6) Render the smart report viewer with structured sections and values
+    # Section values: last saved content for each section (may be empty)
+    section_values = getattr(user_template, "section_values_json", None) or {}
+    
+    # Optional return link back to Case Workspace
+    case_workspace_url = request.args.get("case_workspace_url")
+    
     return render_template(
-        "smart_report_viewer.html",
-        template_title=admin_template.template_name or "WSCompanion Template",
-        template_mode="edit",
-        template_source="user",
-        admin_template=admin_template,
+        "radiology_templates/user_template_detail.html",
+        template_title=user_template.template_name,
         user_template=user_template,
+        admin_templates=admin_templates,
         sections=sections,
-        section_values=normalized_values,
+        section_values=section_values,
+        template_mode="edit",  # viewer starts in edit mode
+        case_workspace_url=case_workspace_url,
     )
 
 

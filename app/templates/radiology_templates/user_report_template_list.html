@@ -32,8 +32,15 @@
         </div>
     </div>
 
-    {% if templates %}
-    <div class="card shadow-sm">
+    {# My user templates #}
+    {% set has_user_templates = user_templates is defined and user_templates %}
+    {% set has_admin_templates = admin_templates is defined and admin_templates %}
+
+    {% if has_user_templates %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-white">
+            <h5 class="mb-0">My templates</h5>
+        </div>
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table table-hover mb-0 align-middle">
@@ -48,10 +55,10 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for t in templates %}
+                        {% for t in user_templates %}
                         <tr>
                             <td>
-                                <a href="{{ url_for('content_routes.get_user_template', template_id=t.id) }}">
+                                <a href="{{ url_for('app_user.user_template_detail', template_id=t.id) }}">
                                     {{ t.template_name }}
                                 </a>
                             </td>
@@ -76,11 +83,11 @@
                                 {% endif %}
                             </td>
                             <td class="text-end">
-                                <a href="{{ url_for('content_routes.get_user_template', template_id=t.id) }}"
-                                    class="btn btn-sm btn-outline-primary">
+                                <a href="{{ url_for('app_user.user_template_detail', template_id=t.id) }}"
+                                   class="btn btn-sm btn-outline-primary">
                                     View
                                 </a>
-                                {# later we can add: "Use in Smart Report", "Duplicate", "Delete" #}
+                                {# later: "Use in Smart Report", "Duplicate", "Delete" #}
                             </td>
                         </tr>
                         {% endfor %}
@@ -90,11 +97,66 @@
         </div>
     </div>
     {% else %}
-    <div class="alert alert-info">
+    <div class="alert alert-info mb-4">
         You don’t have any report templates yet.
         <a href="{{ url_for('app_user.create_user_report_template') }}" class="alert-link">
             Create your first template.
         </a>
+    </div>
+    {% endif %}
+
+    {# Admin / WSCompanion master templates #}
+    {% if has_admin_templates %}
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">WSCompanion templates</h5>
+            <span class="text-muted small">Read-only master templates</span>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">Name</th>
+                            <th scope="col">Modality</th>
+                            <th scope="col">Body part</th>
+                            <th scope="col">Tags</th>
+                            <th scope="col" class="text-end">Open</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for t in admin_templates %}
+                        <tr>
+                            <td>
+                                <a href="{{ url_for('content_routes.get_template', template_id=t.id) }}">
+                                    {{ t.template_name }}
+                                </a>
+                            </td>
+                            <td>
+                                {{ t.modality.name if t.modality else "—" }}
+                            </td>
+                            <td>
+                                {{ t.body_part.name if t.body_part else "—" }}
+                            </td>
+                            <td class="small text-muted">
+                                {% if t.tags %}
+                                {{ t.tags }}
+                                {% else %}
+                                <em>None</em>
+                                {% endif %}
+                            </td>
+                            <td class="text-end">
+                                <a href="{{ url_for('content_routes.get_template', template_id=t.id) }}"
+                                   class="btn btn-sm btn-outline-secondary">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
     {% endif %}
 </div>

@@ -628,10 +628,15 @@ class UserReportTemplate(Base):
     module: so.Mapped[ModuleNames] = sa.Column(sa.Enum(ModuleNames, name='module_name'), nullable=True, index=True)
 
     # Template content and file upload
-    template_text: so.Mapped[str] = sa.Column(sa.Text, nullable=True)  # For storing copy-paste text of the template
-    file: so.Mapped[str] = sa.Column(sa.String(255), nullable=True)  # Path to the uploaded file (docx, txt only)
-    filepath: so.Mapped[str] = sa.Column(sa.String(255), nullable=True)  # Path where the file is stored on disk
-    # JSON structure storing user-specific values for each template section
+    template_text: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)  # For storing copy-paste text of the template
+    file: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)  # Path to the uploaded file (docx, txt only)
+    filepath: so.Mapped[Optional[str]] = sa.Column(sa.String(255), nullable=True)  # Path where the file is stored on disk
+
+    # JSON structure storing the structured template definition (sections, labels, export targets, etc.)
+    # Mirrors AdminReportTemplate.definition_json but at a per-user level.
+    definition_json: so.Mapped[Optional[dict]] = sa.Column(sa.JSON, nullable=True)
+
+    # JSON structure storing user-specific values for each template section (filled-in content / last state)
     section_values_json: so.Mapped[Optional[dict]] = sa.Column(sa.JSON, nullable=True)
     
     template_type: so.Mapped[TemplateTypeEnum] = sa.Column(
