@@ -331,80 +331,221 @@ def get_case_templates(
     if not (modality or body_part or core_question or indication):
         return [], []
 
-    # User-specific templates
-    user_templates_query = db.session.query(UserReportTemplate)
-    if modality:
-        user_templates_query = user_templates_query.filter_by(modality=modality)
-    if body_part:
-        user_templates_query = user_templates_query.filter_by(body_part=body_part)
+    # Helper: intelligent body part match (shared with protocols)
+    def _body_part_matches(proto_bp, selected_bp):
+        """Intelligent body-part matching for Case Workspace.
+
+        Rules:
+        - If no selected body part, everything passes.
+        - Exact enum equality always passes.
+        - ONCOLOGY / MISCELLANEOUS / PEDIATRICS act as cross-body wildcards:
+          * A template tagged with one of these can appear for any selected
+            body part.
+          * If the selected body part is one of these, any template body part
+            is allowed.
+        - ABDOMEN behaves as a superset of several abdominal regions:
+          * ABDOMEN, UPPER_GI, LOWER_GI, HEPATOBILIARY, UROLOGY, GYNAECOLOGY,
+            OTHERS.
+        - LUNG / CARDIAC / VASCULAR form a thoracic family.
+        - NEURO / HEAD_AND_NECK / ENT / VASCULAR form a neuro–head–neck family.
+        - ENDOCRINE can reasonably map to head/neck and abdomen.
+        """
+        if selected_bp is None:
+            return True
+        if proto_bp is None:
+            return False
+        if proto_bp == selected_bp:
+            return True
+
+        try:
+            proto_name = proto_bp.name.upper()
+            sel_name = selected_bp.name.upper()
+        except AttributeError:
+            return False
+
+        # Cross-body wildcards
+        wildcard_set = {"ONCOLOGY", "MISCELLANEOUS", "PEDIATRICS"}
+        if proto_name in wildcard_set or sel_name in wildcard_set:
+            return True
+
+        # Abdomen-related superset
+        abdomen_family = {
+            "ABDOMEN",
+            "UPPER_GI",
+            "LOWER_GI",
+            "HEPATOBILIARY",
+            "UROLOGY",
+            "GYNAECOLOGY",
+            "OTHERS",
+        }
+        if sel_name == "ABDOMEN" and proto_name in abdomen_family:
+            return True
+        if proto_name == "ABDOMEN" and sel_name in abdomen_family:
+            return True
+
+        # Thoracic family: lung–cardiac–vascular
+        thorax_family = {"LUNG", "CARDIAC", "VASCULAR"}
+        if sel_name in {"LUNG", "CARDIAC"} and proto_name in thorax_family:
+            return True
+        if proto_name in {"LUNG", "CARDIAC"} and sel_name in thorax_family:
+            return True
+
+        # Neuro / head & neck / ENT / vascular family
+        neuro_head_family = {"NEURO", "HEAD_AND_NECK", "ENT", "VASCULAR"}
+        if sel_name in neuro_head_family and proto_name in neuro_head_family:
+            return True
+
+        # Endocrine – map to head/neck and abdomen
+        endocrine_targets = {"ABDOMEN", "HEPATOBILIARY", "HEAD_AND_NECK", "NEURO"}
+        if sel_name == "ENDOCRINE" and proto_name in endocrine_targets:
+            return True
+        if proto_name == "ENDOCRINE" and sel_name in endocrine_targets:
+            return True
+
+        return False
+
+    def _modality_matches(proto_mod, selected_mod):
+        if selected_mod is None:
+            return True
+        if proto_mod is None:
+            return False
+        return proto_mod == selected_mod
+
+    # -------------------------------
+    # USER TEMPLATES (structural hard gate)
+    # -------------------------------
+
+    all_user = db.session.query(UserReportTemplate)
     if user_id:
-        user_templates_query = user_templates_query.filter_by(user_id=user_id)
+        all_user = all_user.filter_by(user_id=user_id)
+    all_user = all_user.all()
 
-    # Optional token-based refinement for user templates:
-    # - If core_question is present, use it as the primary driver.
-    # - Otherwise, fall back to indication text.
-    if core_question and core_question.strip():
-        raw_user_search_text = core_question.strip()
-    elif indication and indication.strip():
-        raw_user_search_text = indication.strip()
+    structural_user = []
+    for tpl in all_user:
+        mod_ok = _modality_matches(tpl.modality, modality)
+        bp_ok = _body_part_matches(tpl.body_part, body_part)
+
+        # For user templates we are deliberately more permissive:
+        # - If BOTH modality and body_part are selected for the case, we prefer
+        #   templates that match both, but we also allow templates that have
+        #   only one dimension set and treat the missing dimension as a wildcard.
+        # - If ONLY modality is selected, a user template with matching modality
+        #   OR no modality specified can be used.
+        # - If ONLY body_part is selected, a user template with matching body
+        #   part OR no body_part specified can be used.
+        # - If neither is selected, all user templates are structurally allowed.
+
+        if modality and body_part:
+            if (mod_ok and bp_ok) or (
+                tpl.modality is None and bp_ok
+            ) or (
+                tpl.body_part is None and mod_ok
+            ):
+                structural_user.append(tpl)
+        elif modality:
+            if mod_ok or tpl.modality is None:
+                structural_user.append(tpl)
+        elif body_part:
+            if bp_ok or tpl.body_part is None:
+                structural_user.append(tpl)
+        else:
+            structural_user.append(tpl)
+
+
+    cleaned_core = _clean_search_text(core_question) if core_question else ""
+    cleaned_ind = _clean_search_text(indication) if indication else ""
+
+    core_tokens = _tokenize(cleaned_core)
+    ind_tokens = _tokenize(cleaned_ind)
+
+    user_core_bucket = []
+    user_ind_bucket = []
+    user_struct_bucket = []
+
+    for tpl in structural_user:
+        blob = f"{tpl.template_name or ''} {tpl.tags or ''}".lower()
+        blob_tokens = set(_tokenize(blob))
+
+        core_hits = sum(1 for t in core_tokens if t in blob_tokens)
+        ind_hits = sum(1 for t in ind_tokens if t in blob_tokens)
+        score = core_hits * 4 + ind_hits
+
+        if core_tokens and core_hits > 0:
+            user_core_bucket.append((score, tpl))
+        elif (not core_tokens) and ind_tokens and ind_hits > 0:
+            user_ind_bucket.append((score, tpl))
+        else:
+            user_struct_bucket.append((score, tpl))
+
+    if core_tokens and user_core_bucket:
+        bucket = user_core_bucket
+    elif ind_tokens and user_ind_bucket:
+        bucket = user_ind_bucket
     else:
-        raw_user_search_text = ""
+        bucket = user_struct_bucket
 
-    user_search_text = _clean_search_text(raw_user_search_text)
+    bucket.sort(key=lambda x: (-x[0], x[1].template_name or ""))
 
-    if user_search_text:
-        user_token_filters = _build_token_filters(
-            [
-                UserReportTemplate.template_name,
-                UserReportTemplate.tags,
-            ],
-            user_search_text,
-        )
-        if user_token_filters:
-            user_templates_query = user_templates_query.filter(or_(*user_token_filters))
+    user_templates = bucket[:limit]
+    user_templates = [tpl for score, tpl in user_templates]
 
-    user_templates = (
-        user_templates_query
-        .order_by(UserReportTemplate.updated_at.desc())
-        .limit(limit)
-        .all()
-    )
+    # -------------------------------
+    # ADMIN TEMPLATES (structural hard gate)
+    # -------------------------------
 
-    # Global admin templates
-    admin_templates_query = db.session.query(AdminReportTemplate).filter(
+    all_admin = db.session.query(AdminReportTemplate).filter(
         AdminReportTemplate.is_active.is_(True)
-    )
-    if modality:
-        admin_templates_query = admin_templates_query.filter_by(modality=modality)
-    if body_part:
-        admin_templates_query = admin_templates_query.filter_by(body_part=body_part)
+    ).all()
 
-    if core_question and core_question.strip():
-        raw_admin_search_text = core_question.strip()
-    elif indication and indication.strip():
-        raw_admin_search_text = indication.strip()
+    structural_admin = []
+    for tpl in all_admin:
+        mod_ok = _modality_matches(tpl.modality, modality)
+        bp_ok = _body_part_matches(tpl.body_part, body_part)
+        if modality and body_part:
+            if mod_ok and bp_ok:
+                structural_admin.append(tpl)
+        elif modality:
+            if mod_ok:
+                structural_admin.append(tpl)
+        elif body_part:
+            if bp_ok:
+                structural_admin.append(tpl)
+        else:
+            structural_admin.append(tpl)
+
+    if (modality or body_part) and not structural_admin:
+        return user_templates, []
+
+    admin_core_bucket = []
+    admin_ind_bucket = []
+    admin_struct_bucket = []
+
+    for tpl in structural_admin:
+        blob = f"{tpl.template_name or ''} {tpl.tags or ''}".lower()
+        blob_tokens = set(_tokenize(blob))
+
+        core_hits = sum(1 for t in core_tokens if t in blob_tokens)
+        ind_hits = sum(1 for t in ind_tokens if t in blob_tokens)
+        score = core_hits * 4 + ind_hits
+
+        if core_tokens and core_hits > 0:
+            admin_core_bucket.append((score, tpl))
+        elif (not core_tokens) and ind_tokens and ind_hits > 0:
+            admin_ind_bucket.append((score, tpl))
+        else:
+            admin_struct_bucket.append((score, tpl))
+
+    if core_tokens and admin_core_bucket:
+        admin_bucket = admin_core_bucket
+    elif ind_tokens and admin_ind_bucket:
+        admin_bucket = admin_ind_bucket
     else:
-        raw_admin_search_text = ""
+        admin_bucket = admin_struct_bucket
 
-    admin_search_text = _clean_search_text(raw_admin_search_text)
+    admin_bucket.sort(key=lambda x: (-x[0], x[1].template_name or ""))
 
-    if admin_search_text:
-        admin_token_filters = _build_token_filters(
-            [
-                AdminReportTemplate.template_name,
-                AdminReportTemplate.tags,
-            ],
-            admin_search_text,
-        )
-        if admin_token_filters:
-            admin_templates_query = admin_templates_query.filter(or_(*admin_token_filters))
-
-    admin_templates = (
-        admin_templates_query
-        .order_by(AdminReportTemplate.template_name.asc())
-        .limit(limit)
-        .all()
-    )
+    admin_templates = admin_bucket[:limit]
+    admin_templates = [tpl for score, tpl in admin_templates]
 
     return user_templates, admin_templates
 
@@ -461,63 +602,160 @@ def get_case_measurements(
 ):
     """
     Smart measurement suggestions for Case Workspace (Phase 1).
+
     Strategy:
-    - Structural filters (modality/body_part) first.
-    - core_question is the PRIMARY textual driver.
-    - indication only used when core_question is empty.
-    - If core_question exists but NO measurement matches primary tokens → return [].
-    - Prevent unrelated measurements (e.g., appendix) from leaking into lung studies.
+    - Structural filters (modality/body_part) are HARD GATES.
+      * If BOTH modality and body_part are provided, only measurements matching
+        BOTH are allowed. If none match, return [].
+      * If only modality OR only body_part is provided, structural filter uses
+        that dimension alone. If none match, return [].
+      * If neither is provided, all active measurements are structurally allowed.
+    - Text filters (within the structurally-matched set):
+      * core_question (cleaned) is the primary driver.
+      * If no core match, fall back to indication (cleaned) if present.
+      * If neither core nor indication match anything, fall back to the
+        structural set (modality/body_part only).
+    - Loose abdomen mapping: ABDOMEN also matches enums whose names contain
+      'ABDOMEN' or 'GI' (e.g. UPPER_GI, LOWER_GI).
     """
 
     # Require at least one driver
     if not (modality or body_part or indication or core_question):
         return []
 
-    # Start from active measurements
-    query = db.session.query(NormalMeasurement).filter(
+    # --------------------------
+    # Structural helpers (same pattern as protocols/templates/classifications)
+    # --------------------------
+    def _body_part_matches(meas_bp, selected_bp):
+        """Intelligent body-part matching for Case Workspace.
+
+        Rules:
+        - If no selected body part, everything passes.
+        - Exact enum equality always passes.
+        - ONCOLOGY / MISCELLANEOUS / PEDIATRICS act as cross-body wildcards:
+          * A measurement tagged with one of these can appear for any selected
+            body part.
+          * If the selected body part is one of these, any measurement body part
+            is allowed.
+        - ABDOMEN behaves as a superset of several abdominal regions:
+          * ABDOMEN, UPPER_GI, LOWER_GI, HEPATOBILIARY, UROLOGY, GYNAECOLOGY,
+            OTHERS.
+        - LUNG / CARDIAC / VASCULAR form a thoracic family.
+        - NEURO / HEAD_AND_NECK / ENT / VASCULAR form a neuro–head–neck family.
+        - ENDOCRINE can reasonably map to head/neck and abdomen.
+        """
+        if selected_bp is None:
+            return True
+        if meas_bp is None:
+            return False
+        if meas_bp == selected_bp:
+            return True
+
+        try:
+            proto_name = meas_bp.name.upper()
+            sel_name = selected_bp.name.upper()
+        except AttributeError:
+            return False
+
+        # Cross-body wildcards
+        wildcard_set = {"ONCOLOGY", "MISCELLANEOUS", "PEDIATRICS"}
+        if proto_name in wildcard_set or sel_name in wildcard_set:
+            return True
+
+        # Abdomen-related superset
+        abdomen_family = {
+            "ABDOMEN",
+            "UPPER_GI",
+            "LOWER_GI",
+            "HEPATOBILIARY",
+            "UROLOGY",
+            "GYNAECOLOGY",
+            "OTHERS",
+        }
+        if sel_name == "ABDOMEN" and proto_name in abdomen_family:
+            return True
+        if proto_name == "ABDOMEN" and sel_name in abdomen_family:
+            return True
+
+        # Thoracic family: lung–cardiac–vascular
+        thorax_family = {"LUNG", "CARDIAC", "VASCULAR"}
+        if sel_name in {"LUNG", "CARDIAC"} and proto_name in thorax_family:
+            return True
+        if proto_name in {"LUNG", "CARDIAC"} and sel_name in thorax_family:
+            return True
+
+        # Neuro / head & neck / ENT / vascular family
+        neuro_head_family = {"NEURO", "HEAD_AND_NECK", "ENT", "VASCULAR"}
+        if sel_name in neuro_head_family and proto_name in neuro_head_family:
+            return True
+
+        # Endocrine – map to head/neck and abdomen
+        endocrine_targets = {"ABDOMEN", "HEPATOBILIARY", "HEAD_AND_NECK", "NEURO"}
+        if sel_name == "ENDOCRINE" and proto_name in endocrine_targets:
+            return True
+        if proto_name == "ENDOCRINE" and sel_name in endocrine_targets:
+            return True
+
+        return False
+
+    def _modality_matches(meas_mod, selected_mod):
+        if selected_mod is None:
+            return True
+        if meas_mod is None:
+            return False
+        return meas_mod == selected_mod
+
+    # --------------------------
+    # Load ALL active measurements
+    # --------------------------
+    all_meas = db.session.query(NormalMeasurement).filter(
         NormalMeasurement.is_active.is_(True)
-    )
+    ).all()
 
-    # Structural filters
-    if modality is not None:
-        query = query.filter(NormalMeasurement.modality == modality)
-    if body_part is not None:
-        query = query.filter(NormalMeasurement.body_part == body_part)
+    # --------------------------
+    # Structural HARD GATE
+    # --------------------------
+    structural = []
+    for meas in all_meas:
+        mod_ok = _modality_matches(meas.modality, modality)
+        bp_ok = _body_part_matches(meas.body_part, body_part)
 
-    candidates = query.all()
+        if modality and body_part:
+            if mod_ok and bp_ok:
+                structural.append(meas)
+        elif modality:
+            if mod_ok:
+                structural.append(meas)
+        elif body_part:
+            if bp_ok:
+                structural.append(meas)
+        else:
+            structural.append(meas)
 
-    # If nothing structurally matched AND no structural inputs, widen broadly
-    if not candidates and not (modality or body_part):
-        candidates = (
-            db.session.query(NormalMeasurement)
-            .filter(NormalMeasurement.is_active.is_(True))
-            .all()
-        )
-
-    # Still nothing → return []
-    if not candidates:
+    # If structural drivers exist but zero matches → empty
+    if (modality or body_part) and not structural:
         return []
 
-    # Clean text inputs
+    if not structural:
+        return []
+
+    # --------------------------
+    # TEXT CLEANING
+    # --------------------------
     cleaned_core = _clean_search_text(core_question) if core_question else ""
-    cleaned_indication = _clean_search_text(indication) if indication else ""
+    cleaned_ind = _clean_search_text(indication) if indication else ""
 
-    # Decide primary vs secondary tokens
-    if cleaned_core:
-        primary_tokens = _tokenize(cleaned_core)        # strongest
-        secondary_tokens = _tokenize(cleaned_indication)
-        has_core = True
-    else:
-        primary_tokens = _tokenize(cleaned_indication)  # softer
-        secondary_tokens = []
-        has_core = False
+    core_tokens = _tokenize(cleaned_core)
+    ind_tokens = _tokenize(cleaned_ind)
 
-    has_primary_text = bool(primary_tokens)
+    # --------------------------
+    # BUCKETS
+    # --------------------------
+    core_bucket: list[tuple[int, NormalMeasurement]] = []
+    ind_bucket: list[tuple[int, NormalMeasurement]] = []
+    struct_bucket: list[tuple[int, NormalMeasurement]] = []
 
-    scored_core_matches = []
-    scored_fallback = []
-
-    for meas in candidates:
+    for meas in structural:
         text_blob_parts = [
             meas.name or "",
             meas.context or "",
@@ -527,65 +765,33 @@ def get_case_measurements(
         text_blob = " ".join(text_blob_parts).lower()
         blob_tokens = set(_tokenize(text_blob))
 
-        score = 0
+        core_hits = sum(1 for t in core_tokens if t in blob_tokens)
+        ind_hits = sum(1 for t in ind_tokens if t in blob_tokens)
+        score = core_hits * 4 + ind_hits
 
-        # Structural weighting
-        if modality is not None and meas.modality == modality:
-            score += 5
-        if body_part is not None and meas.body_part == body_part:
-            score += 5
+        if core_tokens and core_hits > 0:
+            core_bucket.append((score, meas))
+        elif (not core_tokens) and ind_tokens and ind_hits > 0:
+            ind_bucket.append((score, meas))
+        else:
+            struct_bucket.append((score, meas))
 
-        # Primary (core OR indication)
-        primary_matches = 0
-        for tok in primary_tokens:
-            if tok and tok in blob_tokens:
-                primary_matches += 1
-        score += primary_matches * 4
+    # --------------------------
+    # Select bucket
+    # --------------------------
+    if core_tokens and core_bucket:
+        bucket = core_bucket
+    elif ind_tokens and ind_bucket:
+        bucket = ind_bucket
+    else:
+        bucket = struct_bucket
 
-        # Secondary (indication only when core exists)
-        secondary_matches = 0
-        for tok in secondary_tokens:
-            if tok and tok in blob_tokens:
-                secondary_matches += 1
-        score += secondary_matches * 1
+    # --------------------------
+    # SORT + RETURN
+    # --------------------------
+    bucket.sort(key=lambda x: (-x[0], x[1].name or ""))
 
-        # If we have core text and this measurement has NO primary matches → reject
-        if has_core and primary_matches == 0:
-            continue
-
-        # Reject items with no textual match at all when primary text exists
-        if has_primary_text and (primary_matches + secondary_matches) == 0:
-            continue
-
-        if score > 0:
-            if has_core:
-                scored_core_matches.append((score, meas))
-            else:
-                scored_fallback.append((score, meas))
-
-    # If core_question exists and we have core matches → return them
-    if scored_core_matches:
-        scored_core_matches.sort(key=lambda item: (-item[0], item[1].name or ""))
-        return [m for score, m in scored_core_matches[:limit]]
-
-    # If core_question exists but no core matches → return []
-    if has_core:
-        return []
-
-    # No core → use fallback if available
-    if scored_fallback:
-        scored_fallback.sort(key=lambda item: (-item[0], item[1].name or ""))
-        return [m for score, m in scored_fallback[:limit]]
-
-    # Final fallback: structural-only
-    return sorted(
-        candidates,
-        key=lambda m: (
-            m.modality.name if m.modality else "",
-            m.body_part.name if m.body_part else "",
-            m.name or "",
-        ),
-    )[:limit]
+    return [meas for score, meas in bucket[:limit]]
 
 # *--------------------------------------------------
 # Case Workspace helpers for Checklists (placeholder)
@@ -599,10 +805,11 @@ def get_case_checklists(
     """
     Placeholder for future checklist model.
 
-    Once a Checklist model exists (e.g. with modality/body_part/tags/indication fields),
-    this function should mirror the Phase 1 ranking logic used for protocols and
-    measurements (structural filters + clinical/core_question tokens).
-
+    Once a Checklist model is implemented (with modality, body_part, tags, indication, etc.),
+    this function should follow the same unified Phase 1 logic as protocols/templates/measurements:
+      - Structural hard gate (modality/body_part)
+      - Textual buckets (core_question, indication)
+      - Sorted buckets as in get_case_measurements
     For now, returns an empty list so callers can safely iterate.
     """
     return []
@@ -621,65 +828,178 @@ def get_case_classifications(
     Primary filter: modality and/or body_part.
     Secondary (optional) filter: free-text match on name, short_code, and tags using the core_question.
     """
-    # Require at least one driver: modality, body_part, indication or core_question
+    # If absolutely no driver, bail early
     if not (modality or body_part or core_question or indication):
         return []
 
-    # Base query: only modality/body_part filters
-    base_query = db.session.query(ClassificationSystem)
-    if modality:
-        base_query = base_query.filter_by(modality=modality)
-    if body_part:
-        base_query = base_query.filter_by(body_part=body_part)
+    # --------------------------
+    # Structural helpers (same as protocols/templates)
+    # --------------------------
+    def _body_part_matches(proto_bp, selected_bp):
+        """Intelligent body-part matching for Case Workspace.
 
-    if core_question and core_question.strip():
-        raw_search_text_cls = core_question.strip()
-    elif indication and indication.strip():
-        raw_search_text_cls = indication.strip()
-    else:
-        raw_search_text_cls = ""
+        Rules:
+        - If no selected body part, everything passes.
+        - Exact enum equality always passes.
+        - ONCOLOGY / MISCELLANEOUS / PEDIATRICS act as cross-body wildcards:
+          * A classification tagged with one of these can appear for any
+            selected body part.
+          * If the selected body part is one of these, any classification body
+            part is allowed.
+        - ABDOMEN behaves as a superset of several abdominal regions:
+          * ABDOMEN, UPPER_GI, LOWER_GI, HEPATOBILIARY, UROLOGY, GYNAECOLOGY,
+            OTHERS.
+        - LUNG / CARDIAC / VASCULAR form a thoracic family.
+        - NEURO / HEAD_AND_NECK / ENT / VASCULAR form a neuro–head–neck family.
+        - ENDOCRINE can reasonably map to head/neck and abdomen.
+        """
+        if selected_bp is None:
+            return True
+        if proto_bp is None:
+            return False
+        if proto_bp == selected_bp:
+            return True
 
-    search_text_cls = _clean_search_text(raw_search_text_cls)
+        try:
+            proto_name = proto_bp.name.upper()
+            sel_name = selected_bp.name.upper()
+        except AttributeError:
+            return False
 
-    query = base_query
+        # Cross-body wildcards
+        wildcard_set = {"ONCOLOGY", "MISCELLANEOUS", "PEDIATRICS"}
+        if proto_name in wildcard_set or sel_name in wildcard_set:
+            return True
 
-    # Apply token filters only if there is meaningful search text
-    if search_text_cls:
-        token_filters = _build_token_filters(
-            [
-                ClassificationSystem.name,
-                ClassificationSystem.short_code,
-                ClassificationSystem.description,
-                ClassificationSystem.version,
-            ],
-            search_text_cls,
-        )
-        if token_filters:
-            query = query.filter(or_(*token_filters))
+        # Abdomen-related superset
+        abdomen_family = {
+            "ABDOMEN",
+            "UPPER_GI",
+            "LOWER_GI",
+            "HEPATOBILIARY",
+            "UROLOGY",
+            "GYNAECOLOGY",
+            "OTHERS",
+        }
+        if sel_name == "ABDOMEN" and proto_name in abdomen_family:
+            return True
+        if proto_name == "ABDOMEN" and sel_name in abdomen_family:
+            return True
 
-    results = (
-        query
-        .order_by(ClassificationSystem.name.asc())
-        .limit(limit)
-        .all()
-    )
+        # Thoracic family: lung–cardiac–vascular
+        thorax_family = {"LUNG", "CARDIAC", "VASCULAR"}
+        if sel_name in {"LUNG", "CARDIAC"} and proto_name in thorax_family:
+            return True
+        if proto_name in {"LUNG", "CARDIAC"} and sel_name in thorax_family:
+            return True
 
-    # Fallback: if text-based filtering returned nothing but we had search text,
-    # return the base modality/body_part-filtered set ONLY when modality/body_part are present.
-    # If there is no structural driver (no modality/body_part), avoid returning "all" classifications
-    # for non-matching clinical/core text and instead return an empty list.
-    if not results and search_text_cls:
-        if modality or body_part:
-            results = (
-                base_query
-                .order_by(ClassificationSystem.name.asc())
-                .limit(limit)
-                .all()
-            )
+        # Neuro / head & neck / ENT / vascular family
+        neuro_head_family = {"NEURO", "HEAD_AND_NECK", "ENT", "VASCULAR"}
+        if sel_name in neuro_head_family and proto_name in neuro_head_family:
+            return True
+
+        # Endocrine – map to head/neck and abdomen
+        endocrine_targets = {"ABDOMEN", "HEPATOBILIARY", "HEAD_AND_NECK", "NEURO"}
+        if sel_name == "ENDOCRINE" and proto_name in endocrine_targets:
+            return True
+        if proto_name == "ENDOCRINE" and sel_name in endocrine_targets:
+            return True
+
+        return False
+
+    def _modality_matches(proto_mod, selected_mod):
+        if selected_mod is None:
+            return True
+        if proto_mod is None:
+            return False
+        return proto_mod == selected_mod
+
+    # --------------------------
+    # Load ALL active classifications
+    # --------------------------
+    all_cls = db.session.query(ClassificationSystem).filter(
+        ClassificationSystem.is_active.is_(True)
+    ).all()
+
+    # --------------------------
+    # Structural HARD GATE
+    # --------------------------
+    structural = []
+    for cs in all_cls:
+        mod_ok = _modality_matches(cs.modality, modality)
+        bp_ok = _body_part_matches(cs.body_part, body_part)
+
+        if modality and body_part:
+            if mod_ok and bp_ok:
+                structural.append(cs)
+        elif modality:
+            if mod_ok:
+                structural.append(cs)
+        elif body_part:
+            if bp_ok:
+                structural.append(cs)
         else:
-            results = []
+            structural.append(cs)
 
-    return results
+    # If structural drivers exist but zero matches → empty
+    if (modality or body_part) and not structural:
+        return []
+
+    if not structural:
+        return []
+
+    # --------------------------
+    # TEXT CLEANING
+    # --------------------------
+    cleaned_core = _clean_search_text(core_question) if core_question else ""
+    cleaned_ind = _clean_search_text(indication) if indication else ""
+
+    core_tokens = _tokenize(cleaned_core)
+    ind_tokens = _tokenize(cleaned_ind)
+
+    # --------------------------
+    # BUCKETS
+    # --------------------------
+    core_bucket = []
+    ind_bucket = []
+    struct_bucket = []
+
+    for cs in structural:
+        blob = " ".join([
+            cs.name or "",
+            cs.short_code or "",
+            cs.description or "",
+            getattr(cs, "tags", "") or ""
+        ]).lower()
+        blob_tokens = set(_tokenize(blob))
+
+        core_hits = sum(1 for t in core_tokens if t in blob_tokens)
+        ind_hits = sum(1 for t in ind_tokens if t in blob_tokens)
+        score = core_hits * 4 + ind_hits
+
+        if core_tokens and core_hits > 0:
+            core_bucket.append((score, cs))
+        elif (not core_tokens) and ind_tokens and ind_hits > 0:
+            ind_bucket.append((score, cs))
+        else:
+            struct_bucket.append((score, cs))
+
+    # --------------------------
+    # Select bucket
+    # --------------------------
+    if core_tokens and core_bucket:
+        bucket = core_bucket
+    elif ind_tokens and ind_bucket:
+        bucket = ind_bucket
+    else:
+        bucket = struct_bucket
+
+    # --------------------------
+    # SORT + RETURN
+    # --------------------------
+    bucket.sort(key=lambda x: (-x[0], x[1].name or ""))
+
+    return [cs for score, cs in bucket[:limit]]
 
 
 # Utility function to add default classifications:

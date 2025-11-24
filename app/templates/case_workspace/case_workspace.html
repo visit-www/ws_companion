@@ -47,7 +47,8 @@
 
           <form method="get"
                 action="{{ url_for('main_routes.case_workspace') }}"
-                class="row g-3">
+                class="row g-3"
+                id="case-navigator-form">
 
             <!-- Indication / history -->
             <div class="col-12">
@@ -105,11 +106,15 @@
               </div>
             </div>
 
-            <div class="col-12 d-flex justify-content-end">
-              <div class="col-12">
+            <div class="col-12 d-flex justify-content-between align-items-center">
+              <div class="me-2">
                 <div class="small text-muted">
-                  At least one of <strong>Modality</strong>, <strong>Body part</strong> or <strong>Core Question</strong> is required
-                  to update the workspace suggestions.
+                  To use the Case Navigator, please select at least
+                  <strong>Modality</strong> or <strong>Body part</strong>. You can then refine with
+                  <strong>Indication</strong> and <strong>Core Question</strong>.
+                </div>
+                <div id="case-nav-structural-error" class="small text-danger mt-1 d-none">
+                  Please select at least a <strong>Modality</strong> or a <strong>Body part</strong> to update the workspace.
                 </div>
               </div>
               <button type="submit" class="btn btn-outline-success">
@@ -589,4 +594,53 @@
       </div>
     </div>
 </div>
+{% endblock %}
+
+{% block script %}
+  {{ super() }}
+  <script>
+    (function () {
+      const form = document.getElementById('case-navigator-form');
+      if (!form) return;
+
+      const modality = document.getElementById('modality');
+      const bodyPart = document.getElementById('body_part');
+      const modalityLabel = document.querySelector('label[for="modality"]');
+      const bodyPartLabel = document.querySelector('label[for="body_part"]');
+      const errorText = document.getElementById('case-nav-structural-error');
+
+      form.addEventListener('submit', function (evt) {
+        const modSelected = modality && modality.value.trim() !== '';
+        const bpSelected = bodyPart && bodyPart.value.trim() !== '';
+
+        // Reset previous visual state
+        [modality, bodyPart].forEach(function (el) {
+          if (!el) return;
+          el.classList.remove('is-invalid');
+        });
+        [modalityLabel, bodyPartLabel].forEach(function (lbl) {
+          if (!lbl) return;
+          lbl.classList.remove('text-danger');
+        });
+        if (errorText) {
+          errorText.classList.add('d-none');
+        }
+
+        // If neither modality nor body part is selected, block submit and highlight
+        if (!modSelected && !bpSelected) {
+          evt.preventDefault();
+
+          if (modality) modality.classList.add('is-invalid');
+          if (bodyPart) bodyPart.classList.add('is-invalid');
+
+          if (modalityLabel) modalityLabel.classList.add('text-danger');
+          if (bodyPartLabel) bodyPartLabel.classList.add('text-danger');
+
+          if (errorText) {
+            errorText.classList.remove('d-none');
+          }
+        }
+      });
+    })();
+  </script>
 {% endblock %}

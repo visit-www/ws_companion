@@ -67,7 +67,6 @@ def index():
         
         # Fetch the user data object
         user_data = db.session.query(UserData).filter_by(user_id=current_user.id).first()
-        print(f"UserData: {user_data}\n User id: {current_user.id}")
 
         # Check if the user data exists and then access 'last_interaction'
         if user_data:
@@ -366,27 +365,76 @@ def _rank_case_protocols(indication, core_question, modality_enum, body_part_enu
     )
     all_protocols = base_query.all()
 
-    # Helper: loose body part match (Phase 1 simple version)
     def _body_part_matches(proto_bp, selected_bp):
+        """Intelligent body-part matching for Case Workspace.
+
+        Rules:
+        - If no selected body part, everything passes.
+        - Exact enum equality always passes.
+        - ONCOLOGY / MISCELLANEOUS / PEDIATRICS act as cross-body wildcards:
+          * A protocol tagged with one of these can appear for any selected
+            body part.
+          * If the selected body part is one of these, any protocol body part
+            is allowed.
+        - ABDOMEN behaves as a superset of several abdominal regions:
+          * ABDOMEN, UPPER_GI, LOWER_GI, HEPATOBILIARY, UROLOGY, GYNAECOLOGY,
+            OTHERS.
+        - LUNG / CARDIAC / VASCULAR form a thoracic family.
+        - NEURO / HEAD_AND_NECK / ENT / VASCULAR form a neuro–head–neck family.
+        - ENDOCRINE can reasonably map to head/neck and abdomen.
+        """
         if selected_bp is None:
             return True
         if proto_bp is None:
             return False
         if proto_bp == selected_bp:
             return True
-        # Loose match for abdomen-style regions (Phase 1 simple heuristic)
+
         try:
-            name = proto_bp.name.upper()
-            sel = selected_bp.name.upper()
+            proto_name = proto_bp.name.upper()
+            sel_name = selected_bp.name.upper()
         except AttributeError:
             return False
 
-        # If user picks ABDOMEN, also accept enums whose names include
-        # "ABDOMEN" or "GI" (e.g. UPPER_GI, LOWER_GI) as a loose match.
-        if sel == "ABDOMEN":
-            if "ABDOMEN" in name or "GI" in name:
-                return True
-        # Add other loose mappings later as needed (Phase 1.5)
+        # Cross-body wildcards
+        wildcard_set = {"ONCOLOGY", "MISCELLANEOUS", "PEDIATRICS"}
+        if proto_name in wildcard_set or sel_name in wildcard_set:
+            return True
+
+        # Abdomen-related superset
+        abdomen_family = {
+            "ABDOMEN",
+            "UPPER_GI",
+            "LOWER_GI",
+            "HEPATOBILIARY",
+            "UROLOGY",
+            "GYNAECOLOGY",
+            "OTHERS",
+        }
+        if sel_name == "ABDOMEN" and proto_name in abdomen_family:
+            return True
+        if proto_name == "ABDOMEN" and sel_name in abdomen_family:
+            return True
+
+        # Thoracic family: lung–cardiac–vascular
+        thorax_family = {"LUNG", "CARDIAC", "VASCULAR"}
+        if sel_name in {"LUNG", "CARDIAC"} and proto_name in thorax_family:
+            return True
+        if proto_name in {"LUNG", "CARDIAC"} and sel_name in thorax_family:
+            return True
+
+        # Neuro / head & neck / ENT / vascular family
+        neuro_head_family = {"NEURO", "HEAD_AND_NECK", "ENT", "VASCULAR"}
+        if sel_name in neuro_head_family and proto_name in neuro_head_family:
+            return True
+
+        # Endocrine – map to head/neck and abdomen
+        endocrine_targets = {"ABDOMEN", "HEPATOBILIARY", "HEAD_AND_NECK", "NEURO"}
+        if sel_name == "ENDOCRINE" and proto_name in endocrine_targets:
+            return True
+        if proto_name == "ENDOCRINE" and sel_name in endocrine_targets:
+            return True
+
         return False
 
     def _modality_matches(proto_mod, selected_mod):
@@ -399,9 +447,19 @@ def _rank_case_protocols(indication, core_question, modality_enum, body_part_enu
     # 2) Structural gating
     structural_candidates = []
 
+
     for proto in all_protocols:
         mod_ok = _modality_matches(proto.modality, modality_enum)
         bp_ok = _body_part_matches(proto.body_part, body_part_enum)
+
+        try:
+            proto_mod_name = proto.modality.name if proto.modality is not None else None
+        except AttributeError:
+            proto_mod_name = str(proto.modality)
+        try:
+            proto_bp_name = proto.body_part.name if proto.body_part is not None else None
+        except AttributeError:
+            proto_bp_name = str(proto.body_part)
 
         if modality_enum and body_part_enum:
             # Both required: only keep if BOTH match
@@ -419,7 +477,6 @@ def _rank_case_protocols(indication, core_question, modality_enum, body_part_enu
 
     # If there was any structural driver but no candidates, stop early
     if (modality_enum or body_part_enum) and not structural_candidates:
-        print("=== _rank_case_protocols: no structural candidates for given modality/body_part; returning empty list ===")
         return []
 
     # If no structural driver and nothing active, nothing to do
@@ -431,16 +488,6 @@ def _rank_case_protocols(indication, core_question, modality_enum, body_part_enu
     cleaned_indication = _clean_search_text(indication) if indication else ""
     core_tokens = _tokenize(cleaned_core)
     indication_tokens = _tokenize(cleaned_indication)
-
-    print("=== _rank_case_protocols context ===")
-    print(f"  indication={indication!r}")
-    print(f"  core_question={core_question!r}")
-    print(f"  modality_enum={modality_enum}")
-    print(f"  body_part_enum={body_part_enum}")
-    print(f"  cleaned_core={cleaned_core!r}")
-    print(f"  cleaned_indication={cleaned_indication!r}")
-    print(f"  core_tokens={core_tokens}")
-    print(f"  indication_tokens={indication_tokens}")
 
     # 4) Textual filtering within the structural set
     core_matches_list = []
@@ -529,13 +576,6 @@ def case_workspace():
         except KeyError:
             flash("Unknown body part selected; please re-select.", "warning")
 
-    # Enforce: at least one of modality, body part, or core question must be provided
-    if not modality_enum and not body_part_enum and not core_question:
-        flash(
-            "Please select at least a modality, body part, or enter a core question to update the workspace.",
-            "warning",
-        )
-
     case_context = {
         "indication": indication,
         "core_question": core_question,
@@ -551,8 +591,10 @@ def case_workspace():
     suggested_checklists = []  # placeholder for future checklist model
     suggested_measurements = []
 
-    # Only attempt suggestions if at least one driver is present
-    if modality_enum or body_part_enum or core_question or indication:
+    # Phase 1 rule (updated): run suggestions when at least one
+    # structural driver (modality or body_part) is provided. The
+    # ranking helpers still enforce structural gating internally.
+    if modality_enum or body_part_enum:
         # Protocol suggestions (Phase 1 smart ranking)
         suggested_protocols = _rank_case_protocols(
             indication=indication,
@@ -663,8 +705,7 @@ def serve_creatives_folder(filename):
 
 @main_bp.route('/debug')
 def debug():
-    message=("The function failed- Thats why you are seeing this page!") 
-    print(f"----------------------------\n{message}\n----------------------------")
+    message = ("The function failed- Thats why you are seeing this page!")
     # Dynamically fetch the current route's name
     current_route = request.endpoint
     return render_template('test_routes.html',route=current_route, message=message)
@@ -688,13 +729,10 @@ def static_preview(filename):
     preview_folder = os.path.abspath(os.path.join(current_app.root_path, '..', 'user_data', 'preview_reports'))
     file_path = os.path.join(preview_folder, filename)
 
-    print(f"💡 Trying to serve: {file_path}")
     if not os.path.exists(file_path):
-        print("❌ File not found!")
         return abort(404)
 
     try:
         return send_file(file_path, as_attachment=False)
-    except Exception as e:
-        print(f"❌ Error sending file: {e}")
+    except Exception:
         return abort(403)
