@@ -207,8 +207,8 @@ def add_default_admin_templates():
         {
             "template_name": "CT Abdomen/Pelvis – Acute Abdomen",
             "modality": ModalityEnum.CT,
-            "body_part": BodyPartEnum.MISCELLANEOUS,
-            "module": ModuleNames.ABDOMINAL,
+            "body_part": BodyPartEnum.ABDOMEN,
+            "module": ModuleNames.GASTROINTESTINAL,
             "category": CategoryNames.REPORT_TEMPLATE,
             "tags": "ct, abdomen, pelvis, acute abdomen, emergency",
             "file": None,
@@ -312,6 +312,83 @@ def _clean_search_text(raw_text: str | None):
         return ""
     return " ".join(filtered)
 
+# Shared intelligent body-part matcher for Case Workspace (protocols, templates, measurements, classifications)
+def _body_part_matches(proto_bp, selected_bp):
+    """Intelligent body-part matching for Case Workspace.
+
+    Rules:
+    - If no selected body part, everything passes.
+    - Exact enum equality always passes.
+    - OTHERS acts as a broad wildcard:
+      * An entry tagged with OTHERS can appear for any selected body part.
+      * If the selected body part is OTHERS, any body part is allowed.
+    - ABDOMEN behaves as a superset of several abdominal regions:
+      * ABDOMEN, UPPER_GI, LOWER_GI, HEPATOBILIARY, UROLOGY, GYNAECOLOGY.
+    - LUNG / CARDIAC / VASCULAR form a thoracic family.
+    - NEURO / HEAD_AND_NECK / VASCULAR form a neuro–head–neck family.
+    """
+    if selected_bp is None:
+        return True
+    if proto_bp is None:
+        return False
+    if proto_bp == selected_bp:
+        return True
+
+    try:
+        proto_name = proto_bp.name.upper()
+        sel_name = selected_bp.name.upper()
+    except AttributeError:
+        return False
+
+    # Broad wildcard
+    wildcard_set = {"OTHERS"}
+    if proto_name in wildcard_set or sel_name in wildcard_set:
+        return True
+
+    # Abdomen-related superset
+    abdomen_family = {
+        "ABDOMEN",
+        "UPPER_GI",
+        "LOWER_GI",
+        "HEPATOBILIARY",
+        "UROLOGY",
+        "GYNAECOLOGY",
+    }
+    if sel_name == "ABDOMEN" and proto_name in abdomen_family:
+        return True
+    if proto_name == "ABDOMEN" and sel_name in abdomen_family:
+        return True
+
+    # Thoracic family: lung–cardiac–vascular
+    thorax_family = {"LUNG", "CARDIAC", "VASCULAR"}
+    if sel_name in thorax_family and proto_name in thorax_family:
+        return True
+
+    # Neuro / head & neck / vascular family
+    neuro_head_family = {"NEURO", "HEAD_AND_NECK", "VASCULAR"}
+    if sel_name in neuro_head_family and proto_name in neuro_head_family:
+        return True
+
+    # MSK family – asymmetric behaviour:
+    # - Selected MSK → show all MSK + SPINE + UPPER_LIMB + LOWER_LIMB.
+    # - Selected SPINE → only SPINE.
+    # - Selected UPPER_LIMB → only UPPER_LIMB.
+    # - Selected LOWER_LIMB → only LOWER_LIMB.
+    if sel_name == "MSK":
+        if proto_name in {"MSK", "SPINE", "UPPER_LIMB", "LOWER_LIMB"}:
+            return True
+    elif sel_name == "SPINE":
+        if proto_name == "SPINE":
+            return True
+    elif sel_name == "UPPER_LIMB":
+        if proto_name == "UPPER_LIMB":
+            return True
+    elif sel_name == "LOWER_LIMB":
+        if proto_name == "LOWER_LIMB":
+            return True
+
+    return False
+
 # Helper function to fetch user and admin templates for a given modality/body part/user
 def get_case_templates(
     modality,
@@ -320,6 +397,7 @@ def get_case_templates(
     limit=8,
     indication: str | None = None,
     core_question: str | None = None,
+    module: ModuleNames | None = None,
 ):
     """
     Return (user_templates, admin_templates) for a given modality and body_part.
@@ -331,78 +409,6 @@ def get_case_templates(
     if not (modality or body_part or core_question or indication):
         return [], []
 
-    # Helper: intelligent body part match (shared with protocols)
-    def _body_part_matches(proto_bp, selected_bp):
-        """Intelligent body-part matching for Case Workspace.
-
-        Rules:
-        - If no selected body part, everything passes.
-        - Exact enum equality always passes.
-        - ONCOLOGY / MISCELLANEOUS / PEDIATRICS act as cross-body wildcards:
-          * A template tagged with one of these can appear for any selected
-            body part.
-          * If the selected body part is one of these, any template body part
-            is allowed.
-        - ABDOMEN behaves as a superset of several abdominal regions:
-          * ABDOMEN, UPPER_GI, LOWER_GI, HEPATOBILIARY, UROLOGY, GYNAECOLOGY,
-            OTHERS.
-        - LUNG / CARDIAC / VASCULAR form a thoracic family.
-        - NEURO / HEAD_AND_NECK / ENT / VASCULAR form a neuro–head–neck family.
-        - ENDOCRINE can reasonably map to head/neck and abdomen.
-        """
-        if selected_bp is None:
-            return True
-        if proto_bp is None:
-            return False
-        if proto_bp == selected_bp:
-            return True
-
-        try:
-            proto_name = proto_bp.name.upper()
-            sel_name = selected_bp.name.upper()
-        except AttributeError:
-            return False
-
-        # Cross-body wildcards
-        wildcard_set = {"ONCOLOGY", "MISCELLANEOUS", "PEDIATRICS"}
-        if proto_name in wildcard_set or sel_name in wildcard_set:
-            return True
-
-        # Abdomen-related superset
-        abdomen_family = {
-            "ABDOMEN",
-            "UPPER_GI",
-            "LOWER_GI",
-            "HEPATOBILIARY",
-            "UROLOGY",
-            "GYNAECOLOGY",
-            "OTHERS",
-        }
-        if sel_name == "ABDOMEN" and proto_name in abdomen_family:
-            return True
-        if proto_name == "ABDOMEN" and sel_name in abdomen_family:
-            return True
-
-        # Thoracic family: lung–cardiac–vascular
-        thorax_family = {"LUNG", "CARDIAC", "VASCULAR"}
-        if sel_name in {"LUNG", "CARDIAC"} and proto_name in thorax_family:
-            return True
-        if proto_name in {"LUNG", "CARDIAC"} and sel_name in thorax_family:
-            return True
-
-        # Neuro / head & neck / ENT / vascular family
-        neuro_head_family = {"NEURO", "HEAD_AND_NECK", "ENT", "VASCULAR"}
-        if sel_name in neuro_head_family and proto_name in neuro_head_family:
-            return True
-
-        # Endocrine – map to head/neck and abdomen
-        endocrine_targets = {"ABDOMEN", "HEPATOBILIARY", "HEAD_AND_NECK", "NEURO"}
-        if sel_name == "ENDOCRINE" and proto_name in endocrine_targets:
-            return True
-        if proto_name == "ENDOCRINE" and sel_name in endocrine_targets:
-            return True
-
-        return False
 
     def _modality_matches(proto_mod, selected_mod):
         if selected_mod is None:
@@ -468,7 +474,15 @@ def get_case_templates(
 
         core_hits = sum(1 for t in core_tokens if t in blob_tokens)
         ind_hits = sum(1 for t in ind_tokens if t in blob_tokens)
-        score = core_hits * 4 + ind_hits
+        # Module-based mild boost: if a module is selected and the template has the same module,
+        # give it a small positive bump so these templates float higher in the list.
+        module_bonus = 0
+        if module is not None:
+            tpl_module = getattr(tpl, "module", None)
+            if tpl_module == module:
+                module_bonus = 2
+
+        score = core_hits * 4 + ind_hits + module_bonus
 
         if core_tokens and core_hits > 0:
             user_core_bucket.append((score, tpl))
@@ -526,7 +540,14 @@ def get_case_templates(
 
         core_hits = sum(1 for t in core_tokens if t in blob_tokens)
         ind_hits = sum(1 for t in ind_tokens if t in blob_tokens)
-        score = core_hits * 4 + ind_hits
+        # Module-based mild boost for admin templates as well:
+        module_bonus = 0
+        if module is not None:
+            tpl_module = getattr(tpl, "module", None)
+            if tpl_module == module:
+                module_bonus = 2
+
+        score = core_hits * 4 + ind_hits + module_bonus
 
         if core_tokens and core_hits > 0:
             admin_core_bucket.append((score, tpl))
@@ -599,9 +620,10 @@ def get_case_measurements(
     indication: str | None = None,
     core_question: str | None = None,
     limit: int = 8,
+    module: ModuleNames | None = None,
 ):
     """
-    Smart measurement suggestions for Case Workspace (Phase 1).
+    Smart measurement suggestions for Case Workspace (Phase 1.5, module-aware).
 
     Strategy:
     - Structural filters (modality/body_part) are HARD GATES.
@@ -623,80 +645,6 @@ def get_case_measurements(
     if not (modality or body_part or indication or core_question):
         return []
 
-    # --------------------------
-    # Structural helpers (same pattern as protocols/templates/classifications)
-    # --------------------------
-    def _body_part_matches(meas_bp, selected_bp):
-        """Intelligent body-part matching for Case Workspace.
-
-        Rules:
-        - If no selected body part, everything passes.
-        - Exact enum equality always passes.
-        - ONCOLOGY / MISCELLANEOUS / PEDIATRICS act as cross-body wildcards:
-          * A measurement tagged with one of these can appear for any selected
-            body part.
-          * If the selected body part is one of these, any measurement body part
-            is allowed.
-        - ABDOMEN behaves as a superset of several abdominal regions:
-          * ABDOMEN, UPPER_GI, LOWER_GI, HEPATOBILIARY, UROLOGY, GYNAECOLOGY,
-            OTHERS.
-        - LUNG / CARDIAC / VASCULAR form a thoracic family.
-        - NEURO / HEAD_AND_NECK / ENT / VASCULAR form a neuro–head–neck family.
-        - ENDOCRINE can reasonably map to head/neck and abdomen.
-        """
-        if selected_bp is None:
-            return True
-        if meas_bp is None:
-            return False
-        if meas_bp == selected_bp:
-            return True
-
-        try:
-            proto_name = meas_bp.name.upper()
-            sel_name = selected_bp.name.upper()
-        except AttributeError:
-            return False
-
-        # Cross-body wildcards
-        wildcard_set = {"ONCOLOGY", "MISCELLANEOUS", "PEDIATRICS"}
-        if proto_name in wildcard_set or sel_name in wildcard_set:
-            return True
-
-        # Abdomen-related superset
-        abdomen_family = {
-            "ABDOMEN",
-            "UPPER_GI",
-            "LOWER_GI",
-            "HEPATOBILIARY",
-            "UROLOGY",
-            "GYNAECOLOGY",
-            "OTHERS",
-        }
-        if sel_name == "ABDOMEN" and proto_name in abdomen_family:
-            return True
-        if proto_name == "ABDOMEN" and sel_name in abdomen_family:
-            return True
-
-        # Thoracic family: lung–cardiac–vascular
-        thorax_family = {"LUNG", "CARDIAC", "VASCULAR"}
-        if sel_name in {"LUNG", "CARDIAC"} and proto_name in thorax_family:
-            return True
-        if proto_name in {"LUNG", "CARDIAC"} and sel_name in thorax_family:
-            return True
-
-        # Neuro / head & neck / ENT / vascular family
-        neuro_head_family = {"NEURO", "HEAD_AND_NECK", "ENT", "VASCULAR"}
-        if sel_name in neuro_head_family and proto_name in neuro_head_family:
-            return True
-
-        # Endocrine – map to head/neck and abdomen
-        endocrine_targets = {"ABDOMEN", "HEPATOBILIARY", "HEAD_AND_NECK", "NEURO"}
-        if sel_name == "ENDOCRINE" and proto_name in endocrine_targets:
-            return True
-        if proto_name == "ENDOCRINE" and sel_name in endocrine_targets:
-            return True
-
-        return False
 
     def _modality_matches(meas_mod, selected_mod):
         if selected_mod is None:
@@ -767,7 +715,16 @@ def get_case_measurements(
 
         core_hits = sum(1 for t in core_tokens if t in blob_tokens)
         ind_hits = sum(1 for t in ind_tokens if t in blob_tokens)
-        score = core_hits * 4 + ind_hits
+
+        # Mild module-based boost: if a module is selected and the measurement
+        # belongs to the same module, push it slightly higher in the list.
+        module_bonus = 0
+        if module is not None:
+            meas_module = getattr(meas, "module", None)
+            if meas_module == module:
+                module_bonus = 2
+
+        score = core_hits * 4 + ind_hits + module_bonus
 
         if core_tokens and core_hits > 0:
             core_bucket.append((score, meas))
@@ -821,9 +778,10 @@ def get_case_classifications(
     indication: str | None = None,
     core_question: str | None = None,
     limit: int = 8,
+    module: ModuleNames | None = None,
 ):
     """
-    Return a list of ClassificationSystem objects relevant to this case.
+    Return a list of ClassificationSystem objects relevant to this case (Phase 1.5, module-aware).
 
     Primary filter: modality and/or body_part.
     Secondary (optional) filter: free-text match on name, short_code, and tags using the core_question.
@@ -832,80 +790,6 @@ def get_case_classifications(
     if not (modality or body_part or core_question or indication):
         return []
 
-    # --------------------------
-    # Structural helpers (same as protocols/templates)
-    # --------------------------
-    def _body_part_matches(proto_bp, selected_bp):
-        """Intelligent body-part matching for Case Workspace.
-
-        Rules:
-        - If no selected body part, everything passes.
-        - Exact enum equality always passes.
-        - ONCOLOGY / MISCELLANEOUS / PEDIATRICS act as cross-body wildcards:
-          * A classification tagged with one of these can appear for any
-            selected body part.
-          * If the selected body part is one of these, any classification body
-            part is allowed.
-        - ABDOMEN behaves as a superset of several abdominal regions:
-          * ABDOMEN, UPPER_GI, LOWER_GI, HEPATOBILIARY, UROLOGY, GYNAECOLOGY,
-            OTHERS.
-        - LUNG / CARDIAC / VASCULAR form a thoracic family.
-        - NEURO / HEAD_AND_NECK / ENT / VASCULAR form a neuro–head–neck family.
-        - ENDOCRINE can reasonably map to head/neck and abdomen.
-        """
-        if selected_bp is None:
-            return True
-        if proto_bp is None:
-            return False
-        if proto_bp == selected_bp:
-            return True
-
-        try:
-            proto_name = proto_bp.name.upper()
-            sel_name = selected_bp.name.upper()
-        except AttributeError:
-            return False
-
-        # Cross-body wildcards
-        wildcard_set = {"ONCOLOGY", "MISCELLANEOUS", "PEDIATRICS"}
-        if proto_name in wildcard_set or sel_name in wildcard_set:
-            return True
-
-        # Abdomen-related superset
-        abdomen_family = {
-            "ABDOMEN",
-            "UPPER_GI",
-            "LOWER_GI",
-            "HEPATOBILIARY",
-            "UROLOGY",
-            "GYNAECOLOGY",
-            "OTHERS",
-        }
-        if sel_name == "ABDOMEN" and proto_name in abdomen_family:
-            return True
-        if proto_name == "ABDOMEN" and sel_name in abdomen_family:
-            return True
-
-        # Thoracic family: lung–cardiac–vascular
-        thorax_family = {"LUNG", "CARDIAC", "VASCULAR"}
-        if sel_name in {"LUNG", "CARDIAC"} and proto_name in thorax_family:
-            return True
-        if proto_name in {"LUNG", "CARDIAC"} and sel_name in thorax_family:
-            return True
-
-        # Neuro / head & neck / ENT / vascular family
-        neuro_head_family = {"NEURO", "HEAD_AND_NECK", "ENT", "VASCULAR"}
-        if sel_name in neuro_head_family and proto_name in neuro_head_family:
-            return True
-
-        # Endocrine – map to head/neck and abdomen
-        endocrine_targets = {"ABDOMEN", "HEPATOBILIARY", "HEAD_AND_NECK", "NEURO"}
-        if sel_name == "ENDOCRINE" and proto_name in endocrine_targets:
-            return True
-        if proto_name == "ENDOCRINE" and sel_name in endocrine_targets:
-            return True
-
-        return False
 
     def _modality_matches(proto_mod, selected_mod):
         if selected_mod is None:
@@ -975,7 +859,16 @@ def get_case_classifications(
 
         core_hits = sum(1 for t in core_tokens if t in blob_tokens)
         ind_hits = sum(1 for t in ind_tokens if t in blob_tokens)
-        score = core_hits * 4 + ind_hits
+
+        # Mild module-based boost: if a module is selected and the classification
+        # belongs to the same module, push it slightly higher in the list.
+        module_bonus = 0
+        if module is not None:
+            cs_module = getattr(cs, "module", None)
+            if cs_module == module:
+                module_bonus = 2
+
+        score = core_hits * 4 + ind_hits + module_bonus
 
         if core_tokens and core_hits > 0:
             core_bucket.append((score, cs))
@@ -1019,7 +912,7 @@ def add_default_classification_systems():
             "short_code": "TI-RADS",
             "category": "scoring",
             "modality": ModalityEnum.ULTRASOUND,
-            "body_part": BodyPartEnum.ENDOCRINE,
+            "body_part": BodyPartEnum.HEAD_AND_NECK,
             "description": "ACR Thyroid Imaging Reporting and Data System for risk stratification of thyroid nodules.",
         },
         {
@@ -1075,7 +968,7 @@ def add_default_classification_systems():
             "short_code": "TNM CRC",
             "category": "tnm",
             "modality": ModalityEnum.CT,
-            "body_part": BodyPartEnum.ONCOLOGY,
+            "body_part": BodyPartEnum.LOWER_GI,
             "description": "TNM staging for colon and rectal carcinoma.",
         },
         {
@@ -1202,7 +1095,7 @@ def add_default_imaging_protocols():
         {
             "name": "CT Abdomen/Pelvis – Acute Abdomen",
             "modality": ModalityEnum.CT,
-            "body_part": BodyPartEnum.MISCELLANEOUS,
+            "body_part": BodyPartEnum.ABDOMEN,
             "indication": "Acute abdominal pain, suspected obstruction, perforation, sepsis or undifferentiated acute abdomen.",
             "is_emergency": True,
             "uses_contrast": True,

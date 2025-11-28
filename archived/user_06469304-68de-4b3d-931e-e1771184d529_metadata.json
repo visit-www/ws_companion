@@ -1,0 +1,16 @@
+{
+    "user": {
+        "id": "06469304-68de-4b3d-931e-e1771184d529",
+        "username": "lotusheart2016",
+        "password": "pbkdf2:sha256:600000$Xp1Q0s1ov87oEaOe$5e12ad8df5c975208fca79a6a9b3aebf0cd84b177f7ad409021954fc0b44ed06",
+        "email": "lotusheart2016@gmail.com",
+        "is_paid": false,
+        "is_admin": false,
+        "status": "active",
+        "created_at": "2025-11-27 14:41:33.034506",
+        "totp_secret": null,
+        "recovery_phone": null,
+        "recovery_email": null
+    },
+    "profile": null
+}
