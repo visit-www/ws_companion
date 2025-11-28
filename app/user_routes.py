@@ -287,7 +287,14 @@ def register():
                     current_login=datetime.now(UTC),  # Assume the user has just logged in
                     last_login=None,
                     session_start_time=None,
-                    login_count=0
+                    login_count=0,
+                    # New baseline fields for productivity / session tracking
+                    modalities_handled=[],          # MUST NOT be NULL in DB
+                    subspecialty_tags=[],
+                    num_cases_reported=0,
+                    is_productivity_log=False,
+                    session_type=None,
+                    notes=None,
                 )
                 db.session.add(user_data)
 

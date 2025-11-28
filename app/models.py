@@ -70,16 +70,14 @@ class ModuleNames(PyEnum):
     CARDIOVASCULAR = 'CARDIOVASCULAR'
     BREAST = 'BREAST'
     GASTROINTESTINAL = 'GASTROINTESTINAL'
-    ABDOMINAL = 'ABDOMINAL'
     GENITOURINARY = 'GENITOURINARY'
     MUSCULOSKELETAL = 'MUSCULOSKELETAL'
-    VASCULAR = 'VASCULAR'
     PEDIATRIC = 'PEDIATRIC'
     ONCOLOGIC = 'ONCOLOGIC'
+    ENDOCRINE = 'ENDOCRINE'
     EMERGENCY = 'EMERGENCY'
     INTERVENTIONAL = 'INTERVENTIONAL'
     NUCLEAR_MEDICINE = 'NUCLEAR_MEDICINE'
-    RADIOGRAPHERS = 'RADIOGRAPHERS'
     OTHERS = 'OTHERS'
 
 
@@ -87,24 +85,21 @@ class ModuleNames(PyEnum):
 class BodyPartEnum(PyEnum):
     NEURO = 'NEURO'
     HEAD_AND_NECK = 'HEAD_AND_NECK'
-    ENT = 'ENT'
-    PEDIATRICS = 'PEDIATRICS'
-    MSK = 'MSK'
+    SPINE = 'SPINE'
     LUNG = 'LUNG'
     CARDIAC = 'CARDIAC'
-    ENDOCRINE = 'ENDOCRINE'
+    BREAST = 'BREAST'
+    UPPER_GI = 'UPPER_GI'
+    LOWER_GI = 'LOWER_GI'
     HEPATOBILIARY = 'HEPATOBILIARY'
     UROLOGY = 'UROLOGY'
     GYNAECOLOGY = 'GYNAECOLOGY'
-    UPPER_GI = 'UPPER_GI'
+    MSK = 'MSK'
+    UPPER_LIMB = 'UPPER_LIMB'
+    LOWER_LIMB = 'LOWER_LIMB'
     VASCULAR = 'VASCULAR'
-    ONCOLOGY = 'ONCOLOGY'
-    MISCELLANEOUS = 'MISCELLANEOUS'
-    BREAST = 'BREAST'
-    OTHERS = 'OTHERS'
     ABDOMEN = 'ABDOMEN'
-    LOWER_GI = 'LOWER_GI'
-    
+    OTHERS = 'OTHERS'
 
 
 # Enum for modalities
@@ -113,6 +108,7 @@ class ModalityEnum(PyEnum):
     X_RAY = 'X-RAY'
     MRI = 'MRI'
     ULTRASOUND = 'ULTRASOUND'
+    COLOR_DOPPLER = 'COLOR_DOPPLER'
     NUCLEAR_MEDICINE = 'NUCLEAR MEDICINE'
     MAMMOGRAPHY = 'MAMMOGRAPHY'
     OTHERS = 'OTHERS'
@@ -322,7 +318,15 @@ class ClassificationSystem(Base):
             index=True,
         )
 
+    module: so.Mapped[Optional[ModuleNames]] = sa.Column(
+            sa.Enum(ModuleNames, name='module_name'),
+            nullable=True,
+            index=True,
+    )
+
     version: so.Mapped[Optional[str]] = sa.Column(sa.String(50), nullable=True)  # e.g., 'v8', '2019'
+
+    tags: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
 
     description: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
 
@@ -352,6 +356,11 @@ class ImagingProtocol(Base):
     )
     body_part: so.Mapped[Optional[BodyPartEnum]] = sa.Column(
             sa.Enum(BodyPartEnum, name='body_part_enum'),
+            nullable=True,
+            index=True,
+    )
+    module: so.Mapped[Optional[ModuleNames]] = sa.Column(
+            sa.Enum(ModuleNames, name='module_name'),
             nullable=True,
             index=True,
     )
@@ -393,6 +402,12 @@ class NormalMeasurement(Base):
 
     modality: so.Mapped[Optional[ModalityEnum]] = sa.Column(
             sa.Enum(ModalityEnum, name='modality_enum'),
+            nullable=True,
+            index=True,
+    )
+
+    module: so.Mapped[Optional[ModuleNames]] = sa.Column(
+            sa.Enum(ModuleNames, name='module_name'),
             nullable=True,
             index=True,
     )

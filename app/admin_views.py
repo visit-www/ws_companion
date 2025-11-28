@@ -20,6 +20,7 @@ from .models import (
     ModalityEnum,
     AdminReportTemplate,
     ImagingProtocol,
+    ClassificationSystem,
 )
 from config import ANONYMOUS_USER_ID, userdir
 
@@ -316,6 +317,7 @@ class ImagingProtocolAdmin(ExtendModelView):
         'name',
         'modality',
         'body_part',
+        'module',
         'indication',
         'is_emergency',
         'uses_contrast',
@@ -1091,18 +1093,26 @@ class AdminReportTemplateAdmin(ExtendModelView):
 class NormalMeasurementAdmin(ModelView):
     # List view
     column_list = (
-        'name', 'body_part', 'modality',
-        'min_value', 'max_value', 'unit',
-        'age_group', 'sex', 'is_active',
-        'created_at'
+        'name',
+        'body_part',
+        'modality',
+        'module',
+        'min_value',
+        'max_value',
+        'unit',
+        'age_group',
+        'sex',
+        'is_active',
+        'created_at',
     )
     column_searchable_list = ('name', 'tags', 'context', 'reference_text')
-    column_filters = ('body_part', 'modality', 'age_group', 'sex', 'is_active')
+    column_filters = ('body_part', 'modality', 'module', 'age_group', 'sex', 'is_active')
 
     form_columns = (
         'name',
         'body_part',
         'modality',
+        'module',
         'min_value',
         'max_value',
         'unit',
@@ -1184,3 +1194,50 @@ class NormalMeasurementAdmin(ModelView):
         'context': {'rows': 3},
         'tags': {'rows': 2},
     }
+
+
+# --------------------------------------------------------------------------
+# ClassificationSystem admin view
+class ClassificationSystemAdmin(ModelView):
+    """
+    Admin view for ClassificationSystem.
+
+    Exposes modality, body_part, module, and tags so that
+    Case Workspace smart search can use structured metadata.
+    """
+
+    # List view: show key structured fields
+    column_list = (
+        'name',
+        'short_code',
+        'modality',
+        'body_part',
+        'module',
+        'version',
+        'tags',
+    )
+
+    column_searchable_list = (
+        'name',
+        'short_code',
+        'description',
+        'version',
+        'tags',
+    )
+
+    column_filters = (
+        'modality',
+        'body_part',
+        'module',
+    )
+
+    form_columns = (
+        'name',
+        'short_code',
+        'description',
+        'version',
+        'modality',
+        'body_part',
+        'module',
+        'tags',
+    )

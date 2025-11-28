@@ -101,6 +101,7 @@ def create_app():
             ImagingProtocolAdmin,
             NormalMeasurementAdmin,
             AdminReportTemplateAdmin,
+            ClassificationSystemAdmin,
         )
 
     # Register Models in Flask-Admin
@@ -110,7 +111,7 @@ def create_app():
     flask_admin.add_view(ReferenceAdmin(Reference, db.session, endpoint='references'))
     flask_admin.add_view(AdminReportTemplateAdmin(AdminReportTemplate, db.session, endpoint='admin_report_templates', name='Admin Report Templates'))
     # Classification / staging systems
-    flask_admin.add_view(ExtendModelView(ClassificationSystem, db.session, endpoint='classification_systems', name='Classification Systems'))
+    flask_admin.add_view(ClassificationSystemAdmin(ClassificationSystem, db.session, endpoint='classification_systems', name='Classification Systems'))
 # Imaging protocols
     flask_admin.add_view(ImagingProtocolAdmin(ImagingProtocol, db.session,endpoint='imaging_protocols', name='Imaging Protocols'))
     flask_admin.add_view(NormalMeasurementAdmin(NormalMeasurement, db.session, endpoint='normal_measurements', name='Normal Measurements'))

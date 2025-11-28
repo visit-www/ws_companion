@@ -14,6 +14,7 @@ from .models import (
     BodyPartEnum,
     NormalMeasurement,
     UserReportTemplate,
+    ModuleNames,
 )
 from . import db
 from .util import (
@@ -22,8 +23,9 @@ from .util import (
     get_case_measurements,
     get_case_checklists,
     _clean_search_text,
+    _body_part_matches,
 )
-from sqlalchemy import or_
+from sqlalchemy import or_, func
 from flask_cors import CORS
 from flask_login import current_user, AnonymousUserMixin, login_required
 from config import userdir, creativesfolder
@@ -84,7 +86,7 @@ def index():
 def site_search():
     """Unified search across key WSCompanion models.
 
-    Uses simple ILIKE matching on a set of important text fields
+    Uses normalised (hyphen/space-insensitive) matching on a set of important text fields
     for each model and returns results grouped by type.
     """
     q = request.args.get('q', '').strip()
@@ -92,16 +94,33 @@ def site_search():
         # If empty search, just go home for now
         return redirect(url_for('main_routes.index'))
 
-    like_pattern = f"%{q}%"
+    # Normalise the query for hyphen/space-insensitive matching:
+    # e.g. "ti-rads" -> "tirads", "ct pa" -> "ctpa"
+    norm_q = re.sub(r"[\s\-]+", "", q.lower())
+    if not norm_q:
+        return redirect(url_for('main_routes.index'))
+
+    def norm_match(col):
+        """
+        Apply the same normalisation to a text column as to the query:
+        - lower-case
+        - remove spaces
+        - remove hyphens
+        Then run a LIKE '%norm_q%'.
+        """
+        lowered = func.lower(col)
+        no_hyphen = func.replace(lowered, "-", "")
+        no_space = func.replace(no_hyphen, " ", "")
+        return no_space.like(f"%{norm_q}%")
 
     # Search content library
     content_results = (
         db.session.query(Content)
         .filter(
             or_(
-                Content.title.ilike(like_pattern),
-                Content.description.ilike(like_pattern),
-                Content.keywords.ilike(like_pattern),
+                norm_match(Content.title),
+                norm_match(Content.description),
+                norm_match(Content.keywords),
             )
         )
         .limit(50)
@@ -113,8 +132,8 @@ def site_search():
         db.session.query(Reference)
         .filter(
             or_(
-                Reference.title.ilike(like_pattern),
-                Reference.description.ilike(like_pattern),
+                norm_match(Reference.title),
+                norm_match(Reference.description),
             )
         )
         .limit(50)
@@ -126,11 +145,11 @@ def site_search():
         db.session.query(ImagingProtocol)
         .filter(
             or_(
-                ImagingProtocol.name.ilike(like_pattern),
-                ImagingProtocol.indication.ilike(like_pattern),
-                ImagingProtocol.technique_text.ilike(like_pattern),
-                ImagingProtocol.contrast_details.ilike(like_pattern),
-                ImagingProtocol.tags.ilike(like_pattern),
+                norm_match(ImagingProtocol.name),
+                norm_match(ImagingProtocol.indication),
+                norm_match(ImagingProtocol.technique_text),
+                norm_match(ImagingProtocol.contrast_details),
+                norm_match(ImagingProtocol.tags),
             )
         )
         .limit(50)
@@ -142,54 +161,54 @@ def site_search():
         db.session.query(ClassificationSystem)
         .filter(
             or_(
-                ClassificationSystem.name.ilike(like_pattern),
-                ClassificationSystem.description.ilike(like_pattern),
-                ClassificationSystem.version.ilike(like_pattern),
+                norm_match(ClassificationSystem.name),
+                norm_match(ClassificationSystem.description),
+                norm_match(ClassificationSystem.version),
             )
         )
         .limit(50)
         .all()
     )
 
-    # Search admin report templates (category is now enum)
+    # Search admin report templates
     adminreporttemplates_results = (
         db.session.query(AdminReportTemplate)
         .filter(
             or_(
-                AdminReportTemplate.template_name.ilike(like_pattern),
-                AdminReportTemplate.description.ilike(like_pattern),
-                AdminReportTemplate.tags.ilike(like_pattern),
+                norm_match(AdminReportTemplate.template_name),
+                norm_match(AdminReportTemplate.description),
+                norm_match(AdminReportTemplate.tags),
             )
         )
         .limit(50)
         .all()
     )
 
-    # Search user report templates (only text/string fields)
+    # Search user report templates
     userreportemplates_results = (
         db.session.query(UserReportTemplate)
         .filter(
             or_(
-                UserReportTemplate.template_name.ilike(like_pattern),
-                UserReportTemplate.tags.ilike(like_pattern),
-                UserReportTemplate.template_text.ilike(like_pattern),
+                norm_match(UserReportTemplate.template_name),
+                norm_match(UserReportTemplate.tags),
+                norm_match(UserReportTemplate.template_text),
             )
         )
         .limit(50)
         .all()
     )
 
-    # Search normal measurements (only text/string fields)
+    # Search normal measurements
     measurement_results = (
         db.session.query(NormalMeasurement)
         .filter(
             or_(
-                NormalMeasurement.name.ilike(like_pattern),
-                NormalMeasurement.context.ilike(like_pattern),
-                NormalMeasurement.reference_text.ilike(like_pattern),
-                NormalMeasurement.tags.ilike(like_pattern),
-                NormalMeasurement.age_group.ilike(like_pattern),
-                NormalMeasurement.sex.ilike(like_pattern),
+                norm_match(NormalMeasurement.name),
+                norm_match(NormalMeasurement.context),
+                norm_match(NormalMeasurement.reference_text),
+                norm_match(NormalMeasurement.tags),
+                norm_match(NormalMeasurement.age_group),
+                norm_match(NormalMeasurement.sex),
             )
         )
         .limit(50)
@@ -342,21 +361,23 @@ def measurement_library():
 
 # *---------------------------------------------------------------
 # Helper: Rank ImagingProtocols for Case Workspace
-def _rank_case_protocols(indication, core_question, modality_enum, body_part_enum, limit=5):
+def _rank_case_protocols(indication, core_question, modality_enum, body_part_enum, module_enum, limit=5):
     """Rank ImagingProtocol rows for the Case Workspace.
 
-    Strategy:
-    - Structural filters (modality/body_part) are hard gates.
-      * If BOTH modality and body_part are provided, only protocols matching BOTH
-        are allowed. If none match, return [].
-      * If only modality OR only body_part is provided, structural filter uses
-        that dimension alone. If none match, return [].
-      * If neither is provided, all active protocols are structurally allowed.
-    - Text filters (within the structurally-matched set):
-      * core_question (cleaned) is the primary driver.
-      * If no core match, fall back to indication (cleaned) if present.
-      * If neither core nor indication match anything, fall back to the
-        structural set (modality/body_part only).
+    Updated Phase 1.5 strategy (radiologist-centric):
+    - Modality and body_part are the primary structural gates.
+    - Module is a soft refiner:
+      * Prefer protocols whose module matches the selected module.
+      * If filtering by module would remove all candidates, fall back to the
+        broader structural set.
+    - Text filters:
+      * core_question is the primary textual driver.
+        - If some protocols match core tokens, show only those.
+        - If none match, fall back to the structural set (do NOT return empty).
+      * If no core_question but indication is present, use indication tokens
+        in the same way, but with weaker weight.
+      * If neither core_question nor indication is provided, return the
+        structural set ordered by modality/body_part/name.
     """
 
     # 1) Load all active protocols once
@@ -365,136 +386,43 @@ def _rank_case_protocols(indication, core_question, modality_enum, body_part_enu
     )
     all_protocols = base_query.all()
 
-    def _body_part_matches(proto_bp, selected_bp):
-        """Intelligent body-part matching for Case Workspace.
-
-        Rules:
-        - If no selected body part, everything passes.
-        - Exact enum equality always passes.
-        - ONCOLOGY / MISCELLANEOUS / PEDIATRICS act as cross-body wildcards:
-          * A protocol tagged with one of these can appear for any selected
-            body part.
-          * If the selected body part is one of these, any protocol body part
-            is allowed.
-        - ABDOMEN behaves as a superset of several abdominal regions:
-          * ABDOMEN, UPPER_GI, LOWER_GI, HEPATOBILIARY, UROLOGY, GYNAECOLOGY,
-            OTHERS.
-        - LUNG / CARDIAC / VASCULAR form a thoracic family.
-        - NEURO / HEAD_AND_NECK / ENT / VASCULAR form a neuro–head–neck family.
-        - ENDOCRINE can reasonably map to head/neck and abdomen.
-        """
-        if selected_bp is None:
-            return True
-        if proto_bp is None:
-            return False
-        if proto_bp == selected_bp:
-            return True
-
-        try:
-            proto_name = proto_bp.name.upper()
-            sel_name = selected_bp.name.upper()
-        except AttributeError:
-            return False
-
-        # Cross-body wildcards
-        wildcard_set = {"ONCOLOGY", "MISCELLANEOUS", "PEDIATRICS"}
-        if proto_name in wildcard_set or sel_name in wildcard_set:
-            return True
-
-        # Abdomen-related superset
-        abdomen_family = {
-            "ABDOMEN",
-            "UPPER_GI",
-            "LOWER_GI",
-            "HEPATOBILIARY",
-            "UROLOGY",
-            "GYNAECOLOGY",
-            "OTHERS",
-        }
-        if sel_name == "ABDOMEN" and proto_name in abdomen_family:
-            return True
-        if proto_name == "ABDOMEN" and sel_name in abdomen_family:
-            return True
-
-        # Thoracic family: lung–cardiac–vascular
-        thorax_family = {"LUNG", "CARDIAC", "VASCULAR"}
-        if sel_name in {"LUNG", "CARDIAC"} and proto_name in thorax_family:
-            return True
-        if proto_name in {"LUNG", "CARDIAC"} and sel_name in thorax_family:
-            return True
-
-        # Neuro / head & neck / ENT / vascular family
-        neuro_head_family = {"NEURO", "HEAD_AND_NECK", "ENT", "VASCULAR"}
-        if sel_name in neuro_head_family and proto_name in neuro_head_family:
-            return True
-
-        # Endocrine – map to head/neck and abdomen
-        endocrine_targets = {"ABDOMEN", "HEPATOBILIARY", "HEAD_AND_NECK", "NEURO"}
-        if sel_name == "ENDOCRINE" and proto_name in endocrine_targets:
-            return True
-        if proto_name == "ENDOCRINE" and sel_name in endocrine_targets:
-            return True
-
-        return False
-
-    def _modality_matches(proto_mod, selected_mod):
-        if selected_mod is None:
-            return True
-        if proto_mod is None:
-            return False
-        return proto_mod == selected_mod
-
-    # 2) Structural gating
+    # 2) Structural gating: modality + body_part via _body_part_matches
     structural_candidates = []
-
-
     for proto in all_protocols:
-        mod_ok = _modality_matches(proto.modality, modality_enum)
-        bp_ok = _body_part_matches(proto.body_part, body_part_enum)
+        # Modality gate
+        if modality_enum is not None and proto.modality != modality_enum:
+            continue
 
-        try:
-            proto_mod_name = proto.modality.name if proto.modality is not None else None
-        except AttributeError:
-            proto_mod_name = str(proto.modality)
-        try:
-            proto_bp_name = proto.body_part.name if proto.body_part is not None else None
-        except AttributeError:
-            proto_bp_name = str(proto.body_part)
+        # Body-part gate (using the shared body-part matcher)
+        if body_part_enum is not None and not _body_part_matches(proto.body_part, body_part_enum):
+            continue
 
-        if modality_enum and body_part_enum:
-            # Both required: only keep if BOTH match
-            if mod_ok and bp_ok:
-                structural_candidates.append(proto)
-        elif modality_enum:
-            if mod_ok:
-                structural_candidates.append(proto)
-        elif body_part_enum:
-            if bp_ok:
-                structural_candidates.append(proto)
-        else:
-            # No structural driver at all: allow everything
-            structural_candidates.append(proto)
+        structural_candidates.append(proto)
 
-    # If there was any structural driver but no candidates, stop early
-    if (modality_enum or body_part_enum) and not structural_candidates:
-        return []
-
-    # If no structural driver and nothing active, nothing to do
+    # If no structural candidates at all, stop early
     if not structural_candidates:
         return []
 
-    # 3) Clean and tokenise text inputs
+    # 3) Optional module refinement: try to narrow to matching module,
+    #    but never drop to an empty set solely because of module.
+    module_filtered = structural_candidates
+    if module_enum is not None:
+        narrowed = [
+            p for p in structural_candidates
+            if getattr(p, "module", None) == module_enum
+        ]
+        if narrowed:
+            module_filtered = narrowed
+
+    # 4) Clean and tokenise text inputs
     cleaned_core = _clean_search_text(core_question) if core_question else ""
     cleaned_indication = _clean_search_text(indication) if indication else ""
     core_tokens = _tokenize(cleaned_core)
     indication_tokens = _tokenize(cleaned_indication)
 
-    # 4) Textual filtering within the structural set
-    core_matches_list = []
-    indication_matches_list = []
-    structural_only = []
-
-    for proto in structural_candidates:
+    # 5) Score all module-filtered candidates
+    scored = []
+    for proto in module_filtered:
         text_blob_parts = [
             proto.name or "",
             proto.indication or "",
@@ -503,36 +431,52 @@ def _rank_case_protocols(indication, core_question, modality_enum, body_part_enu
         text_blob = " ".join(text_blob_parts).lower()
         blob_tokens = set(_tokenize(text_blob))
 
-        core_match_count = 0
-        for tok in core_tokens:
-            if tok and tok in blob_tokens:
-                core_match_count += 1
+        core_hits = sum(1 for tok in core_tokens if tok and tok in blob_tokens)
+        indication_hits = sum(1 for tok in indication_tokens if tok and tok in blob_tokens)
 
-        indication_match_count = 0
-        for tok in indication_tokens:
-            if tok and tok in blob_tokens:
-                indication_match_count += 1
+        score = 0
 
-        # Simple score for sorting: core matches (strong), indication (soft)
-        score = core_match_count * 4 + indication_match_count * 1
+        # Structural reinforcement
+        if modality_enum is not None and proto.modality == modality_enum:
+            score += 5
+        if body_part_enum is not None and _body_part_matches(proto.body_part, body_part_enum):
+            score += 5
 
-        if core_tokens and core_match_count > 0:
-            core_matches_list.append((score, proto))
-        elif (not core_tokens) and indication_tokens and indication_match_count > 0:
-            indication_matches_list.append((score, proto))
+        # Module bonus (soft preference)
+        if module_enum is not None and getattr(proto, "module", None) == module_enum:
+            score += 3
+
+        # Textual components: core is strong, indication is softer
+        score += core_hits * 4
+        score += indication_hits * 1
+
+        scored.append((score, proto, core_hits, indication_hits))
+
+    # 6) Apply text-driven filtering according to the rules
+    bucket = []
+
+    if core_tokens:
+        # Prefer protocols that actually mention the core question tokens
+        core_only = [(s, p) for (s, p, ch, ih) in scored if ch > 0]
+        if core_only:
+            bucket = core_only
         else:
-            structural_only.append((score, proto))
-
-    # 5) Decide which bucket to use
-    if core_tokens and core_matches_list:
-        bucket = core_matches_list
-    elif indication_tokens and indication_matches_list:
-        bucket = indication_matches_list
+            # No protocol textually matches the core question: fall back to
+            # the full structural/module-filtered set (do not return empty).
+            bucket = [(s, p) for (s, p, ch, ih) in scored]
+    elif indication_tokens:
+        # No core question, but we do have indication text
+        ind_only = [(s, p) for (s, p, ch, ih) in scored if ih > 0]
+        if ind_only:
+            bucket = ind_only
+        else:
+            # Indication text didn't narrow anything: show structural set
+            bucket = [(s, p) for (s, p, ch, ih) in scored]
     else:
-        # Fall back to purely structural candidates (even if scores are 0)
-        bucket = structural_only
+        # No core_question or indication: pure structural ordering
+        bucket = [(s, p) for (s, p, ch, ih) in scored]
 
-    # 6) Sort by score desc, then name for stability
+    # 7) Sort by score desc, then name for stability and apply limit
     bucket.sort(key=lambda item: (-item[0], item[1].name or ""))
 
     return [proto for score, proto in bucket[:limit]]
@@ -560,6 +504,26 @@ def case_workspace():
     modality_name = request.args.get("modality")     # e.g. "CT"
     body_part_name = request.args.get("body_part")   # e.g. "LUNG"
     core_question = (request.args.get("core_question") or "").strip()
+    tool_search = (request.args.get("tool_search") or "").strip()
+
+    source = (request.args.get("source") or "left").strip()
+
+    # Decide which text field actually drives the smart suggestions:
+    # - If the request came from the right-panel tool search, use tool_search
+    #   as the primary driver and ignore indication/core_question.
+    # - Otherwise (default/left panel), ignore tool_search for ranking and
+    #   rely on indication + core_question as before.
+    if source == "right" and tool_search:
+        ranking_core_question = tool_search
+        ranking_indication = ""
+    else:
+        ranking_core_question = core_question
+        ranking_indication = indication
+        # Do not let a stale tool_search accidentally influence anything
+        tool_search = ""
+
+    module_name = request.args.get("module")  # e.g. "CHEST", "GASTROINTESTINAL"
+    module_enum = None
 
     modality_enum = None
     body_part_enum = None
@@ -576,11 +540,33 @@ def case_workspace():
         except KeyError:
             flash("Unknown body part selected; please re-select.", "warning")
 
+    if module_name:
+        try:
+            module_enum = ModuleNames[module_name]
+        except KeyError:
+            flash("Unknown module selected; please re-select.", "warning")
+
+    # For ranking, we may ignore structural gates when searching from the right panel.
+    suggest_modality_enum = modality_enum
+    suggest_body_part_enum = body_part_enum
+    suggest_module_enum = module_enum
+
+    # If the request originated from the right-panel tool search, we want a
+    # "pure tool search" that does not depend on left-panel structural inputs.
+    # In that case, disable structural gating for the ranking helpers.
+    if source == "right":
+        suggest_modality_enum = None
+        suggest_body_part_enum = None
+        suggest_module_enum = None
+
     case_context = {
         "indication": indication,
         "core_question": core_question,
         "modality_enum": modality_enum,
         "body_part_enum": body_part_enum,
+        "module_enum": module_enum,
+        "tool_search": tool_search,
+        "source": source,
     }
 
     # --- Auto-suggestions (thin slice for now) ----------------------
@@ -591,66 +577,183 @@ def case_workspace():
     suggested_checklists = []  # placeholder for future checklist model
     suggested_measurements = []
 
-    # Phase 1 rule (updated): run suggestions when at least one
-    # structural driver (modality or body_part) is provided. The
-    # ranking helpers still enforce structural gating internally.
-    if modality_enum or body_part_enum:
-        # Protocol suggestions (Phase 1 smart ranking)
-        suggested_protocols = _rank_case_protocols(
-            indication=indication,
-            core_question=core_question,
-            modality_enum=modality_enum,
-            body_part_enum=body_part_enum,
-            limit=5,
-        )
+    # Branch 1: Right-panel tool search → pure tool-centric search using
+    # the same normalised matching logic as the global site_search, but
+    # returning results into the Case Workspace suggestion slots.
+    if source == "right" and tool_search:
+        norm_q = re.sub(r"[\s\-]+", "", tool_search.lower())
 
-        # Report template suggestions (user + admin)
-        suggested_user_templates, suggested_admin_templates = get_case_templates(
-            modality_enum,
-            body_part_enum,
-            user_id=current_user.id,
-            limit=8,
-            indication=indication,
-            core_question=core_question,
-        )
-        # Staging / classification suggestions
-        suggested_classifications = get_case_classifications(
-            modality_enum,
-            body_part_enum,
-            indication=indication,
-            core_question=core_question,
-            limit=8,
-        )
+        if norm_q:
+            def norm_match_case(col):
+                lowered = func.lower(col)
+                no_hyphen = func.replace(lowered, "-", "")
+                no_space = func.replace(no_hyphen, " ", "")
+                return no_space.like(f"%{norm_q}%")
 
-        # Measurement suggestions (Phase 1 smart ranking)
-        suggested_measurements = get_case_measurements(
-            modality=modality_enum,
-            body_part=body_part_enum,
-            indication=indication,
-            core_question=core_question,
-            limit=8,
-        )
+            # Imaging protocols (no structural gating; pure tool search)
+            suggested_protocols = (
+                db.session.query(ImagingProtocol)
+                .filter(
+                    ImagingProtocol.is_active.is_(True),
+                    or_(
+                        norm_match_case(ImagingProtocol.name),
+                        norm_match_case(ImagingProtocol.indication),
+                        norm_match_case(ImagingProtocol.technique_text),
+                        norm_match_case(ImagingProtocol.contrast_details),
+                        norm_match_case(ImagingProtocol.tags),
+                    ),
+                )
+                .order_by(ImagingProtocol.modality, ImagingProtocol.body_part, ImagingProtocol.name)
+                .limit(10)
+                .all()
+            )
 
-        # Checklist suggestions (Phase 1 placeholder)
-        suggested_checklists = get_case_checklists(
-            modality=modality_enum,
-            body_part=body_part_enum,
-            indication=indication,
-            core_question=core_question,
-            limit=8,
-        )
+            # Admin report templates
+            suggested_admin_templates = (
+                db.session.query(AdminReportTemplate)
+                .filter(
+                    AdminReportTemplate.is_active.is_(True),
+                    or_(
+                        norm_match_case(AdminReportTemplate.template_name),
+                        norm_match_case(AdminReportTemplate.description),
+                        norm_match_case(AdminReportTemplate.tags),
+                    ),
+                )
+                .order_by(AdminReportTemplate.modality, AdminReportTemplate.body_part, AdminReportTemplate.template_name)
+                .limit(10)
+                .all()
+            )
+
+            # User-specific report templates
+            if isinstance(current_user, AnonymousUserMixin):
+                suggested_user_templates = []
+            else:
+                suggested_user_templates = (
+                    db.session.query(UserReportTemplate)
+                    .filter(
+                        UserReportTemplate.user_id == current_user.id,
+                        or_(
+                            norm_match_case(UserReportTemplate.template_name),
+                            norm_match_case(UserReportTemplate.tags),
+                            norm_match_case(UserReportTemplate.template_text),
+                        ),
+                    )
+                    .order_by(UserReportTemplate.updated_at.desc())
+                    .limit(10)
+                    .all()
+                )
+
+            # Classification / staging systems
+            suggested_classifications = (
+                db.session.query(ClassificationSystem)
+                .filter(
+                    ClassificationSystem.is_active.is_(True),
+                    or_(
+                        norm_match_case(ClassificationSystem.name),
+                        norm_match_case(ClassificationSystem.description),
+                        norm_match_case(ClassificationSystem.version),
+                    ),
+                )
+                .order_by(ClassificationSystem.category, ClassificationSystem.name)
+                .limit(10)
+                .all()
+            )
+
+            # Normal measurements
+            suggested_measurements = (
+                db.session.query(NormalMeasurement)
+                .filter(
+                    NormalMeasurement.is_active.is_(True),
+                    or_(
+                        norm_match_case(NormalMeasurement.name),
+                        norm_match_case(NormalMeasurement.context),
+                        norm_match_case(NormalMeasurement.reference_text),
+                        norm_match_case(NormalMeasurement.tags),
+                        norm_match_case(NormalMeasurement.age_group),
+                        norm_match_case(NormalMeasurement.sex),
+                    ),
+                )
+                .order_by(NormalMeasurement.modality, NormalMeasurement.body_part, NormalMeasurement.name)
+                .limit(10)
+                .all()
+            )
+
+            # Checklists remain a placeholder for now (no model yet)
+
+    # Branch 2: Left-panel (or default) case navigator →
+    # use the Phase 1.5 structural + clinical strategy.
+    else:
+        # Decide when to run suggestions:
+        # - Requires at least one structural driver (modality/body_part).
+        run_suggestions = False
+        if suggest_modality_enum or suggest_body_part_enum:
+            run_suggestions = True
+
+        if run_suggestions:
+            # Protocol suggestions (Phase 1.5 smart ranking)
+            suggested_protocols = _rank_case_protocols(
+                indication=ranking_indication,
+                core_question=ranking_core_question,
+                modality_enum=suggest_modality_enum,
+                body_part_enum=suggest_body_part_enum,
+                module_enum=suggest_module_enum,
+                limit=5,
+            )
+
+            # Report template suggestions (user + admin)
+            suggested_user_templates, suggested_admin_templates = get_case_templates(
+                suggest_modality_enum,
+                suggest_body_part_enum,
+                user_id=current_user.id,
+                limit=8,
+                indication=ranking_indication,
+                core_question=ranking_core_question,
+                module=suggest_module_enum,
+            )
+
+            # Staging / classification suggestions
+            suggested_classifications = get_case_classifications(
+                suggest_modality_enum,
+                suggest_body_part_enum,
+                indication=ranking_indication,
+                core_question=ranking_core_question,
+                limit=8,
+                module=suggest_module_enum,
+            )
+
+            # Measurement suggestions (Phase 1 smart ranking)
+            suggested_measurements = get_case_measurements(
+                modality=suggest_modality_enum,
+                body_part=suggest_body_part_enum,
+                indication=ranking_indication,
+                core_question=ranking_core_question,
+                limit=8,
+                module=suggest_module_enum,
+            )
+
+            # Checklist suggestions (Phase 1 placeholder)
+            suggested_checklists = get_case_checklists(
+                modality=suggest_modality_enum,
+                body_part=suggest_body_part_enum,
+                indication=ranking_indication,
+                core_question=ranking_core_question,
+                limit=8,
+            )
 
     return render_template(
         "case_workspace/case_workspace.html",
         case=case_context,
         modality_choices=list(ModalityEnum),
         body_part_choices=list(BodyPartEnum),
+        module_choices=list(ModuleNames),
         suggested_protocols=suggested_protocols,
         suggested_user_templates=suggested_user_templates,
         suggested_admin_templates=suggested_admin_templates,
         suggested_classifications=suggested_classifications,
         suggested_checklists=suggested_checklists,
         suggested_measurements=suggested_measurements,
+        module_enum=module_enum,
+        tool_search=tool_search,
     )
 
 #!----------------------------------------------------------------
