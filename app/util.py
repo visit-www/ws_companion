@@ -771,6 +771,120 @@ def get_case_checklists(
     """
     return []
 
+
+#------------
+# Helper function for AdminReportTemplate and UserReportTemplate
+#-------
+
+def render_report_template_to_text(tpl, export_scope: str | None = None) -> str:
+    """
+    Universal renderer for BOTH AdminReportTemplate and UserReportTemplate.
+
+    Strategy:
+    - If the template has a non-empty ``template_text`` attribute, return that
+      directly (future-proofing for inline-text admin templates).
+    - Otherwise, fall back to ``definition_json`` with the expected structure:
+
+          {
+              "sections": [
+                  {
+                      "id": "...",
+                      "label": "Findings",
+                      "default_text": "...",
+                      "order": 10,
+                      "export_targets": ["case_workspace", ...]
+                  },
+                  ...
+              ]
+          }
+
+    - If ``export_scope`` is provided, we prefer sections whose
+      ``export_targets`` contain that scope. If no such sections exist, we
+      gracefully fall back to all sections.
+    - Sections are sorted by their ``order`` field (default 0) and their
+      ``default_text`` blocks are concatenated with blank lines between them.
+    """
+    if tpl is None:
+        return ""
+
+    # 1) Direct inline body, if present (mainly for admin templates)
+    body = getattr(tpl, "template_text", None)
+    if body:
+        return str(body).strip()
+
+    # 2) definition_json-based templates (admin OR user)
+    definition = getattr(tpl, "definition_json", None)
+    if not isinstance(definition, dict):
+        return ""
+
+    sections = definition.get("sections")
+    if not isinstance(sections, list):
+        return ""
+
+    # First pass: respect export_scope, if provided
+    filtered_sections = []
+    for sec in sections:
+        if not isinstance(sec, dict):
+            continue
+
+        text = (sec.get("default_text") or "").strip()
+        if not text:
+            continue
+
+        # If a scope is requested, only keep sections whose export_targets
+        # include that scope. export_targets may be a string or a list.
+        if export_scope:
+            targets = sec.get("export_targets")
+            if targets:
+                if isinstance(targets, str):
+                    targets_set = {targets}
+                else:
+                    try:
+                        targets_set = set(targets)
+                    except TypeError:
+                        targets_set = set()
+                if export_scope not in targets_set:
+                    continue
+
+        filtered_sections.append(sec)
+
+    # If we requested a scope but nothing matched, gracefully fall back to
+    # all sections that have non-empty default_text.
+    if export_scope and not filtered_sections:
+        filtered_sections = []
+        for sec in sections:
+            if not isinstance(sec, dict):
+                continue
+            text = (sec.get("default_text") or "").strip()
+            if text:
+                filtered_sections.append(sec)
+
+    # Still nothing meaningful -> empty string
+    if not filtered_sections:
+        return ""
+
+    # Sort sections by their "order" key if present (default to 0)
+    filtered_sections.sort(key=lambda s: s.get("order", 0))
+
+    blocks: list[str] = []
+    for sec in filtered_sections:
+        text = (sec.get("default_text") or "").strip()
+        if not text:
+            continue
+        blocks.append(text)
+
+    return "\n\n".join(blocks)
+
+
+def render_admin_template_to_text(admin_tpl, export_scope: str | None = None) -> str:
+    """
+    Backwards-compatible wrapper for existing callers that specifically
+    request an AdminReportTemplate. Internally this now uses the universal
+    renderer which also supports UserReportTemplate.
+    """
+    return render_report_template_to_text(admin_tpl, export_scope)
+
+
 # Utility function to get classification/ staging system results in case workspace
 def get_case_classifications(
     modality,

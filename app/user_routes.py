@@ -1924,6 +1924,7 @@ def create_user_report_template():
         "sections": sections,
     }
 
+
     # Create and persist the user template
     user_template = UserReportTemplate(
         user_id=current_user.id,
