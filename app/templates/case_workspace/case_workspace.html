@@ -33,764 +33,928 @@
     </ol>
   </nav>
 
+  <style>
+    .wsc-has-placeholders {
+      border: 1px solid #ffc107 !important;
+      box-shadow: 0 0 0 0.12rem rgba(255, 193, 7, 0.45);
+      background-color: #fff9e6;
+    }
+    .wsc-placeholder-flag {
+      font-size: 0.75rem;
+    }
+    .wsc-active-placeholder {
+      border: 1px solid #e83e8c !important;
+      box-shadow: 0 0 0 0.12rem rgba(232, 62, 140, 0.35);
+      /* No background fill, so the whole textarea is not solid red/pink */
+      background-color: transparent;
+    }
+  </style>
+
   <div class="row">
-    <!-- Left: Phase 1: Readig the case context -->
-    <div class="col-lg-8">
-      <div class="card shadow-sm mb-4">
-        <div class="card-header">
-          <h2 class="h5 mb-0">Phase 1. Case Navigator</h2>
-        </div>
-        <div class="card-body">
-          <p class="text-muted small mb-3">
-            Capture the indication, suspected study, and core question. This anchors all downstream tools.
-          </p>
-
-          <form method="get"
-                action="{{ url_for('main_routes.case_workspace') }}"
-                class="row g-3"
-                id="case-navigator-form">
-            <input type="hidden" name="source" value="left">
-
-            <!-- Indication / history -->
-            <div class="col-12">
-              <label for="indication" class="form-label fw-semibold">
-                Indication / Clinical History
-              </label>
-              <textarea id="indication"
-                        name="indication"
-                        rows="2"
-                        class="form-control"
-                        placeholder="e.g. RUQ pain, fever, ?acute cholecystitis">{{ case.indication }}</textarea>
-            </div>
-
-            <!-- Modality -->
-            <div class="col-md-4">
-              <label for="modality" class="form-label fw-semibold">Modality</label>
-              <select id="modality" name="modality" class="form-select">
-                <option value="">Select modality</option>
-                {% for m in modality_choices %}
-                  <option value="{{ m.name }}"
-                    {% if case.modality_enum and case.modality_enum == m %}selected{% endif %}>
-                    {{ m.value }}
-                  </option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <!-- Module (optional) -->
-            <div class="col-md-4">
-              <label for="module" class="form-label fw-semibold">Module</label>
-              <select id="module" name="module" class="form-select">
-                <option value="">Module (optional)</option>
-                {% if module_choices %}
-                  {% for mod in module_choices %}
-                    <option value="{{ mod.name }}"
-                      {% if case.module_enum and case.module_enum == mod %}selected{% endif %}>
-                      {{ mod.value.replace('_', ' ').title() }}
-                    </option>
-                  {% endfor %}
-                {% endif %}
-              </select>
-            </div>
-
-            <!-- Body part -->
-            <div class="col-md-4">
-              <label for="body_part" class="form-label fw-semibold">Body part</label>
-              <select id="body_part" name="body_part" class="form-select">
-                <option value="">Select body part</option>
-                {% for b in body_part_choices %}
-                  <option value="{{ b.name }}"
-                    {% if case.body_part_enum and case.body_part_enum == b %}selected{% endif %}>
-                    {{ b.value.replace('_', ' ').title() }}
-                  </option>
-                {% endfor %}
-              </select>
-            </div>
-
-            <!-- Core clinical question -->
-            <div class="col-12">
-              <label for="core_question" class="form-label fw-semibold">
-                Core Question
-              </label>
-              <input type="text"
-                     id="core_question"
-                     name="core_question"
-                     class="form-control"
-                     placeholder="?PE, ?HCC characterisation, ?acute stroke"
-                     value="{{ case.core_question }}">
-              <div class="form-text">
-                Short keyword-style question that should steer the whole workspace.
-              </div>
-            </div>
-
-            <div class="col-12 d-flex justify-content-between align-items-center">
-              <div class="me-2">
-                <div class="small text-muted">
-                  To use the Case Navigator, please select at least
-                  <strong>Modality</strong> or <strong>Body part</strong>. You can then refine with
-                  <strong>Indication</strong> and <strong>Core Question</strong>.
-                </div>
-                <div id="case-nav-structural-error" class="small text-danger mt-1 d-none">
-                  Please select at least a <strong>Modality</strong> or a <strong>Body part</strong> to update the workspace.
-                </div>
-              </div>
-              <button type="submit" class="btn btn-outline-success">
-                Update Workspace
+    {% if not active_template %}
+      <!-- Phase 1 view: Smart tools on the left, Case Navigator on the right -->
+      <div class="col-lg-4 mb-4">
+        <!-- Top card: Direct Smart Tool search -->
+        <div class="card shadow-sm mb-3" style="background:#fafbfd;">
+          <div class="card-header" style="background:#eef2f7;">
+            <h3 class="h6 mb-0">Search Smart Tools</h3>
+          </div>
+          <div class="card-body small">
+            <form method="get"
+                  action="{{ url_for('main_routes.case_workspace') }}"
+                  class="d-flex align-items-center">
+              <input type="hidden" name="source" value="right">
+              <input type="search"
+                    name="tool_search"
+                    class="form-control form-control-sm"
+                    placeholder="Search specific tools (e.g. CTPA, Lung-RADS, TIRADS)…"
+                    value="{{ tool_search or '' }}"
+                    aria-label="Search tools across WSCompanion">
+              <button type="submit" class="btn btn-sm btn-outline-primary ms-2">
+                Search
               </button>
-            </div>
-          </form>
+            </form>
+            <p class="text-muted mt-2 mb-0">
+              If you already know what you need, search directly for a specific protocol, template,
+              measurement, or classification system. This search is independent of the clinical inputs on the right and uses the same smart matching logic as the global WSCompanion search.
+            </p>
+          </div>
         </div>
-      </div>
 
-      <!-- DDx and Pattern helper panel -->
-        <div class="card shadow-sm mb-4">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h2 class="h6 mb-0">2. Pattern &amp; DDX Helper</h2>
-            <span class="badge bg-light text-muted small">
-            Use while scrolling images
-            </span>
-        </div>
-        <div class="card-body">
-            <p class="text-muted small mb-3">
-            Use this panel while you scroll images to crystallise the pattern and a tight
-            differential list. Think: <strong>Pattern → Shortlist → Leading diagnosis + can’t-miss</strong>.
+        <!-- Middle card: Smart tool suggestions -->
+        <div class="card shadow-sm mb-3" style="background:#fafbfd;">
+          <div class="card-header" style="background:#eef2f7;">
+            <h3 class="h6 mb-0">Case Navigator – Smart Tools</h3>
+          </div>
+          <div class="card-body small">
+            <p class="text-muted mb-2">
+              Suggestions are based on your clinical history, modality, body part, core question, and any tool search.
             </p>
 
-            <form class="row g-3">
-            <!-- Key imaging pattern -->
-            <div class="col-12">
-                <label class="form-label fw-semibold" for="imaging_pattern">
-                Key imaging pattern
-                </label>
-                <textarea id="imaging_pattern"
-                        class="form-control"
-                        rows="2"
-                        placeholder="e.g. Solitary ring-enhancing lesion in right frontal lobe with marked vasogenic oedema and minimal mass effect."></textarea>
-                <div class="form-text">
-                One-sentence pattern description your future self will instantly recognise.
-                </div>
-            </div>
-
-            <!-- DDX shortlist -->
-            <div class="col-md-6">
-                <label class="form-label fw-semibold" for="ddx_shortlist">
-                Differential shortlist (3–5 items)
-                </label>
-                <textarea id="ddx_shortlist"
-                        class="form-control"
-                        rows="4"
-                        placeholder="1) Metastasis (favoured)&#10;2) High-grade glioma&#10;3) Abscess (less likely)..."></textarea>
-            </div>
-
-            <!-- Imaging clues / pearls -->
-            <div class="col-md-6">
-                <label class="form-label fw-semibold" for="ddx_clues">
-                Imaging clues / reporting pearls
-                </label>
-                <textarea id="ddx_clues"
-                        class="form-control"
-                        rows="4"
-                        placeholder="Look for: central restricted diffusion, smooth thin wall, satellite lesions, haemorrhagic components, MR perfusion pattern..."></textarea>
-            </div>
-
-            <!-- Can’t-miss diagnoses -->
-            <div class="col-md-6">
-                <label class="form-label fw-semibold" for="cant_miss">
-                Can’t-miss diagnoses / red flags
-                </label>
-                <textarea id="cant_miss"
-                        class="form-control"
-                        rows="2"
-                        placeholder="e.g. Epidural abscess, impending cord compression, testicular torsion, acute mesenteric ischaemia..."></textarea>
-            </div>
-
-            <!-- Suggested next steps -->
-            <div class="col-md-6">
-                <label class="form-label fw-semibold" for="suggested_next_steps">
-                Suggested next steps for the report
-                </label>
-                <textarea id="suggested_next_steps"
-                        class="form-control"
-                        rows="2"
-                        placeholder="State leading diagnosis, list key differentials, recommend MRI with contrast / follow-up / MDT discussion as appropriate."></textarea>
-            </div>
-
-            <div class="col-12">
-                <div class="small text-muted">
-                Later in the roadmap: this panel will auto-pull <strong>checklists</strong> and
-                <strong>report templates</strong> based on your clinical question, modality and body part.
-                </div>
-            </div>
-            </form>
-        </div>
-        </div>
-
-        <!-- Section 3: Diagnosis & Impression Prep -->
-        <div class="card shadow-sm mb-4">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h2 class="h6 mb-0">3. Diagnosis &amp; Impression Prep</h2>
-            <span class="badge bg-light text-muted small">
-              Auto-build impression from your inputs
-            </span>
-          </div>
-
-          <div class="card-body">
-            <p class="text-muted small mb-3">
-              This section synthesises your clinical question, imaging pattern, and DDX into a structured
-              radiologist-style impression. Later, this will auto‑populate from your entries in Sections 1 and 2.
-            </p>
-
-            <form class="row g-3">
-
-              <!-- Leading Diagnosis -->
-              <div class="col-12">
-                <label class="form-label fw-semibold" for="leading_diagnosis">
-                  Leading diagnosis
-                </label>
-                <textarea id="leading_diagnosis"
-                          class="form-control"
-                          rows="2"
-                          placeholder="e.g. Favoured diagnosis: Metastasis from presumed lung primary..."></textarea>
-              </div>
-
-              <!-- Supportive Imaging Findings -->
-              <div class="col-12">
-                <label class="form-label fw-semibold" for="supportive_findings">
-                  Supportive imaging findings
-                </label>
-                <textarea id="supportive_findings"
-                          class="form-control"
-                          rows="3"
-                          placeholder="e.g. Irregular peripheral enhancement, vasogenic oedema out of proportion to mass effect, multiplicity..."></textarea>
-              </div>
-
-              <!-- Alternative Considerations -->
-              <div class="col-md-6">
-                <label class="form-label fw-semibold" for="alt_considerations">
-                  Alternative considerations (DDX)
-                </label>
-                <textarea id="alt_considerations"
-                          class="form-control"
-                          rows="3"
-                          placeholder="e.g. High‑grade glioma, abscess (less likely)..."></textarea>
-              </div>
-
-              <!-- Red Flags -->
-              <div class="col-md-6">
-                <label class="form-label fw-semibold" for="red_flags">
-                  Red flags to mention
-                </label>
-                <textarea id="red_flags"
-                          class="form-control"
-                          rows="3"
-                          placeholder="e.g. Mass effect approaching ventricular surface, risk of herniation, impending cord compression..."></textarea>
-              </div>
-
-              <!-- Recommended next steps -->
-              <div class="col-12">
-                <label class="form-label fw-semibold" for="impression_next_steps">
-                  Recommended next steps
-                </label>
-                <textarea id="impression_next_steps"
-                          class="form-control"
-                          rows="2"
-                          placeholder="e.g. Recommend MRI brain with perfusion, oncology referral, tissue sampling if clinically appropriate..."></textarea>
-              </div>
-
-              <div class="col-12 small text-muted">
-                Future roadmap: This impression builder will auto‑assemble from Sections 1–2 and allow “one‑click insert”
-                into your structured report template.
-              </div>
-
-            </form>
-          </div>
-        </div>
-
-        <!-- Section 4: Measurement Panel -->
-        <div class="card shadow-sm mb-4">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h2 class="h6 mb-0">4. Measurement Panel</h2>
-            <span class="badge bg-light text-muted small">Smart measurement helper</span>
-          </div>
-
-          <div class="card-body">
-            <p class="text-muted small mb-3">
-              Add key measurements relevant to this case. Later stages will auto-pull normal ranges
-              from the NormalMeasurement module and compute normal vs abnormal.
-            </p>
-
-            <form class="row g-3">
-              <!-- Measurement name -->
-              <div class="col-md-6">
-                <label class="form-label fw-semibold" for="measurement_name">
-                  Measurement name
-                </label>
-                <input id="measurement_name"
-                       type="text"
-                       class="form-control"
-                       placeholder="e.g. CBD diameter, AP canal, aortic root, LVOT...">
-              </div>
-
-              <!-- User measurement -->
-              <div class="col-md-6">
-                <label class="form-label fw-semibold" for="measurement_value">
-                  Your measured value
-                </label>
-                <input id="measurement_value"
-                      type="text"
-                      class="form-control"
-                      placeholder="e.g. 7 mm, 23 mm, 3.4 cm">
-              </div>
-
-              <!-- How to measure -->
-              <div class="col-12">
-                <label class="form-label fw-semibold" for="measurement_how">
-                  How to measure
-                </label>
-                <textarea id="measurement_how"
-                          class="form-control"
-                          rows="2"
-                          placeholder="e.g. Measure inner-to-inner at the level of the porta hepatis during quiet respiration..."></textarea>
-              </div>
-
-              <!-- Normal range -->
-              <div class="col-md-6">
-                <label class="form-label fw-semibold" for="measurement_normal">
-                  Normal range
-                </label>
-                <input id="measurement_normal"
-                       type="text"
-                       class="form-control"
-                       placeholder="e.g. 0–6 mm; auto-populated later">
-              </div>
-
-              <!-- Interpretation -->
-              <div class="col-md-6">
-                <label class="form-label fw-semibold" for="measurement_interpretation">
-                  Interpretation
-                </label>
-                <input id="measurement_interpretation"
-                      type="text"
-                      class="form-control"
-                      placeholder="e.g. Mildly enlarged / Normal / Markedly increased">
-              </div>
-
-              <!-- Pearls -->
-              <div class="col-12">
-                <label class="form-label fw-semibold" for="measurement_pearl">
-                  Measurement pearls
-                </label>
-                <textarea id="measurement_pearl"
-                          class="form-control"
-                          rows="2"
-                          placeholder="e.g. Avoid tangential cuts; confirm on coronal plane; ensure patient is not rotated..."></textarea>
-              </div>
-
-              <div class="col-12 small text-muted">
-                Future roadmap: will connect to the NormalMeasurement database, auto-suggest measurements,
-                validate against age/sex‑matched ranges, and allow one‑click insertion into the report.
-              </div>
-            </form>
-          </div>
-        </div>
-
-        <!-- Section 5: Checklist & Pitfalls -->
-        <div class="card shadow-sm mb-4">
-          <div class="card-header d-flex justify-content-between align-items-center">
-            <h2 class="h6 mb-0">5. Checklist &amp; Pitfalls</h2>
-            <span class="badge bg-light text-muted small">Don’t-miss items</span>
-          </div>
-
-          <div class="card-body">
-            <p class="text-muted small mb-3">
-              Use this section to capture must‑check items and common pitfalls for this case. Later, this will auto‑load
-              modality/body‑part specific checklists.
-            </p>
-
-            <form class="row g-3">
-              <!-- Checklist items -->
-              <div class="col-md-6">
-                <label class="form-label fw-semibold" for="case_checklist_items">
-                  Checklist items
-                </label>
-                <textarea id="case_checklist_items"
-                          class="form-control"
-                          rows="5"
-                          placeholder="e.g. For CT head trauma: basal cisterns, herniation, temporal bone, venous sinuses, orbit, cervical spine..."></textarea>
-                <div class="form-text">
-                  Bullet‑style list of things you want to be sure you’ve checked.
-                </div>
-              </div>
-
-              <!-- Pitfalls / don’t-miss -->
-              <div class="col-md-6">
-                <label class="form-label fw-semibold" for="case_pitfalls">
-                  Pitfalls &amp; don’t‑miss findings
-                </label>
-                <textarea id="case_pitfalls"
-                          class="form-control"
-                          rows="5"
-                          placeholder="e.g. Subtle subdural along falx, early insular ribbon loss, small pneumothorax, tiny ureteric stones..."></textarea>
-                <div class="form-text">
-                  Things that are easy to overlook but clinically important.
-                </div>
-              </div>
-
-              <!-- Communication / MDT notes -->
-              <div class="col-12">
-                <label class="form-label fw-semibold" for="case_mdt_notes">
-                  Communication / MDT notes
-                </label>
-                <textarea id="case_mdt_notes"
-                          class="form-control"
-                          rows="2"
-                          placeholder="e.g. Flag for stroke MDT, urgent clinician phone call, add to teaching file, follow‑up imaging plan..."></textarea>
-              </div>
-
-              <div class="col-12 small text-muted">
-                Future roadmap: This panel will sync with predefined checklists and allow you to tick items off,
-                then push a summary into your final report or teaching file.
-              </div>
-            </form>
-          </div>
-        </div>
-    </div>
-
-    <!-- Right: Search tools, smart suggestions, and summary -->
-    <div class="col-lg-4">
-      <!-- Top card: Direct Smart Tool search -->
-      <div class="card shadow-sm mb-3" style="background:#fafbfd;">
-        <div class="card-header" style="background:#eef2f7;">
-          <h3 class="h6 mb-0">Search Smart Tools</h3>
-        </div>
-        <div class="card-body small">
-          <form method="get"
-                action="{{ url_for('main_routes.case_workspace') }}"
-                class="d-flex align-items-center">
-            <input type="hidden" name="source" value="right">
-            <input type="search"
-                  name="tool_search"
-                  class="form-control form-control-sm"
-                  placeholder="Search specific tools (e.g. CTPA, Lung-RADS, TIRADS)…"
-                  value="{{ tool_search or '' }}"
-                  aria-label="Search tools across WSCompanion">
-            <button type="submit" class="btn btn-sm btn-outline-primary ms-2">
-              Search
-            </button>
-          </form>
-          <p class="text-muted mt-2 mb-0">
-            If you already know what you need, search directly for a specific protocol, template,
-            measurement, or classification system. This search is independent of the clinical inputs on the left and uses the same smart matching logic as the global WSCompanion search.
-          </p>
-        </div>
-      </div>
-
-      <!-- Middle card: Smart tool suggestions -->
-      <div class="card shadow-sm mb-3" style="background:#fafbfd;">
-        <div class="card-header" style="background:#eef2f7;">
-          <h3 class="h6 mb-0">Case Navigator – Smart Tools</h3>
-        </div>
-        <div class="card-body small">
-          <p class="text-muted mb-2">
-            Suggestions are based on your clinical history, modality, body part, core question, and any tool search.
-          </p>
-
-          <h6 class="fw-semibold">Imaging protocols</h6>
-          {% if suggested_protocols %}
-            <ul class="list-unstyled mb-3">
-              {% for p in suggested_protocols %}
-                <li class="mb-1">
-                  <a href="{{ url_for('content_routes.get_protocol', protocol_id=p.id) }}"
-                     class="text-decoration-none">
-                    <div class="fw-semibold">{{ p.name }}</div>
-                    <div class="text-muted small">
-                      {{ p.modality.value }} – {{ p.body_part.value.replace('_', ' ').title() }}
-                    </div>
-                  </a>
-                </li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <p class="text-muted">No matching protocols yet.</p>
-          {% endif %}
-
-          <h6 class="fw-semibold mt-3">Your templates for this case</h6>
-          {% if suggested_user_templates %}
-            <ul class="list-unstyled mb-3">
-              {% for t in suggested_user_templates %}
-                <li class="mb-2">
-                  <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                      <div class="fw-semibold">{{ t.template_name }}</div>
+            <h6 class="fw-semibold">Imaging protocols</h6>
+            {% if suggested_protocols %}
+              <ul class="list-unstyled mb-3">
+                {% for p in suggested_protocols %}
+                  <li class="mb-1">
+                    <a href="{{ url_for('content_routes.get_protocol', protocol_id=p.id) }}"
+                       class="text-decoration-none">
+                      <div class="fw-semibold">{{ p.name }}</div>
                       <div class="text-muted small">
-                        {% if t.admin_template_id %}
-                          My template (linked to WSCompanion)
-                        {% else %}
-                          My template
-                        {% endif %}
+                        {{ p.modality.value }} – {{ p.body_part.value.replace('_', ' ').title() }}
                       </div>
-                      <div class="small mt-1">
-                        <a href="{{ url_for('app_user.user_template_detail', template_id=t.id, case_workspace_url=url_for('main_routes.case_workspace')) }}"
-                           class="text-decoration-none text-muted">
-                          View full template
+                    </a>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="text-muted">No matching protocols yet.</p>
+            {% endif %}
+
+            <h6 class="fw-semibold mt-3">Your templates for this case</h6>
+            {% if suggested_user_templates %}
+              <ul class="list-unstyled mb-3">
+                {% for t in suggested_user_templates %}
+                  <li class="mb-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                      <div>
+                        <div class="fw-semibold">{{ t.template_name }}</div>
+                        <div class="text-muted small">
+                          {% if t.admin_template_id %}
+                            My template (linked to WSCompanion)
+                          {% else %}
+                            My template
+                          {% endif %}
+                        </div>
+                        <div class="small mt-1">
+                          <a href="{{ url_for('app_user.user_template_detail', template_id=t.id, case_workspace_url=url_for('main_routes.case_workspace')) }}"
+                             class="text-decoration-none text-muted">
+                            View full template
+                          </a>
+                        </div>
+                      </div>
+                      <div class="ms-2">
+                        <a href="{{ url_for(
+                                    'main_routes.case_workspace',
+                                    indication=case.indication or '',
+                                    modality=case.modality_enum.name if case.modality_enum else '',
+                                    body_part=case.body_part_enum.name if case.body_part_enum else '',
+                                    module=case.module_enum.name if case.module_enum else '',
+                                    core_question=case.core_question or '',
+                                    user_template_id=t.id,
+                                    source='left'
+                                  ) }}"
+                          class="btn btn-sm btn-success">
+                          Use in workspace
                         </a>
                       </div>
                     </div>
-                    <div class="ms-2">
-                      <a href="{{ url_for(
-                                  'main_routes.case_workspace',
-                                  indication=case.indication or '',
-                                  modality=case.modality_enum.name if case.modality_enum else '',
-                                  body_part=case.body_part_enum.name if case.body_part_enum else '',
-                                  module=case.module_enum.name if case.module_enum else '',
-                                  core_question=case.core_question or '',
-                                  user_template_id=t.id,
-                                  source='left'
-                                ) }}"
-                        class="btn btn-sm btn-outline-success">
-                        Use in workspace
-                      </a>
-                    </div>
-                  </div>
-                </li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <p class="text-muted mb-2">No personal templates yet.</p>
-          {% endif %}
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="text-muted mb-2">No personal templates yet.</p>
+            {% endif %}
 
-          <h6 class="fw-semibold mt-2">WSCompanion templates</h6>
-          {% if suggested_admin_templates %}
-            <ul class="list-unstyled mb-3">
-              {% for t in suggested_admin_templates %}
-                <li class="mb-2">
-                  <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                      <div class="fw-semibold">{{ t.template_name }}</div>
-                      <div class="text-muted small">
-                        {{ t.modality.value }} – {{ t.body_part.value.replace('_', ' ').title() }}
+            <h6 class="fw-semibold mt-2">WSCompanion templates</h6>
+            {% if suggested_admin_templates %}
+              <ul class="list-unstyled mb-3">
+                {% for t in suggested_admin_templates %}
+                  <li class="mb-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                      <div>
+                        <div class="fw-semibold">{{ t.template_name }}</div>
+                        <div class="text-muted small">
+                          {{ t.modality.value }} – {{ t.body_part.value.replace('_', ' ').title() }}
+                        </div>
+                        <div class="small mt-1">
+                          <a href="{{ url_for('content_routes.get_template', template_id=t.id) }}"
+                             class="text-decoration-none text-muted">
+                            View full template
+                          </a>
+                        </div>
                       </div>
-                      <div class="small mt-1">
-                        <a href="{{ url_for('content_routes.get_template', template_id=t.id) }}"
-                           class="text-decoration-none text-muted">
-                          View full template
+                      <div class="ms-2">
+                        <a href="{{ url_for(
+                                     'main_routes.case_workspace',
+                                     indication=case.indication or '',
+                                     modality=case.modality_enum.name if case.modality_enum else '',
+                                     body_part=case.body_part_enum.name if case.body_part_enum else '',
+                                     module=case.module_enum.name if case.module_enum else '',
+                                     core_question=case.core_question or '',
+                                     admin_template_id=t.id,
+                                     source='left'
+                                   ) }}"
+                           class="btn btn-sm btn-success">
+                          Use in workspace
                         </a>
                       </div>
                     </div>
-                    <div class="ms-2">
-                      <a href="{{ url_for(
-                                   'main_routes.case_workspace',
-                                   indication=case.indication or '',
-                                   modality=case.modality_enum.name if case.modality_enum else '',
-                                   body_part=case.body_part_enum.name if case.body_part_enum else '',
-                                   module=case.module_enum.name if case.module_enum else '',
-                                   core_question=case.core_question or '',
-                                   admin_template_id=t.id,
-                                   source='left'
-                                 ) }}"
-                         class="btn btn-sm btn-outline-success">
-                        Use in workspace
-                      </a>
-                    </div>
-                  </div>
-                </li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <p class="text-muted mb-2">No matching WSCompanion templates yet.</p>
-          {% endif %}
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="text-muted mb-2">No matching WSCompanion templates yet.</p>
+            {% endif %}
 
-          <h6 class="fw-semibold mt-3">Normal measurements</h6>
-          {% if suggested_measurements %}
-            <ul class="list-unstyled mb-3">
-              {% for m in suggested_measurements %}
-                <li class="mb-1">
-                  <div class="fw-semibold">{{ m.name }}</div>
-                  <div class="text-muted small">
-                    {% if m.modality %}{{ m.modality.value }}{% endif %}
-                    {% if m.body_part %} – {{ m.body_part.value.replace('_', ' ').title() }}{% endif %}
-                  </div>
-                  {% if m.context %}
+            <h6 class="fw-semibold mt-3">Normal measurements</h6>
+            {% if suggested_measurements %}
+              <ul class="list-unstyled mb-3">
+                {% for m in suggested_measurements %}
+                  <li class="mb-1">
+                    <div class="fw-semibold">{{ m.name }}</div>
                     <div class="text-muted small">
-                      {{ m.context }}
+                      {% if m.modality %}{{ m.modality.value }}{% endif %}
+                      {% if m.body_part %} – {{ m.body_part.value.replace('_', ' ').title() }}{% endif %}
                     </div>
-                  {% endif %}
-                </li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <p class="text-muted mb-2">No measurements suggested yet.</p>
-          {% endif %}
-
-          <h6 class="fw-semibold mt-3">Staging &amp; Classification</h6>
-          {% if suggested_classifications %}
-            <ul class="list-unstyled mb-3">
-              {% for s in suggested_classifications %}
-                <li class="mb-1">
-                  <a href="{{ url_for('content_routes.get_classification_system', system_id=s.id) }}"
-                    class="text-decoration-none">
-                    <div class="fw-semibold">{{ s.name }}</div>
-                    <div class="text-muted small">
-                      {% if s.short_code %}{{ s.short_code }} · {% endif %}
-                      {% if s.modality %}{{ s.modality.value }}{% endif %}
-                      {% if s.body_part %} · {{ s.body_part.value.replace('_', ' ').title() }}{% endif %}
-                    </div>
-                    {% if s.tags %}
+                    {% if m.context %}
                       <div class="text-muted small">
-                        {{ s.tags }}
+                        {{ m.context }}
                       </div>
                     {% endif %}
-                  </a>
-                </li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <p class="text-muted mb-2">No staging or classification systems suggested yet.</p>
-          {% endif %}
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="text-muted mb-2">No measurements suggested yet.</p>
+            {% endif %}
 
-          <h6 class="fw-semibold mt-3">Checklists</h6>
-          {% if suggested_checklists %}
-            <ul class="list-unstyled mb-0">
-              {% for item in suggested_checklists %}
-                <li class="mb-1">{{ item }}</li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <p class="text-muted mb-0">Checklist integration coming later.</p>
-          {% endif %}
+            <h6 class="fw-semibold mt-3">Staging &amp; Classification</h6>
+            {% if suggested_classifications %}
+              <ul class="list-unstyled mb-3">
+                {% for s in suggested_classifications %}
+                  <li class="mb-1">
+                    <a href="{{ url_for('content_routes.get_classification_system', system_id=s.id) }}"
+                      class="text-decoration-none">
+                      <div class="fw-semibold">{{ s.name }}</div>
+                      <div class="text-muted small">
+                        {% if s.short_code %}{{ s.short_code }} · {% endif %}
+                        {% if s.modality %}{{ s.modality.value }}{% endif %}
+                        {% if s.body_part %} · {{ s.body_part.value.replace('_', ' ').title() }}{% endif %}
+                      </div>
+                      {% if s.tags %}
+                        <div class="text-muted small">
+                          {{ s.tags }}
+                        </div>
+                      {% endif %}
+                    </a>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="text-muted mb-2">No staging or classification systems suggested yet.</p>
+            {% endif %}
+
+            <h6 class="fw-semibold mt-3">Checklists</h6>
+            {% if suggested_checklists %}
+              <ul class="list-unstyled mb-0">
+                {% for item in suggested_checklists %}
+                  <li class="mb-1">{{ item }}</li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="text-muted mb-0">Checklist integration coming later.</p>
+            {% endif %}
+          </div>
         </div>
       </div>
 
-      <!-- Bottom card: Current case summary + Phase 2 reporting workspace -->
-      <div class="card shadow-sm" style="background:#fafbfd;">
-        <div class="card-header d-flex justify-content-between align-items-center" style="background:#eef2f7;">
-          <h3 class="h6 mb-0">Current case summary</h3>
-          <span class="badge bg-light text-muted small">Phase 2 – Reporting workspace</span>
-        </div>
-        <div class="card-body small">
-          <div class="mb-2">
-            <strong>Indication:</strong> {{ case.indication or "—" }}
+      <div class="col-lg-8 mb-4">
+        <div class="card shadow-sm mb-4">
+          <div class="card-header">
+            <h2 class="h5 mb-0">Phase 1. Case Navigator</h2>
           </div>
-          <div class="mb-2">
-            <strong>Study:</strong>
-            {% if case.modality_enum or case.body_part_enum %}
-              {{ case.modality_enum.value if case.modality_enum else "?" }}
-              {{ case.body_part_enum.value.replace('_', ' ').title() if case.body_part_enum else "" }}
-            {% else %}
-              —
-            {% endif %}
-          </div>
-          <div class="mb-3">
-            <strong>Core question:</strong> {{ case.core_question or "—" }}
-          </div>
+          <div class="card-body">
+            <p class="text-muted small mb-3">
+              Capture the indication, suspected study, and core question. This anchors all downstream tools.
+            </p>
 
-          <hr class="my-2">
+            <form method="get"
+                  action="{{ url_for('main_routes.case_workspace') }}"
+                  class="row g-3"
+                  id="case-navigator-form">
+              <input type="hidden" name="source" value="left">
 
-          {% if active_template %}
-            <div class="mb-2">
-              <div class="d-flex justify-content-between align-items-center">
-                <div>
-                  <strong>Active template:</strong>
-                  {{ active_template.name }}
-                </div>
-                <span class="badge bg-secondary-subtle text-muted small">
-                  {{ 'My template' if active_template.kind == 'user' else 'WSCompanion template' }}
-                </span>
-              </div>
-              <div class="text-muted small mt-1">
-                {% if active_template.modality %}
-                  {{ active_template.modality.value }}{% if active_template.body_part %} · {{ active_template.body_part.value.replace('_', ' ').title() }}{% endif %}
-                {% elif active_template.body_part %}
-                  {{ active_template.body_part.value.replace('_', ' ').title() }}
-                {% endif %}
-                {% if active_template.module %}
-                  · {{ active_template.module.value.replace('_', ' ').title() }}
-                {% endif %}
-              </div>
-            </div>
-
-            <form method="post" action="{{ url_for('main_routes.save_report_instance') }}" class="small">
-              <!-- CSRF token for POST -->
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-              <!-- Template linkage -->
-              <input type="hidden" name="active_template_kind" value="{{ active_template.kind }}">
-              <input type="hidden" name="active_template_id" value="{{ active_template.id }}">
-
-              <!-- Structural anchors -->
-              <input type="hidden" name="modality" value="{{ case.modality_enum.name if case.modality_enum else '' }}">
-              <input type="hidden" name="body_part" value="{{ case.body_part_enum.name if case.body_part_enum else '' }}">
-              <input type="hidden" name="module" value="{{ case.module_enum.name if case.module_enum else '' }}">
-              <input type="hidden" name="indication" value="{{ case.indication or '' }}">
-              <input type="hidden" name="core_question" value="{{ case.core_question or '' }}">
-
-              <div class="mb-2">
-                <label for="reporting_workspace_text" class="form-label fw-semibold mb-1">
-                  Draft report text (Phase 2 workspace)
+              <!-- Indication / history -->
+              <div class="col-12">
+                <label for="indication" class="form-label fw-semibold">
+                  Indication / Clinical History
                 </label>
-                <textarea id="reporting_text"
-                          name="report_text"
-                          class="form-control form-control-sm"
-                          rows="10"
-                          placeholder="This area will evolve into a full Phase 2 reporting workspace – for now, you can refine the selected template text here.">{{ report_text_default or '' }}</textarea>
+                <textarea id="indication"
+                          name="indication"
+                          rows="2"
+                          class="form-control"
+                          placeholder="e.g. RUQ pain, fever, ?acute cholecystitis">{{ case.indication }}</textarea>
+              </div>
+
+              <!-- Modality -->
+              <div class="col-md-4">
+                <label for="modality" class="form-label fw-semibold">Modality</label>
+                <select id="modality" name="modality" class="form-select">
+                  <option value="">Select modality</option>
+                  {% for m in modality_choices %}
+                    <option value="{{ m.name }}"
+                      {% if case.modality_enum and case.modality_enum == m %}selected{% endif %}>
+                      {{ m.value }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <!-- Module (optional) -->
+              <div class="col-md-4">
+                <label for="module" class="form-label fw-semibold">Module</label>
+                <select id="module" name="module" class="form-select">
+                  <option value="">Module (optional)</option>
+                  {% if module_choices %}
+                    {% for mod in module_choices %}
+                      <option value="{{ mod.name }}"
+                        {% if case.module_enum and case.module_enum == mod %}selected{% endif %}>
+                        {{ mod.value.replace('_', ' ').title() }}
+                      </option>
+                    {% endfor %}
+                  {% endif %}
+                </select>
+              </div>
+
+              <!-- Body part -->
+              <div class="col-md-4">
+                <label for="body_part" class="form-label fw-semibold">Body part</label>
+                <select id="body_part" name="body_part" class="form-select">
+                  <option value="">Select body part</option>
+                  {% for b in body_part_choices %}
+                    <option value="{{ b.name }}"
+                      {% if case.body_part_enum and case.body_part_enum == b %}selected{% endif %}>
+                      {{ b.value.replace('_', ' ').title() }}
+                    </option>
+                  {% endfor %}
+                </select>
+              </div>
+
+              <!-- Core clinical question -->
+              <div class="col-12">
+                <label for="core_question" class="form-label fw-semibold">
+                  Core Question
+                </label>
+                <input type="text"
+                       id="core_question"
+                       name="core_question"
+                       class="form-control"
+                       placeholder="?PE, ?HCC characterisation, ?acute stroke"
+                       value="{{ case.core_question }}">
                 <div class="form-text">
-                  In later phases, this workspace will be saved as <strong>UserReportInstance</strong> rows with diagnosis,
-                  institution, and service anchors, and can be linked to teaching files.
+                  Short keyword-style question that should steer the whole workspace.
                 </div>
               </div>
 
-              <div class="row g-2 mb-2">
-                <div class="col-md-6">
-                  <label for="diagnosis" class="form-label fw-semibold mb-1">Diagnosis / label for this report</label>
-                  <input type="text"
-                        id="diagnosis"
-                        name="diagnosis"
-                        class="form-control form-control-sm"
-                        placeholder="e.g. Acute PE, HRCT ILD – UIP pattern"
-                        required>
+              <div class="col-12 d-flex justify-content-between align-items-center">
+                <div class="me-2">
+                  <div class="small text-muted">
+                    To use the Case Navigator, please select at least
+                    <strong>Modality</strong> or <strong>Body part</strong>. You can then refine with
+                    <strong>Indication</strong> and <strong>Core Question</strong>.
+                  </div>
+                  <div id="case-nav-structural-error" class="small text-danger mt-1 d-none">
+                    Please select at least a <strong>Modality</strong> or a <strong>Body part</strong> to update the workspace.
+                  </div>
                 </div>
-                <div class="col-md-6">
-                  <label for="institution_name" class="form-label fw-semibold mb-1">Institution / site (optional)</label>
-                  <input type="text"
-                        id="institution_name"
-                        name="institution_name"
-                        class="form-control form-control-sm"
-                        placeholder="e.g. Hexarad, NHS Trust, teleradiology">
-                </div>
-              </div>
-
-              <div class="row g-2 mb-3">
-                <div class="col-md-6">
-                  <label for="service_name" class="form-label fw-semibold mb-1">Service / workflow (optional)</label>
-                  <input type="text"
-                        id="service_name"
-                        name="service_name"
-                        class="form-control form-control-sm"
-                        placeholder="e.g. On-call, daytime CT list, neuro-MDT">
-                </div>
-              </div>
-
-              <div class="d-flex justify-content-end">
-                <button type="submit" class="btn btn-sm btn-primary">
-                  Save report instance
+                <button type="submit" class="btn btn-outline-success">
+                  Update Workspace
                 </button>
               </div>
             </form>
-          {% else %}
-            <p class="text-muted mb-0">
-              No active report template yet. Select a personal or WSCompanion template from the
-              <strong>Case Navigator – Smart Tools</strong> panel to start a Phase 2 reporting workspace here.
-            </p>
-          {% endif %}
+          </div>
         </div>
       </div>
-    </div>
-</div>
+    {% else %}
+      <!-- Phase 2 view: full-width reporting workspace with helpers drawer -->
+      <div class="col-12">
+        <div class="card shadow-sm mb-3" style="background:#fafbfd;">
+          <div class="card-header d-flex justify-content-between align-items-center" style="background:#eef2f7;">
+            <h3 class="h6 mb-0">Case Workspace – Phase 2 Reporting</h3>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-light text-muted small">Template-driven workspace</span>
+              <a href="{{ url_for(
+                          'main_routes.case_workspace',
+                          indication=case.indication or '',
+                          modality=case.modality_enum.name if case.modality_enum else '',
+                          body_part=case.body_part_enum.name if case.body_part_enum else '',
+                          module=case.module_enum.name if case.module_enum else '',
+                          core_question=case.core_question or '',
+                          source='left'
+                        ) }}"
+                 class="btn btn-sm btn-outline-primary">
+                Back to Phase 1
+              </a>
+            </div>
+          </div>
+          <div class="card-body small">
+            <div class="mb-2">
+              <strong>Indication:</strong> {{ case.indication or "—" }}
+            </div>
+            <div class="mb-2">
+              <strong>Study:</strong>
+              {% if case.modality_enum or case.body_part_enum %}
+                {{ case.modality_enum.value if case.modality_enum else "?" }}
+                {{ case.body_part_enum.value.replace('_', ' ').title() if case.body_part_enum else "" }}
+              {% else %}
+                —
+              {% endif %}
+            </div>
+            <div class="mb-3">
+              <strong>Core question:</strong> {{ case.core_question or "—" }}
+            </div>
+
+            <hr class="my-2">
+
+            {% if active_template %}
+              <div class="mb-2">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong>Active template:</strong>
+                    {{ active_template.name }}
+                  </div>
+                  <span class="badge bg-secondary-subtle text-muted small">
+                    {{ 'My template' if active_template.kind == 'user' else 'WSCompanion template' }}
+                  </span>
+                </div>
+                <div class="text-muted small mt-1">
+                  {% if active_template.modality %}
+                    {{ active_template.modality.value }}{% if active_template.body_part %} · {{ active_template.body_part.value.replace('_', ' ').title() }}{% endif %}
+                  {% elif active_template.body_part %}
+                    {{ active_template.body_part.value.replace('_', ' ').title() }}
+                  {% endif %}
+                  {% if active_template.module %}
+                    · {{ active_template.module.value.replace('_', ' ').title() }}
+                  {% endif %}
+                </div>
+              </div>
+
+              {% set defn = active_template.definition_json or {} %}
+              {% set sections = defn.get('sections', []) %}
+              {% if sections %}
+                <div class="mb-3">
+                  <div class="small text-muted mb-1">
+                    Template sections
+                  </div>
+                  <div class="d-flex flex-wrap gap-1">
+                    {% for section in sections %}
+                      {% set sec_label = section.get('label') or section.get('id') or ('Section ' ~ loop.index) %}
+                      <span class="badge rounded-pill bg-light text-dark border">
+                        {{ sec_label }}
+                      </span>
+                    {% endfor %}
+                  </div>
+                </div>
+              {% endif %}
+
+              <form method="post" action="{{ url_for('main_routes.save_report_instance') }}" class="small">
+                <!-- CSRF token for POST -->
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+                <!-- Template linkage -->
+                <input type="hidden" name="active_template_kind" value="{{ active_template.kind }}">
+                <input type="hidden" name="active_template_id" value="{{ active_template.id }}">
+
+                <!-- Structural anchors -->
+                <input type="hidden" name="modality" value="{{ case.modality_enum.name if case.modality_enum else '' }}">
+                <input type="hidden" name="body_part" value="{{ case.body_part_enum.name if case.body_part_enum else '' }}">
+                <input type="hidden" name="module" value="{{ case.module_enum.name if case.module_enum else '' }}">
+                <input type="hidden" name="indication" value="{{ case.indication or '' }}">
+                <input type="hidden" name="core_question" value="{{ case.core_question or '' }}">
+
+                <div class="mb-2">
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <label for="reporting_text" class="form-label fw-semibold mb-0">
+                      Draft report text (Phase 2 workspace)
+                    </label>
+                    <div class="btn-group btn-group-sm" role="group" aria-label="Report view mode">
+                      <button type="button"
+                              class="btn btn-outline-secondary active"
+                              id="report-mode-edit">
+                        Edit
+                      </button>
+                      <button type="button"
+                              class="btn btn-outline-secondary"
+                              id="report-mode-view">
+                        View
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <div class="form-text mb-0">
+                      This is your main reporting surface. Later phases will save this as <strong>UserReportInstance</strong> rows with diagnosis,
+                      institution, and service anchors, and can be linked to teaching files.
+                      <br>
+                      <small id="wsc-placeholder-count" class="text-muted"></small>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                      <button type="button"
+                              class="btn btn-sm btn-outline-warning"
+                              id="prev-placeholder-btn">
+                        Prev [ ]
+                      </button>
+                      <button type="button"
+                              class="btn btn-sm btn-outline-warning"
+                              id="next-placeholder-btn">
+                        Next [ ]
+                      </button>
+                      <button type="button"
+                              class="btn btn-sm btn-outline-secondary"
+                              id="copy-report-text-btn">
+                        Copy text
+                      </button>
+                    </div>
+                  </div>
+
+                  {% if sections %}
+                  <div class="mb-2">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <span class="small text-muted">Structured report view (section-wise)</span>
+                      <small class="text-muted">Edits here will update the raw text below.</small>
+                    </div>
+                    <div class="table-responsive">
+                      <table class="table table-sm align-middle mb-0">
+                        <tbody>
+                          {% for section in sections %}
+                            {% set sec_label = section.get('label') or section.get('id') or ('Section ' ~ loop.index) %}
+                            {% set sec_text = section.get('default_text') or section.get('content') or '' %}
+                            <tr>
+                              <th scope="row" class="text-nowrap align-top small" style="width: 15%;">
+                                {{ sec_label }}
+                              </th>
+                              <td class="align-top">
+                                <textarea
+                                  class="form-control form-control-sm wsc-section-editor"
+                                  rows="3"
+                                  data-section-id="{{ section.get('id') or loop.index }}"
+                                >{{ sec_text }}</textarea>
+                                <div class="mt-1 d-flex justify-content-between align-items-center">
+                                  <div class="d-flex align-items-center gap-2">
+                                    <small class="text-muted">Placeholders in [square brackets] are editable.</small>
+                                    <small class="text-warning d-none wsc-placeholder-flag">Placeholders remaining</small>
+                                  </div>
+                                  <button type="button"
+                                          class="btn btn-sm btn-outline-secondary wsc-copy-section-btn"
+                                          data-section-label="{{ sec_label }}">
+                                    Copy section
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+                    </div>
+                    <hr class="my-2">
+                  </div>
+                  {% endif %}
+
+                  <textarea id="reporting_text"
+                            name="report_text"
+                            class="form-control form-control-sm"
+                            rows="12"
+                            placeholder="Refine the selected template text here.">{{ report_text_default or '' }}</textarea>
+
+                  <div id="reporting_text_view"
+                      class="form-control form-control-sm bg-light d-none"
+                      style="white-space: pre-wrap; min-height: 12rem;">
+                    {{ report_text_default or '' }}
+                  </div>
+                </div>
+
+                <div class="row g-2 mb-2">
+                  <div class="col-md-6">
+                    <label for="diagnosis" class="form-label fw-semibold mb-1">Diagnosis / label for this report</label>
+                    <input type="text"
+                          id="diagnosis"
+                          name="diagnosis"
+                          class="form-control form-control-sm"
+                          placeholder="e.g. Acute PE, HRCT ILD – UIP pattern"
+                          required>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="institution_name" class="form-label fw-semibold mb-1">Institution / site (optional)</label>
+                    <input type="text"
+                          id="institution_name"
+                          name="institution_name"
+                          class="form-control form-control-sm"
+                          placeholder="e.g. Hexarad, NHS Trust, teleradiology">
+                  </div>
+                </div>
+
+                <div class="row g-2 mb-3">
+                  <div class="col-md-6">
+                    <label for="service_name" class="form-label fw-semibold mb-1">Service / workflow (optional)</label>
+                    <input type="text"
+                          id="service_name"
+                          name="service_name"
+                          class="form-control form-control-sm"
+                          placeholder="e.g. On-call, daytime CT list, neuro-MDT">
+                  </div>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                  <button type="submit" class="btn btn-sm btn-primary">
+                    Save report instance
+                  </button>
+                </div>
+              </form>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- Helpers drawer: collapsible panel for pattern, DDX, measurements, checklist -->
+        <div class="card shadow-sm">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h2 class="h6 mb-0">Helpers drawer</h2>
+            <button class="btn btn-sm btn-outline-secondary"
+                    type="button"
+                    data-bs-toggle="collapse"
+                    data-bs-target="#caseHelpersCollapse"
+                    aria-expanded="false"
+                    aria-controls="caseHelpersCollapse">
+              Toggle helpers
+            </button>
+          </div>
+          <div id="caseHelpersCollapse" class="collapse">
+            <div class="card-body">
+              <!-- Section 2: Pattern & DDX Helper -->
+              <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h2 class="h6 mb-0">2. Pattern &amp; DDX Helper</h2>
+                  <span class="badge bg-light text-muted small">
+                    Use while scrolling images
+                  </span>
+                </div>
+                <div class="card-body">
+                  <p class="text-muted small mb-3">
+                    Use this panel while you scroll images to crystallise the pattern and a tight
+                    differential list. Think: <strong>Pattern → Shortlist → Leading diagnosis + can’t-miss</strong>.
+                  </p>
+
+                  <form class="row g-3">
+                    <!-- Key imaging pattern -->
+                    <div class="col-12">
+                      <label class="form-label fw-semibold" for="imaging_pattern">
+                        Key imaging pattern
+                      </label>
+                      <textarea id="imaging_pattern"
+                                class="form-control"
+                                rows="2"
+                                placeholder="e.g. Solitary ring-enhancing lesion in right frontal lobe with marked vasogenic oedema and minimal mass effect."></textarea>
+                      <div class="form-text">
+                        One-sentence pattern description your future self will instantly recognise.
+                      </div>
+                    </div>
+
+                    <!-- DDX shortlist -->
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold" for="ddx_shortlist">
+                        Differential shortlist (3–5 items)
+                      </label>
+                      <textarea id="ddx_shortlist"
+                                class="form-control"
+                                rows="4"
+                                placeholder="1) Metastasis (favoured)&#10;2) High-grade glioma&#10;3) Abscess (less likely)..."></textarea>
+                    </div>
+
+                    <!-- Imaging clues / pearls -->
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold" for="ddx_clues">
+                        Imaging clues / reporting pearls
+                      </label>
+                      <textarea id="ddx_clues"
+                                class="form-control"
+                                rows="4"
+                                placeholder="Look for: central restricted diffusion, smooth thin wall, satellite lesions, haemorrhagic components, MR perfusion pattern..."></textarea>
+                    </div>
+
+                    <!-- Can’t-miss diagnoses -->
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold" for="cant_miss">
+                        Can’t-miss diagnoses / red flags
+                      </label>
+                      <textarea id="cant_miss"
+                                class="form-control"
+                                rows="2"
+                                placeholder="e.g. Epidural abscess, impending cord compression, testicular torsion, acute mesenteric ischaemia..."></textarea>
+                    </div>
+
+                    <!-- Suggested next steps -->
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold" for="suggested_next_steps">
+                        Suggested next steps for the report
+                      </label>
+                      <textarea id="suggested_next_steps"
+                                class="form-control"
+                                rows="2"
+                                placeholder="State leading diagnosis, list key differentials, recommend MRI with contrast / follow-up / MDT discussion as appropriate."></textarea>
+                    </div>
+
+                    <div class="col-12">
+                      <div class="small text-muted">
+                        Later in the roadmap: this panel will auto-pull <strong>checklists</strong> and
+                        <strong>report templates</strong> based on your clinical question, modality and body part.
+                      </div>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Section 3: Diagnosis & Impression Prep -->
+              <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h2 class="h6 mb-0">3. Diagnosis &amp; Impression Prep</h2>
+                  <span class="badge bg-light text-muted small">
+                    Auto-build impression from your inputs
+                  </span>
+                </div>
+
+                <div class="card-body">
+                  <p class="text-muted small mb-3">
+                    This section synthesises your clinical question, imaging pattern, and DDX into a structured
+                    radiologist-style impression. Later, this will auto‑populate from your entries in Sections 1 and 2.
+                  </p>
+
+                  <form class="row g-3">
+
+                    <!-- Leading Diagnosis -->
+                    <div class="col-12">
+                      <label class="form-label fw-semibold" for="leading_diagnosis">
+                        Leading diagnosis
+                      </label>
+                      <textarea id="leading_diagnosis"
+                                class="form-control"
+                                rows="2"
+                                placeholder="e.g. Favoured diagnosis: Metastasis from presumed lung primary..."></textarea>
+                    </div>
+
+                    <!-- Supportive Imaging Findings -->
+                    <div class="col-12">
+                      <label class="form-label fw-semibold" for="supportive_findings">
+                        Supportive imaging findings
+                      </label>
+                      <textarea id="supportive_findings"
+                                class="form-control"
+                                rows="3"
+                                placeholder="e.g. Irregular peripheral enhancement, vasogenic oedema out of proportion to mass effect, multiplicity..."></textarea>
+                    </div>
+
+                    <!-- Alternative Considerations -->
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold" for="alt_considerations">
+                        Alternative considerations (DDX)
+                      </label>
+                      <textarea id="alt_considerations"
+                                class="form-control"
+                                rows="3"
+                                placeholder="e.g. High‑grade glioma, abscess (less likely)..."></textarea>
+                    </div>
+
+                    <!-- Red Flags -->
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold" for="red_flags">
+                        Red flags to mention
+                      </label>
+                      <textarea id="red_flags"
+                                class="form-control"
+                                rows="3"
+                                placeholder="e.g. Mass effect approaching ventricular surface, risk of herniation, impending cord compression..."></textarea>
+                    </div>
+
+                    <!-- Recommended next steps -->
+                    <div class="col-12">
+                      <label class="form-label fw-semibold" for="impression_next_steps">
+                        Recommended next steps
+                      </label>
+                      <textarea id="impression_next_steps"
+                                class="form-control"
+                                rows="2"
+                                placeholder="e.g. Recommend MRI brain with perfusion, oncology referral, tissue sampling if clinically appropriate..."></textarea>
+                    </div>
+
+                    <div class="col-12 small text-muted">
+                      Future roadmap: This impression builder will auto‑assemble from Sections 1–2 and allow “one‑click insert”
+                      into your structured report template.
+                    </div>
+
+                  </form>
+                </div>
+              </div>
+
+              <!-- Section 4: Measurement Panel -->
+              <div class="card shadow-sm mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h2 class="h6 mb-0">4. Measurement Panel</h2>
+                  <span class="badge bg-light text-muted small">Smart measurement helper</span>
+                </div>
+
+                <div class="card-body">
+                  <p class="text-muted small mb-3">
+                    Add key measurements relevant to this case. Later stages will auto-pull normal ranges
+                    from the NormalMeasurement module and compute normal vs abnormal.
+                  </p>
+
+                  <form class="row g-3">
+                    <!-- Measurement name -->
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold" for="measurement_name">
+                        Measurement name
+                      </label>
+                      <input id="measurement_name"
+                            type="text"
+                            class="form-control"
+                            placeholder="e.g. CBD diameter, AP canal, aortic root, LVOT...">
+                    </div>
+
+                    <!-- User measurement -->
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold" for="measurement_value">
+                        Your measured value
+                      </label>
+                      <input id="measurement_value"
+                            type="text"
+                            class="form-control"
+                            placeholder="e.g. 7 mm, 23 mm, 3.4 cm">
+                    </div>
+
+                    <!-- How to measure -->
+                    <div class="col-12">
+                      <label class="form-label fw-semibold" for="measurement_how">
+                        How to measure
+                      </label>
+                      <textarea id="measurement_how"
+                                class="form-control"
+                                rows="2"
+                                placeholder="e.g. Measure inner-to-inner at the level of the porta hepatis during quiet respiration..."></textarea>
+                    </div>
+
+                    <!-- Normal range -->
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold" for="measurement_normal">
+                        Normal range
+                      </label>
+                      <input id="measurement_normal"
+                            type="text"
+                            class="form-control"
+                            placeholder="e.g. 0–6 mm; auto-populated later">
+                    </div>
+
+                    <!-- Interpretation -->
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold" for="measurement_interpretation">
+                        Interpretation
+                      </label>
+                      <input id="measurement_interpretation"
+                            type="text"
+                            class="form-control"
+                            placeholder="e.g. Mildly enlarged / Normal / Markedly increased">
+                    </div>
+
+                    <!-- Pearls -->
+                    <div class="col-12">
+                      <label class="form-label fw-semibold" for="measurement_pearl">
+                        Measurement pearls
+                      </label>
+                      <textarea id="measurement_pearl"
+                                class="form-control"
+                                rows="2"
+                                placeholder="e.g. Avoid tangential cuts; confirm on coronal plane; ensure patient is not rotated..."></textarea>
+                    </div>
+
+                    <div class="col-12 small text-muted">
+                      Future roadmap: will connect to the NormalMeasurement database, auto-suggest measurements,
+                      validate against age/sex‑matched ranges, and allow one‑click insertion into the report.
+                    </div>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Section 5: Checklist & Pitfalls -->
+              <div class="card shadow-sm mb-0">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                  <h2 class="h6 mb-0">5. Checklist &amp; Pitfalls</h2>
+                  <span class="badge bg-light text-muted small">Don’t-miss items</span>
+                </div>
+
+                <div class="card-body">
+                  <p class="text-muted small mb-3">
+                    Use this section to capture must‑check items and common pitfalls for this case. Later, this will auto‑load
+                    modality/body‑part specific checklists.
+                  </p>
+
+                  <form class="row g-3">
+                    <!-- Checklist items -->
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold" for="case_checklist_items">
+                        Checklist items
+                      </label>
+                      <textarea id="case_checklist_items"
+                                class="form-control"
+                                rows="5"
+                                placeholder="e.g. For CT head trauma: basal cisterns, herniation, temporal bone, venous sinuses, orbit, cervical spine..."></textarea>
+                      <div class="form-text">
+                        Bullet‑style list of things you want to be sure you’ve checked.
+                      </div>
+                    </div>
+
+                    <!-- Pitfalls / don’t-miss -->
+                    <div class="col-md-6">
+                      <label class="form-label fw-semibold" for="case_pitfalls">
+                        Pitfalls &amp; don’t‑miss findings
+                      </label>
+                      <textarea id="case_pitfalls"
+                                class="form-control"
+                                rows="5"
+                                placeholder="e.g. Subtle subdural along falx, early insular ribbon loss, small pneumothorax, tiny ureteric stones..."></textarea>
+                      <div class="form-text">
+                        Things that are easy to overlook but clinically important.
+                      </div>
+                    </div>
+
+                    <!-- Communication / MDT notes -->
+                    <div class="col-12">
+                      <label class="form-label fw-semibold" for="case_mdt_notes">
+                        Communication / MDT notes
+                      </label>
+                      <textarea id="case_mdt_notes"
+                                class="form-control"
+                                rows="2"
+                                placeholder="e.g. Flag for stroke MDT, urgent clinician phone call, add to teaching file, follow‑up imaging plan..."></textarea>
+                    </div>
+
+                    <div class="col-12 small text-muted">
+                      Future roadmap: This panel will sync with predefined checklists and allow you to tick items off,
+                      then push a summary into your final report or teaching file.
+                    </div>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
 {% endblock %}
 
 {% block script %}
   {{ super() }}
   <script>
+    function wscHasPlaceholders(text) {
+      if (!text) return false;
+      return /\[[^\]]+\]/.test(text);
+    }
+
+    function wscConfirmCopyIfPlaceholders(text) {
+      if (!wscHasPlaceholders(text)) {
+        return true;
+      }
+      return window.confirm(
+        'Your report still contains generic placeholder text in square brackets.\n\nDo you want to continue copying?'
+      );
+    }
     (function () {
       const form = document.getElementById('case-navigator-form');
       if (!form) return;
@@ -833,6 +997,729 @@
           }
         }
       });
+    })();
+
+    (function () {
+      const textarea = document.getElementById('reporting_text');
+      const viewDiv = document.getElementById('reporting_text_view');
+      const editBtn = document.getElementById('report-mode-edit');
+      const viewBtn = document.getElementById('report-mode-view');
+      const copyBtn = document.getElementById('copy-report-text-btn');
+      const nextPlaceholderBtn = document.getElementById('next-placeholder-btn');
+      const prevPlaceholderBtn = document.getElementById('prev-placeholder-btn');
+      const placeholderCountEl = document.getElementById('wsc-placeholder-count');
+
+      if (!textarea || !viewDiv || !editBtn || !viewBtn) {
+        return;
+      }
+
+      let currentPlaceholderIndex = 0;
+      let currentPlaceholders = [];
+      let undoStack = [];
+      let redoStack = [];
+      let isApplyingUndoRedo = false;
+
+      function setActivePlaceholderState(active) {
+        if (!textarea) return;
+        if (active) {
+          textarea.classList.add('wsc-active-placeholder');
+        } else {
+          textarea.classList.remove('wsc-active-placeholder');
+        }
+      }
+
+      function recomputePlaceholders() {
+        const text = textarea.value || '';
+        const regex = /\[[^\]]+\]/g;
+        currentPlaceholders = [];
+        let match;
+        while ((match = regex.exec(text)) !== null) {
+          currentPlaceholders.push({
+            start: match.index,
+            end: regex.lastIndex,
+            token: match[0]
+          });
+        }
+
+        if (placeholderCountEl) {
+          if (currentPlaceholders.length === 0) {
+            placeholderCountEl.textContent = 'All placeholders resolved.';
+          } else if (currentPlaceholders.length === 1) {
+            placeholderCountEl.textContent = '1 placeholder remaining.';
+          } else {
+            placeholderCountEl.textContent = currentPlaceholders.length + ' placeholders remaining.';
+          }
+        }
+
+        // Reset index if out of range
+        if (currentPlaceholderIndex >= currentPlaceholders.length) {
+          currentPlaceholderIndex = 0;
+        }
+
+        // If there are no placeholders, clear active state
+        if (!currentPlaceholders.length) {
+          setActivePlaceholderState(false);
+        }
+      }
+
+            function pushUndoState() {
+        if (!textarea) return;
+        undoStack.push({
+          text: textarea.value,
+          selectionStart: textarea.selectionStart,
+          selectionEnd: textarea.selectionEnd
+        });
+        // Optional cap so it doesn’t grow forever
+        if (undoStack.length > 200) {
+          undoStack.shift();
+        }
+        // Any new change clears the redo history
+        redoStack = [];
+      }
+
+      function applyState(state) {
+        if (!state) return;
+        isApplyingUndoRedo = true;
+        textarea.value = state.text;
+        try {
+          if (typeof textarea.setSelectionRange === 'function') {
+            textarea.setSelectionRange(state.selectionStart, state.selectionEnd);
+          }
+        } catch (e) {
+          // ignore
+        }
+        isApplyingUndoRedo = false;
+        recomputePlaceholders();
+        updateCurrentPlaceholderFromCaret();
+      }
+
+      function placeCaretAtPlaceholder(index) {
+        if (!currentPlaceholders.length) {
+          setActivePlaceholderState(false);
+          return;
+        }
+        const item = currentPlaceholders[index];
+        if (!item) {
+          setActivePlaceholderState(false);
+          return;
+        }
+
+        // Place caret just after the opening '[' so user types inside the placeholder
+        const caretPos = item.start + 1;
+
+        try {
+          textarea.focus();
+          if (typeof textarea.setSelectionRange === 'function') {
+            textarea.setSelectionRange(caretPos, caretPos);
+          }
+        } catch (e) {
+          // ignore
+        }
+        setActivePlaceholderState(true);
+      }
+
+      function updateCurrentPlaceholderFromCaret() {
+        if (!currentPlaceholders.length) {
+          setActivePlaceholderState(false);
+          return;
+        }
+        const pos = textarea.selectionStart;
+        if (pos == null) {
+          setActivePlaceholderState(false);
+          return;
+        }
+
+        // Make sure list is current
+        recomputePlaceholders();
+
+        let found = false;
+        for (let i = 0; i < currentPlaceholders.length; i++) {
+          const ph = currentPlaceholders[i];
+          if (pos >= ph.start && pos <= ph.end) {
+            currentPlaceholderIndex = i;
+            found = true;
+            break;
+          }
+        }
+        setActivePlaceholderState(found);
+      }
+
+      function removeBracketsAroundCurrentCaret() {
+        if (!currentPlaceholders.length) return false;
+
+        const pos = textarea.selectionStart;
+        if (pos == null) return false;
+
+        // Find placeholder containing current caret position
+        let idx = -1;
+        for (let i = 0; i < currentPlaceholders.length; i++) {
+          const ph = currentPlaceholders[i];
+          if (pos >= ph.start && pos <= ph.end) {
+            idx = i;
+            break;
+          }
+        }
+        if (idx === -1) return false;
+
+        const ph = currentPlaceholders[idx];
+        const text = textarea.value || '';
+
+        // Inner content between the brackets
+        const inner = text.slice(ph.start + 1, ph.end - 1);
+        const before = text.slice(0, ph.start);
+        const after = text.slice(ph.end);
+        const newText = before + inner + after;
+
+        // Replace textarea content
+        textarea.value = newText;
+
+        // Caret position just after the inner text
+        const caretPos = before.length + inner.length;
+
+        try {
+          if (typeof textarea.setSelectionRange === 'function') {
+            textarea.setSelectionRange(caretPos, caretPos);
+          }
+        } catch (e) {
+          // ignore
+        }
+
+        // Recompute placeholders after modification
+        recomputePlaceholders();
+
+        // Decide which placeholder should be considered “next” after resolving this one.
+        if (currentPlaceholders.length) {
+          let nextIndex = -1;
+          for (let i = 0; i < currentPlaceholders.length; i++) {
+            // Pick the first placeholder that starts at or after the current caret position
+            if (currentPlaceholders[i].start >= caretPos) {
+              nextIndex = i;
+              break;
+            }
+          }
+          if (nextIndex === -1) {
+            // If none are after the caret, wrap to the first remaining placeholder
+            nextIndex = 0;
+          }
+
+          // We set currentPlaceholderIndex to the “previous” slot so that the
+          // very next click on the Next [ ] button lands on nextIndex.
+          const len = currentPlaceholders.length;
+          currentPlaceholderIndex = (nextIndex - 1 + len) % len;
+
+          // We intentionally do NOT call updateCurrentPlaceholderFromCaret here,
+          // because the caret is now outside any placeholder; the next/prev
+          // buttons will use currentPlaceholderIndex to jump correctly.
+          setActivePlaceholderState(false);
+        } else {
+          // No placeholders left
+          currentPlaceholderIndex = 0;
+          setActivePlaceholderState(false);
+        }
+
+        return true;
+      }
+
+      function setMode(mode) {
+        const isEdit = mode === 'edit';
+
+        if (isEdit) {
+          textarea.classList.remove('d-none');
+          viewDiv.classList.add('d-none');
+          if (editBtn) editBtn.classList.add('active');
+          if (viewBtn) viewBtn.classList.remove('active');
+        } else {
+          // Plain read-only view, no special highlighting
+          viewDiv.textContent = textarea.value || '';
+          textarea.classList.add('d-none');
+          viewDiv.classList.remove('d-none');
+          if (editBtn) editBtn.classList.remove('active');
+          if (viewBtn) viewBtn.classList.add('active');
+          setActivePlaceholderState(false);
+        }
+      }
+
+      editBtn.addEventListener('click', function () {
+        setMode('edit');
+        recomputePlaceholders();
+        // On returning to edit, move caret to first placeholder if any
+        if (currentPlaceholders.length > 0) {
+          currentPlaceholderIndex = 0;
+          placeCaretAtPlaceholder(currentPlaceholderIndex);
+        }
+      });
+
+      viewBtn.addEventListener('click', function () {
+        setMode('view');
+      });
+
+      textarea.addEventListener('input', function () {
+        // Any manual edits may change placeholder positions or remove them
+        if (!isApplyingUndoRedo) {
+          pushUndoState();
+        }
+        recomputePlaceholders();
+        updateCurrentPlaceholderFromCaret();
+      });
+
+      // When clicking inside the textarea or moving the caret with arrows, detect if it's inside a placeholder
+      textarea.addEventListener('click', function () {
+        updateCurrentPlaceholderFromCaret();
+      });
+      textarea.addEventListener('keyup', function (evt) {
+        // Only care about caret-movement keys
+        const keys = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End', 'PageUp', 'PageDown'];
+        if (keys.indexOf(evt.key) !== -1) {
+          updateCurrentPlaceholderFromCaret();
+        }
+      });
+      // When double-clicking inside a placeholder in the main textarea, select the entire [placeholder]
+      textarea.addEventListener('dblclick', function () {
+        if (!currentPlaceholders.length) {
+          return;
+        }
+
+        // Ensure placeholder list is current
+        recomputePlaceholders();
+
+        const pos = textarea.selectionStart;
+        if (pos == null) {
+          return;
+        }
+
+        // Find the placeholder that contains the current caret position
+        for (let i = 0; i < currentPlaceholders.length; i++) {
+          const ph = currentPlaceholders[i];
+          if (pos >= ph.start && pos <= ph.end) {
+            try {
+              textarea.focus();
+              if (typeof textarea.setSelectionRange === 'function') {
+                textarea.setSelectionRange(ph.start, ph.end);
+              }
+            } catch (e) {
+              // ignore
+            }
+            currentPlaceholderIndex = i;
+            setActivePlaceholderState(true);
+            break;
+          }
+        }
+      });
+
+            // Handle Tab as "finish editing this placeholder and remove brackets".
+      // Enter should behave normally (newline), so we don't intercept it.
+      // Implement a custom multi-step undo/redo stack for this textarea.
+      textarea.addEventListener('keydown', function (evt) {
+        const isUndo = (evt.key === 'z' || evt.key === 'Z') &&
+          (evt.ctrlKey || evt.metaKey) &&
+          !evt.shiftKey;
+
+        const isRedo = ((evt.key === 'y' || evt.key === 'Y') && (evt.ctrlKey || evt.metaKey)) ||
+          ((evt.key === 'z' || evt.key === 'Z') && evt.metaKey && evt.shiftKey);
+
+        // Custom UNDO
+        if (isUndo) {
+          if (undoStack.length > 1) {
+            evt.preventDefault();
+            const current = undoStack.pop();
+            redoStack.push(current);
+            const prev = undoStack[undoStack.length - 1];
+            applyState(prev);
+          }
+          return;
+        }
+
+        // Custom REDO
+        if (isRedo) {
+          if (redoStack.length > 0) {
+            evt.preventDefault();
+            const state = redoStack.pop();
+            undoStack.push(state);
+            applyState(state);
+          }
+          return;
+        }
+
+        // Keyboard shortcuts for placeholder navigation:
+        // Next placeholder: Ctrl + Alt + Right Arrow
+        // Previous placeholder: Ctrl + Alt + Left Arrow
+        const isNextShortcut =
+          evt.key === 'ArrowRight' &&
+          evt.ctrlKey &&
+          evt.altKey &&
+          !evt.shiftKey &&
+          !evt.metaKey;
+
+        const isPrevShortcut =
+          evt.key === 'ArrowLeft' &&
+          evt.ctrlKey &&
+          evt.altKey &&
+          !evt.shiftKey &&
+          !evt.metaKey;
+
+        if (isNextShortcut && nextPlaceholderBtn) {
+          evt.preventDefault();
+          nextPlaceholderBtn.click();
+          return;
+        }
+
+        if (isPrevShortcut && prevPlaceholderBtn) {
+          evt.preventDefault();
+          prevPlaceholderBtn.click();
+          return;
+        }
+
+        // Tab: resolve current placeholder by removing [ ]
+        if (evt.key === 'Tab') {
+          const before = textarea.value || '';
+          const changed = removeBracketsAroundCurrentCaret();
+          const after = textarea.value || '';
+          if (changed && after !== before) {
+            // The change will be captured by the input handler as a single undo step
+            // Prevent Tab from moving focus / inserting a tab character
+            evt.preventDefault();
+          }
+        }
+      });
+
+      if (nextPlaceholderBtn) {
+        nextPlaceholderBtn.addEventListener('click', function () {
+          // Always recompute in case user has edited/deleted placeholders
+          recomputePlaceholders();
+          if (!currentPlaceholders.length) {
+            return;
+          }
+
+          const caretPos = textarea.selectionStart;
+          const len = currentPlaceholders.length;
+          let targetIndex = 0;
+
+          if (caretPos == null) {
+            // Fallback: just go to the first placeholder
+            targetIndex = 0;
+          } else {
+            // Find the first placeholder that starts at or after the caret
+            let containingIndex = -1;
+            let firstAfterIndex = -1;
+
+            for (let i = 0; i < len; i++) {
+              const ph = currentPlaceholders[i];
+              if (caretPos >= ph.start && caretPos <= ph.end) {
+                containingIndex = i;
+              }
+              if (firstAfterIndex === -1 && ph.start >= caretPos) {
+                firstAfterIndex = i;
+              }
+            }
+
+            if (containingIndex !== -1) {
+              // If caret is already inside a placeholder, "next" means the one after it
+              targetIndex = (containingIndex + 1) % len;
+            } else if (firstAfterIndex !== -1) {
+              // Otherwise jump to the first placeholder after the caret
+              targetIndex = firstAfterIndex;
+            } else {
+              // If none are after the caret, wrap around to the first placeholder
+              targetIndex = 0;
+            }
+          }
+
+          currentPlaceholderIndex = targetIndex;
+          placeCaretAtPlaceholder(currentPlaceholderIndex);
+        });
+      }
+
+      if (prevPlaceholderBtn) {
+        prevPlaceholderBtn.addEventListener('click', function () {
+          // Always recompute in case user has edited/deleted placeholders
+          recomputePlaceholders();
+          if (!currentPlaceholders.length) {
+            return;
+          }
+
+          const caretPos = textarea.selectionStart;
+          const len = currentPlaceholders.length;
+          let targetIndex = len - 1;
+
+          if (caretPos == null) {
+            // Fallback: go to the last placeholder
+            targetIndex = len - 1;
+          } else {
+            let containingIndex = -1;
+            let lastBeforeIndex = -1;
+
+            for (let i = 0; i < len; i++) {
+              const ph = currentPlaceholders[i];
+              if (caretPos >= ph.start && caretPos <= ph.end) {
+                containingIndex = i;
+              }
+              if (ph.end < caretPos) {
+                lastBeforeIndex = i;
+              }
+            }
+
+            if (containingIndex !== -1) {
+              // If caret is inside a placeholder, "prev" means the one before it
+              targetIndex = (containingIndex - 1 + len) % len;
+            } else if (lastBeforeIndex !== -1) {
+              // Otherwise jump to the last placeholder before the caret
+              targetIndex = lastBeforeIndex;
+            } else {
+              // If none are before the caret, wrap to the last placeholder
+              targetIndex = len - 1;
+            }
+          }
+
+          currentPlaceholderIndex = targetIndex;
+          placeCaretAtPlaceholder(currentPlaceholderIndex);
+        });
+      }
+
+      if (copyBtn) {
+        copyBtn.addEventListener('click', function () {
+          const textToCopy = textarea.value || '';
+
+          if (!textToCopy) {
+            return;
+          }
+
+          if (!wscConfirmCopyIfPlaceholders(textToCopy)) {
+            return;
+          }
+
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(textToCopy).catch(function () {
+              // Silently ignore clipboard errors
+            });
+          } else {
+            const temp = document.createElement('textarea');
+            temp.value = textToCopy;
+            document.body.appendChild(temp);
+            temp.select();
+            try {
+              document.execCommand('copy');
+            } catch (e) {
+              // Ignore
+            }
+            document.body.removeChild(temp);
+          }
+        });
+      }
+
+      // Initial state: Edit mode with placeholder navigation ready
+      setMode('edit');
+      recomputePlaceholders();
+      // Seed undo stack with initial content so final undo returns here
+      pushUndoState();
+      updateCurrentPlaceholderFromCaret();
+    })();
+    (function () {
+      const textarea = document.getElementById('reporting_text');
+      const viewDiv = document.getElementById('reporting_text_view');
+      const appendButtons = document.querySelectorAll('.append-section-btn');
+
+      if (!textarea || appendButtons.length === 0) {
+        return;
+      }
+
+      function appendTextToDraft(text) {
+        if (!text) {
+          return;
+        }
+
+        const current = textarea.value || '';
+        const trimmedCurrent = current.replace(/\s+$/g, '');
+        const trimmedNew = text.toString().replace(/^\s+|\s+$/g, '');
+
+        const combined = trimmedCurrent
+          ? trimmedCurrent + '\n\n' + trimmedNew
+          : trimmedNew;
+
+        textarea.value = combined;
+
+        // If in view mode, keep the read-only div in sync
+        if (viewDiv && !viewDiv.classList.contains('d-none')) {
+          viewDiv.textContent = combined;
+        }
+      }
+
+      appendButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const rawText = btn.getAttribute('data-section-default') || '';
+          if (!rawText) {
+            return;
+          }
+
+          // The text from the data attribute may contain HTML-escaped entities; create
+          // a temporary element to decode them.
+          const temp = document.createElement('textarea');
+          temp.innerHTML = rawText;
+          const decoded = temp.value || rawText;
+
+          appendTextToDraft(decoded);
+        });
+      });
+    })();
+    (function () {
+      const sectionEditors = document.querySelectorAll('.wsc-section-editor');
+      if (!sectionEditors.length) {
+        return;
+      }
+
+      const mainTextarea = document.getElementById('reporting_text');
+      const viewDiv = document.getElementById('reporting_text_view');
+
+      function updatePlaceholderState(editor) {
+        if (!editor) return;
+        const has = wscHasPlaceholders(editor.value || '');
+        if (has) {
+          editor.classList.add('wsc-has-placeholders');
+        } else {
+          editor.classList.remove('wsc-has-placeholders');
+        }
+        const cell = editor.closest('td');
+        if (cell) {
+          const flag = cell.querySelector('.wsc-placeholder-flag');
+          if (flag) {
+            if (has) {
+              flag.classList.remove('d-none');
+            } else {
+              flag.classList.add('d-none');
+            }
+          }
+        }
+      }
+
+      function rebuildFromSections() {
+        if (!mainTextarea) return;
+        const parts = [];
+        sectionEditors.forEach(function (ed) {
+          const val = (ed.value || '').trim();
+          if (!val) {
+            return;
+          }
+
+          // Try to get the human-readable section label from the table header cell
+          let labelText = '';
+          const row = ed.closest('tr');
+          if (row) {
+            const th = row.querySelector('th');
+            if (th) {
+              labelText = (th.textContent || '').trim();
+            }
+          }
+
+          if (labelText) {
+            // Label on its own line, followed by the section content
+            parts.push(labelText + ':\n' + val);
+          } else {
+            // Fallback: just push the content if no label found
+            parts.push(val);
+          }
+        });
+
+        const combined = parts.join('\n\n');
+        mainTextarea.value = combined;
+        if (viewDiv && !viewDiv.classList.contains('d-none')) {
+          viewDiv.textContent = combined;
+        }
+      }
+
+      function selectFirstPlaceholder(editor) {
+        if (!editor) return;
+        const text = editor.value || '';
+        const match = text.match(/\[[^\]]+\]/);
+        if (!match) return;
+        const start = match.index || 0;
+        const end = start + match[0].length;
+
+        setTimeout(function () {
+          try {
+            editor.focus();
+            if (typeof editor.setSelectionRange === 'function') {
+              editor.setSelectionRange(start, end);
+            }
+          } catch (e) {
+            // ignore
+          }
+        }, 0);
+      }
+
+      sectionEditors.forEach(function (ed) {
+        updatePlaceholderState(ed);
+
+        ed.addEventListener('input', function () {
+          updatePlaceholderState(ed);
+          rebuildFromSections();
+        });
+
+        // On focus, jump to the first [placeholder] in that section, if any.
+        ed.addEventListener('focus', function () {
+          selectFirstPlaceholder(ed);
+        });
+
+        // On double-click inside a [placeholder] in this section, select the whole token
+        ed.addEventListener('dblclick', function () {
+          const text = ed.value || '';
+          if (!text) return;
+
+          const pos = ed.selectionStart;
+          if (pos == null) return;
+
+          // Scan for all placeholders and find the one containing the caret
+          const regex = /\[[^\]]+\]/g;
+          let match;
+          while ((match = regex.exec(text)) !== null) {
+            const start = match.index;
+            const end = regex.lastIndex;
+            if (pos >= start && pos <= end) {
+              setTimeout(function () {
+                try {
+                  ed.focus();
+                  if (typeof ed.setSelectionRange === 'function') {
+                    ed.setSelectionRange(start, end);
+                  }
+                } catch (e) {
+                  // ignore
+                }
+              }, 0);
+              break;
+            }
+          }
+        });
+      });
+
+      const sectionCopyButtons = document.querySelectorAll('.wsc-copy-section-btn');
+      sectionCopyButtons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          const row = btn.closest('tr');
+          if (!row) return;
+          const editor = row.querySelector('.wsc-section-editor');
+          if (!editor) return;
+          const text = editor.value || '';
+          if (!text) return;
+
+          if (!wscConfirmCopyIfPlaceholders(text)) {
+            return;
+          }
+
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(function () {});
+          } else {
+            const temp = document.createElement('textarea');
+            temp.value = text;
+            document.body.appendChild(temp);
+            temp.select();
+            try {
+              document.execCommand('copy');
+            } catch (e) {}
+            document.body.removeChild(temp);
+          }
+        });
+      });
+
+      // initial sync from sections to raw textarea
+      rebuildFromSections();
     })();
   </script>
 {% endblock %}

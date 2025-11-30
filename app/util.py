@@ -871,7 +871,14 @@ def render_report_template_to_text(tpl, export_scope: str | None = None) -> str:
         text = (sec.get("default_text") or "").strip()
         if not text:
             continue
-        blocks.append(text)
+
+        # Prefer to expose section labels in the rendered text so the
+        # case workspace / PACS paste has a natural "Label: content" feel.
+        label = (sec.get("label") or "").strip()
+        if label:
+            blocks.append(f"{label}:\n{text}")
+        else:
+            blocks.append(text)
 
     return "\n\n".join(blocks)
 
