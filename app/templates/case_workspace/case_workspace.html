@@ -34,19 +34,61 @@
   </nav>
 
   <style>
+    /* Sections that still have [placeholders] get a subtle visual cue, not a heavy block highlight */
     .wsc-has-placeholders {
       border: 1px solid #ffc107 !important;
-      box-shadow: 0 0 0 0.12rem rgba(255, 193, 7, 0.45);
-      background-color: #fff9e6;
+      box-shadow: none;
+      background-color: #fff;
     }
     .wsc-placeholder-flag {
       font-size: 0.75rem;
     }
-    .wsc-active-placeholder {
-      border: 1px solid #e83e8c !important;
-      box-shadow: 0 0 0 0.12rem rgba(232, 62, 140, 0.35);
-      /* No background fill, so the whole textarea is not solid red/pink */
-      background-color: transparent;
+    /* Active placeholder state: make the main editor clearly pink when caret is inside a [placeholder] */
+    .wsc-active-placeholder,
+    #reporting_text.wsc-active-placeholder {
+      border: 2px solid #e83e8c !important;
+      box-shadow: 0 0 0 0.2rem rgba(232, 62, 140, 0.45) !important;
+      background-color: #fff5fa !important;
+    }
+    .wsc-report-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .wsc-report-table th {
+      text-align: start;
+      width: 22%;
+      background-color: #e9f5ff; /* soft bluish highlight for labels */
+      border-right: 1px solid #dee2e6;
+      vertical-align: top;
+      font-weight: 600;
+      font-size: 0.85rem;
+      white-space: normal;
+    }
+    .wsc-report-table td {
+      text-align: start;
+      vertical-align: top;
+      font-size: 0.9rem;
+      white-space: normal;
+      background-color: #ffffff;
+    }
+    .wsc-report-table th,
+    .wsc-report-table td {
+      text-align: start;
+      padding: 0.5rem 0.75rem;
+      border-top: 1px solid #dee2e6;
+    }
+    /* Stronger separator between sections (similar to an <hr> between rows) */
+    .wsc-report-table tbody tr + tr th,
+    .wsc-report-table tbody tr + tr td {
+      border-top-width: 2px;
+      border-top-color: #ced4da;
+    }
+
+    .wsc-edit-labels .wsc-report-table {
+      border: 1px solid #f8d7da;
+    }
+    .wsc-edit-labels .wsc-report-table td {
+      box-shadow: 0 0 0 1px #f8d7da inset;
     }
   </style>
 
@@ -143,7 +185,7 @@
                                     user_template_id=t.id,
                                     source='left'
                                   ) }}"
-                          class="btn btn-sm btn-success">
+                          class="btn btn-sm btn-success-outline">
                           Use in workspace
                         </a>
                       </div>
@@ -168,7 +210,7 @@
                         </div>
                         <div class="small mt-1">
                           <a href="{{ url_for('content_routes.get_template', template_id=t.id) }}"
-                             class="text-decoration-none text-muted">
+                             class="text-decoration-none text-muted btn-sm">
                             View full template
                           </a>
                         </div>
@@ -436,13 +478,21 @@
                   <div class="small text-muted mb-1">
                     Template sections
                   </div>
-                  <div class="d-flex flex-wrap gap-1">
+                  <div class="d-flex flex-wrap gap-1 bg-info-subtle">
                     {% for section in sections %}
                       {% set sec_label = section.get('label') or section.get('id') or ('Section ' ~ loop.index) %}
-                      <span class="badge rounded-pill bg-light text-dark border">
+                      <span class="badge rounded-pill text-dark border bg-info bg-opacity-50 m-1">
                         {{ sec_label }}
                       </span>
+                      <hr>
                     {% endfor %}
+                  </div>
+                </div>
+              {% else %}
+                <div class="mb-3">
+                  <div class="alert alert-info small mb-0">
+                    This template does not expose structured sections yet – you are editing a single free‑text block.
+                    Once templates are saved with section metadata (like in <code>smart_report_dashboard</code>), a section‑wise editor will appear here.
                   </div>
                 </div>
               {% endif %}
@@ -507,57 +557,32 @@
                     </div>
                   </div>
 
-                  {% if sections %}
-                  <div class="mb-2">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                      <span class="small text-muted">Structured report view (section-wise)</span>
-                      <small class="text-muted">Edits here will update the raw text below.</small>
-                    </div>
-                    <div class="table-responsive">
-                      <table class="table table-sm align-middle mb-0">
-                        <tbody>
-                          {% for section in sections %}
-                            {% set sec_label = section.get('label') or section.get('id') or ('Section ' ~ loop.index) %}
-                            {% set sec_text = section.get('default_text') or section.get('content') or '' %}
-                            <tr>
-                              <th scope="row" class="text-nowrap align-top small" style="width: 15%;">
-                                {{ sec_label }}
-                              </th>
-                              <td class="align-top">
-                                <textarea
-                                  class="form-control form-control-sm wsc-section-editor"
-                                  rows="3"
-                                  data-section-id="{{ section.get('id') or loop.index }}"
-                                >{{ sec_text }}</textarea>
-                                <div class="mt-1 d-flex justify-content-between align-items-center">
-                                  <div class="d-flex align-items-center gap-2">
-                                    <small class="text-muted">Placeholders in [square brackets] are editable.</small>
-                                    <small class="text-warning d-none wsc-placeholder-flag">Placeholders remaining</small>
-                                  </div>
-                                  <button type="button"
-                                          class="btn btn-sm btn-outline-secondary wsc-copy-section-btn"
-                                          data-section-label="{{ sec_label }}">
-                                    Copy section
-                                  </button>
-                                </div>
-                              </td>
-                            </tr>
-                          {% endfor %}
-                        </tbody>
-                      </table>
-                    </div>
-                    <hr class="my-2">
-                  </div>
-                  {% endif %}
 
                   <textarea id="reporting_text"
                             name="report_text"
                             class="form-control form-control-sm"
                             rows="12"
                             placeholder="Refine the selected template text here.">{{ report_text_default or '' }}</textarea>
+                  <script>
+                    (function() {
+                      const ta = document.getElementById('reporting_text');
+                      if (!ta) return;
+
+                      function autoResize() {
+                        ta.style.height = 'auto';
+                        ta.style.height = ta.scrollHeight + 'px';
+                      }
+
+                      // Trigger resize on input
+                      ta.addEventListener('input', autoResize);
+
+                      // Trigger on page load (initial template)
+                      window.addEventListener('load', autoResize);
+                    })();
+                  </script>
 
                   <div id="reporting_text_view"
-                      class="form-control form-control-sm bg-light d-none"
+                      class="form-control form-control-sm bg-warning-subtle d-none"
                       style="white-space: pre-wrap; min-height: 12rem;">
                     {{ report_text_default or '' }}
                   </div>
@@ -1019,6 +1044,81 @@
       let redoStack = [];
       let isApplyingUndoRedo = false;
 
+      function buildReportHtmlFromText(text) {
+        if (!text) return '';
+
+        const lines = text.split(/\r?\n/);
+        const sections = [];
+        let current = null;
+
+        function pushCurrent() {
+          if (current) {
+            sections.push(current);
+            current = null;
+          }
+        }
+
+        lines.forEach(function (line) {
+          const trimmed = (line || '').trim();
+
+          // Preserve intentional blank lines inside a section as line breaks
+          if (!trimmed) {
+            if (current && current.content.length) {
+              current.content.push('');
+            }
+            return;
+          }
+
+          // Treat lines that end with a colon as section labels, e.g. "Findings:" or "Impression:"
+          const labelMatch = trimmed.match(/^(.{1,80}?):\s*$/);
+          if (labelMatch) {
+            pushCurrent();
+            current = {
+              label: labelMatch[1],
+              content: []
+            };
+          } else {
+            if (!current) {
+              // If the template doesn't use explicit "Label:" lines, group everything under a generic heading
+              current = {
+                label: 'Report',
+                content: []
+              };
+            }
+            current.content.push(line);
+          }
+        });
+
+        pushCurrent();
+
+        if (!sections.length) {
+          sections.push({
+            label: 'Report',
+            content: [text]
+          });
+        }
+
+        function escapeHtml(str) {
+          return (str || '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+        }
+
+        let html = '<table class="table table-sm wsc-report-table mb-0"><tbody>';
+        sections.forEach(function (sec) {
+          const safeLabel = escapeHtml(sec.label);
+          const contentHtml = (sec.content || [])
+            .map(function (line) {
+              return escapeHtml(line);
+            })
+            .join('<br>');
+          html += '<tr><th scope="row">' + safeLabel + '</th><td>' + contentHtml + '</td></tr>';
+        });
+        html += '</tbody></table>';
+        return html;
+      }
+
       function setActivePlaceholderState(active) {
         if (!textarea) return;
         if (active) {
@@ -1222,17 +1322,24 @@
 
       function setMode(mode) {
         const isEdit = mode === 'edit';
+        const text = textarea.value || '';
 
         if (isEdit) {
+          // Edit mode: keep things simple – textarea only.
+          // Placeholder navigation, Tab behaviour, and undo/redo all operate on this surface.
           textarea.classList.remove('d-none');
           viewDiv.classList.add('d-none');
+          viewDiv.classList.remove('wsc-edit-labels');
+
           if (editBtn) editBtn.classList.add('active');
           if (viewBtn) viewBtn.classList.remove('active');
         } else {
-          // Plain read-only view, no special highlighting
-          viewDiv.textContent = textarea.value || '';
+          // View mode: structured smart-report style table (labels left, content right).
+          viewDiv.innerHTML = buildReportHtmlFromText(text);
           textarea.classList.add('d-none');
           viewDiv.classList.remove('d-none');
+          viewDiv.classList.remove('wsc-edit-labels');
+
           if (editBtn) editBtn.classList.remove('active');
           if (viewBtn) viewBtn.classList.add('active');
           setActivePlaceholderState(false);
@@ -1260,6 +1367,7 @@
         }
         recomputePlaceholders();
         updateCurrentPlaceholderFromCaret();
+        // No need to constantly update viewDiv here; VIEW mode regenerates the table when toggled.
       });
 
       // When clicking inside the textarea or moving the caret with arrows, detect if it's inside a placeholder
@@ -1622,6 +1730,18 @@
         mainTextarea.value = combined;
         if (viewDiv && !viewDiv.classList.contains('d-none')) {
           viewDiv.textContent = combined;
+        }
+
+        // Notify the main placeholder/undo logic that the text has changed,
+        // so Next/Prev [ ] navigation, Tab behaviour, and undo stack stay in sync.
+        try {
+          const evt = new Event('input', { bubbles: true });
+          mainTextarea.dispatchEvent(evt);
+        } catch (e) {
+          // Older browsers: fall back to a simpler event
+          const evtLegacy = document.createEvent('Event');
+          evtLegacy.initEvent('input', true, true);
+          mainTextarea.dispatchEvent(evtLegacy);
         }
       }
 
