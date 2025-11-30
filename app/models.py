@@ -680,6 +680,157 @@ class UserReportTemplate(Base):
     def __repr__(self):
         return f"<ReportTemplate(id={self.id}, template_name='{self.template_name}', is_public={self.is_public})>"
 
+# 9b. UserReportInstance Model: stores per-case report outputs based on templates
+class UserReportInstance(Base):
+    __tablename__ = 'user_report_instances'
+
+    id: so.Mapped[uuid.UUID] = sa.Column(
+        sa.UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
+        nullable=False,
+    )
+
+    # Ownership and template lineage
+    user_id: so.Mapped[uuid.UUID] = sa.Column(
+        sa.UUID(as_uuid=True),
+        sa.ForeignKey('users.id', ondelete='CASCADE', onupdate='CASCADE'),
+        nullable=False,
+        index=True,
+    )
+
+    admin_template_id: so.Mapped[Optional[int]] = sa.Column(
+        sa.Integer,
+        sa.ForeignKey('admin_report_templates.id', ondelete='SET NULL', onupdate='CASCADE'),
+        nullable=True,
+        index=True,
+    )
+
+    user_template_id: so.Mapped[Optional[int]] = sa.Column(
+        sa.Integer,
+        sa.ForeignKey('user_report_templates.id', ondelete='SET NULL', onupdate='CASCADE'),
+        nullable=True,
+        index=True,
+    )
+
+    # Structural anchors for search/retrieval
+    modality: so.Mapped[Optional[ModalityEnum]] = sa.Column(
+        sa.Enum(ModalityEnum, name='modality_enum'),
+        nullable=True,
+        index=True,
+    )
+
+    body_part: so.Mapped[Optional[BodyPartEnum]] = sa.Column(
+        sa.Enum(BodyPartEnum, name='body_part_enum'),
+        nullable=True,
+        index=True,
+    )
+
+    module: so.Mapped[Optional[ModuleNames]] = sa.Column(
+        sa.Enum(ModuleNames, name='module_name'),
+        nullable=True,
+        index=True,
+    )
+
+    # Case context
+    indication: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
+    core_question: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
+    case_identifier: so.Mapped[Optional[str]] = sa.Column(
+        sa.String(255),
+        nullable=True,
+        index=True,
+    )  # e.g. local case ID / MRN (user-controlled, not enforced)
+
+    # Report payload
+    report_text: so.Mapped[Optional[str]] = sa.Column(
+        sa.Text,
+        nullable=True,
+    )  # flattened text suitable for RIS / copy-paste
+
+    section_values_json: so.Mapped[Optional[dict]] = sa.Column(
+        sa.JSON,
+        nullable=True,
+    )  # optional structured snapshot matching template definition_json
+
+    # Diagnosis and learning anchors (no direct patient identifiers)
+    diagnosis: so.Mapped[Optional[str]] = sa.Column(
+        sa.String(255),
+        nullable=True,
+        index=True,
+    )  # short final diagnosis label, e.g. "PE", "Ischaemic stroke", "TI-RADS 4 nodule"
+
+    diagnosis_details: so.Mapped[Optional[str]] = sa.Column(
+        sa.Text,
+        nullable=True,
+    )  # optional longer description / differential / staging summary
+
+    diagnosis_tags: so.Mapped[Optional[str]] = sa.Column(
+        sa.Text,
+        nullable=True,
+    )  # comma-separated keywords to make retrieval easier (e.g. "PE, saddle embolus, CTPA")
+
+    # Site / service context (helps retrieval and future teaching files)
+    institution_name: so.Mapped[Optional[str]] = sa.Column(
+        sa.String(255),
+        nullable=True,
+        index=True,
+    )  # hospital / trust / client name, free text
+
+    service_name: so.Mapped[Optional[str]] = sa.Column(
+        sa.String(255),
+        nullable=True,
+        index=True,
+    )  # e.g. "NHS", "Hexarad", "Teleradiology – Night", etc.
+
+    # Lifecycle
+    status: so.Mapped[str] = sa.Column(
+        sa.Enum('DRAFT', 'FINAL', 'AMENDED', name='report_status_enum'),
+        nullable=False,
+        default='DRAFT',
+        index=True,
+    )
+
+    created_at: so.Mapped[datetime] = sa.Column(
+        sa.DateTime,
+        default=datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    updated_at: so.Mapped[datetime] = sa.Column(
+        sa.DateTime,
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    finalized_at: so.Mapped[Optional[datetime]] = sa.Column(
+        sa.DateTime,
+        nullable=True,
+    )
+
+    # Relationships
+    user: so.Mapped['User'] = so.relationship(
+        'User',
+        backref=so.backref('report_instances', lazy='dynamic', cascade="all, delete-orphan"),
+        passive_deletes=True,
+    )
+
+    admin_template: so.Mapped[Optional['AdminReportTemplate']] = so.relationship(
+        'AdminReportTemplate',
+        backref=so.backref('report_instances', lazy='dynamic', passive_deletes=True),
+    )
+
+    user_template: so.Mapped[Optional['UserReportTemplate']] = so.relationship(
+        'UserReportTemplate',
+        backref=so.backref('report_instances', lazy='dynamic', passive_deletes=True),
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<UserReportInstance(id={self.id}, user_id={self.user_id}, "
+            f"status={self.status}, diagnosis={self.diagnosis})>"
+        )
+
 # 10. UserProfile Model: stores user preferences and profile information
 from sqlalchemy.dialects.postgresql import ARRAY
 

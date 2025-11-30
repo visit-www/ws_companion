@@ -24,11 +24,13 @@ from .util import (
     get_case_checklists,
     _clean_search_text,
     _body_part_matches,
+    render_report_template_to_text,
 )
 from sqlalchemy import or_, func
 from flask_cors import CORS
 from flask_login import current_user, AnonymousUserMixin, login_required
 from config import userdir, creativesfolder
+from types import SimpleNamespace
 
 #----------------------------------------------------------------
 # Helper: simple tokenizer for smart search
@@ -191,7 +193,6 @@ def site_search():
             or_(
                 norm_match(UserReportTemplate.template_name),
                 norm_match(UserReportTemplate.tags),
-                norm_match(UserReportTemplate.template_text),
             )
         )
         .limit(50)
@@ -480,7 +481,8 @@ def _rank_case_protocols(indication, core_question, modality_enum, body_part_enu
     bucket.sort(key=lambda item: (-item[0], item[1].name or ""))
 
     return [proto for score, proto in bucket[:limit]]
-
+#-----------------------
+    
 # Case Workspace route
 @main_bp.route("/case_workspace", methods=["GET"])
 @login_required
@@ -508,6 +510,67 @@ def case_workspace():
 
     source = (request.args.get("source") or "left").strip()
 
+    # Optional: selected report template for Phase 2 reporting workspace
+    selected_admin_template_id = request.args.get("admin_template_id")
+    selected_user_template_id = request.args.get("user_template_id")
+
+    active_template = None
+    report_text_default = ""
+
+    # Prefer a user template if explicitly selected
+    if selected_user_template_id:
+        # In the current schema the primary key is an integer. Guard against
+        # invalid/non-numeric IDs coming from the query string so we don't
+        # trigger a DataError on the database.
+        tpl = None
+        try:
+            user_tpl_id_int = int(selected_user_template_id)
+        except (TypeError, ValueError):
+            user_tpl_id_int = None
+        if user_tpl_id_int is not None:
+            tpl = db.session.get(UserReportTemplate, user_tpl_id_int)
+
+        if tpl is not None:
+            # Resolve user template body using the universal renderer
+            tpl_body = render_report_template_to_text(tpl, export_scope="case_workspace")
+
+            active_template = SimpleNamespace(
+                kind="user",
+                id=tpl.id,
+                name=tpl.template_name,
+                modality=tpl.modality,
+                body_part=tpl.body_part,
+                module=getattr(tpl, "module", None),
+                tags=tpl.tags,
+                template_text=tpl_body,
+            )
+
+    # If no user template, fall back to an admin (WSCompanion) template
+    if active_template is None and selected_admin_template_id:
+        try:
+            admin_tpl_id_int = int(selected_admin_template_id)
+        except ValueError:
+            admin_tpl_id_int = None
+        if admin_tpl_id_int is not None:
+            tpl = db.session.query(AdminReportTemplate).get(admin_tpl_id_int)
+            if tpl is not None:
+                # Resolve admin template body using the universal renderer
+                tpl_body = render_report_template_to_text(tpl, export_scope="case_workspace")
+
+                active_template = SimpleNamespace(
+                    kind="admin",
+                    id=tpl.id,
+                    name=tpl.template_name,
+                    modality=tpl.modality,
+                    body_part=tpl.body_part,
+                    module=getattr(tpl, "module", None),
+                    tags=tpl.tags,
+                    template_text=tpl_body,
+                )
+
+    if active_template is not None:
+        # Use whatever body we resolved from the selected template (user or admin)
+        report_text_default = getattr(active_template, "template_text", "") or ""
     # Decide which text field actually drives the smart suggestions:
     # - If the request came from the right-panel tool search, use tool_search
     #   as the primary driver and ignore indication/core_question.
@@ -558,6 +621,8 @@ def case_workspace():
         suggest_modality_enum = None
         suggest_body_part_enum = None
         suggest_module_enum = None
+
+    # (active_template and report_text_default are now constructed above)
 
     case_context = {
         "indication": indication,
@@ -635,7 +700,6 @@ def case_workspace():
                         or_(
                             norm_match_case(UserReportTemplate.template_name),
                             norm_match_case(UserReportTemplate.tags),
-                            norm_match_case(UserReportTemplate.template_text),
                         ),
                     )
                     .order_by(UserReportTemplate.updated_at.desc())
@@ -739,7 +803,7 @@ def case_workspace():
                 core_question=ranking_core_question,
                 limit=8,
             )
-
+        # -----------------------------------------
     return render_template(
         "case_workspace/case_workspace.html",
         case=case_context,
@@ -754,8 +818,134 @@ def case_workspace():
         suggested_measurements=suggested_measurements,
         module_enum=module_enum,
         tool_search=tool_search,
+        active_template=active_template,
+        report_text_default=report_text_default,
     )
 
+
+# ---------------------------------------
+@main_bp.route("/case_workspace/save_report_instance", methods=["POST"])
+@login_required
+def save_report_instance():
+    """Persist a single Phase 2 report draft as a UserReportInstance.
+
+    This is intentionally lightweight for now: it anchors a saved report to
+    the current user, the chosen template (user/admin), and the structural
+    case context (modality/body_part/module + indication/core_question).
+    """
+    from .models import UserReportInstance, ModalityEnum, BodyPartEnum, ModuleNames
+
+    form = request.form
+
+    # Basic required fields
+    report_text = (form.get("report_text") or "").strip()
+    diagnosis = (form.get("diagnosis") or "").strip()
+
+    if not report_text or not diagnosis:
+        flash("Report text and diagnosis are required to save a report instance.", "warning")
+        # Fall back to reloading the case workspace with whatever structural context we have
+        indication = form.get("indication", "")
+        modality_name = form.get("modality", "")
+        body_part_name = form.get("body_part", "")
+        module_name = form.get("module", "")
+        core_question = form.get("core_question", "")
+
+        return redirect(
+            url_for(
+                "main_routes.case_workspace",
+                indication=indication,
+                modality=modality_name,
+                body_part=body_part_name,
+                module=module_name,
+                core_question=core_question,
+            )
+        )
+
+    # Optional meta fields
+    institution_name = (form.get("institution_name") or "").strip() or None
+    service_name = (form.get("service_name") or "").strip() or None
+
+    # Structural context
+    indication = (form.get("indication") or "").strip() or None
+    core_question = (form.get("core_question") or "").strip() or None
+
+    modality_name = form.get("modality") or None
+    body_part_name = form.get("body_part") or None
+    module_name = form.get("module") or None
+
+    modality_enum = None
+    body_part_enum = None
+    module_enum = None
+
+    if modality_name:
+        try:
+            modality_enum = ModalityEnum[modality_name]
+        except KeyError:
+            modality_enum = None
+
+    if body_part_name:
+        try:
+            body_part_enum = BodyPartEnum[body_part_name]
+        except KeyError:
+            body_part_enum = None
+
+    if module_name:
+        try:
+            module_enum = ModuleNames[module_name]
+        except KeyError:
+            module_enum = None
+
+    # Template linkage
+    template_kind = form.get("active_template_kind") or None
+    template_id_raw = form.get("active_template_id") or None
+    admin_template_id = None
+    user_template_id = None
+
+    if template_kind and template_id_raw:
+        try:
+            template_id_int = int(template_id_raw)
+        except ValueError:
+            template_id_int = None
+
+        # For now we assume:
+        #   kind == 'admin' -> admin_template_id (integer PK)
+        #   kind == 'user'  -> user_template_id (UUID string)
+        if template_kind == "admin" and template_id_int is not None:
+            admin_template_id = template_id_int
+        elif template_kind == "user":
+            # UserReportTemplate primary key is UUID (string/UUID depending on model)
+            user_template_id = template_id_raw
+
+    instance = UserReportInstance(
+        user_id=current_user.id,
+        admin_template_id=admin_template_id,
+        user_template_id=user_template_id,
+        modality=modality_enum,
+        body_part=body_part_enum,
+        module=module_enum,
+        diagnosis=diagnosis,
+        institution_name=institution_name,
+        service_name=service_name,
+        indication=indication,
+        core_question=core_question,
+        report_text=report_text,
+    )
+
+    db.session.add(instance)
+    db.session.commit()
+
+    flash("Report instance saved to your personal library.", "success")
+
+    return redirect(
+        url_for(
+            "main_routes.case_workspace",
+            indication=indication or "",
+            modality=modality_name or "",
+            body_part=body_part_name or "",
+            module=module_name or "",
+            core_question=core_question or "",
+        )
+    )
 #!----------------------------------------------------------------
 # Place holder routes for maain page navigations :
 

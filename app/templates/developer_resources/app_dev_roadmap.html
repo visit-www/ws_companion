@@ -24,6 +24,9 @@
                     <strong>Workflow Sections</strong>
                 </div>
                 <div class="list-group list-group-flush">
+                    <a class="list-group-item list-group-item-action" href="#phase-roadmap">
+                        0. Phase Roadmap
+                    </a>
                     <a class="list-group-item list-group-item-action" href="#section-1">
                         1. Clinical Question Panel
                     </a>
@@ -57,6 +60,73 @@
 
         <!-- Right: Detailed content -->
         <div class="col-lg-9">
+
+            <!-- Phase Roadmap Overview -->
+            <section id="phase-roadmap" class="mb-4">
+                <div class="card shadow-sm">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="h4 mb-0">0. Phase Roadmap – Case Workspace &amp; Beyond</h2>
+                            <small class="text-muted">High-level phases for WSCompanion reporting evolution.</small>
+                        </div>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                            Living document
+                        </span>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <h3 class="h6 mb-1">Phase 2 – Case Workspace</h3>
+                            <p class="small mb-2">
+                                Turn WSCompanion into a practical, case-centric co‑pilot for day-to-day radiology reporting.
+                            </p>
+                            <ul class="small mb-0">
+                                <li>
+                                    <strong>Phase 2a – Core reporting loop</strong>
+                                    <span class="badge bg-success ms-1">Completed</span><br>
+                                    Report template (Admin/User) populates the Case Workspace textarea, user can save
+                                    <code>UserReportInstance</code>, and templates open in their dedicated viewers.
+                                </li>
+                                <li class="mt-2">
+                                    <strong>Phase 2b – Enhanced Case Workspace editor UI</strong><br>
+                                    Upgrade the textarea to behave like <code>smart_report_viewer</code> /
+                                    Smart Report dashboard (see <code>create_smart_report</code> routes in
+                                    <code>user_routes.py</code>), reusing the same structure and UX patterns.
+                                </li>
+                                <li class="mt-2">
+                                    <strong>Phase 2c – Interactive helpers</strong><br>
+                                    Add interactive Case Workspace helpers: autosuggestions for measurements, diagnosis phrases,
+                                    and context-aware helper panels driven by modality, body part, and core clinical question.
+                                </li>
+                                <li class="mt-2">
+                                    <strong>Phase 2d – Re-open saved reports</strong><br>
+                                    Allow a <code>UserReportInstance</code> to be reopened inside Case Workspace with its original
+                                    template context, and provide dedicated report viewers for reviewing past reports.
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div class="mb-3">
+                            <h3 class="h6 mb-1">Phase 3 – Teaching File &amp; Personal Case Library</h3>
+                            <p class="small mb-0">
+                                Build a Teaching File / personal case library module where de-identified cases, key images,
+                                measurements and final reports can be saved and reused for academic teaching, viva preparation,
+                                and personal learning. Integrate tightly with Case Workspace so interesting cases can be promoted
+                                to Teaching Files with one click.
+                            </p>
+                        </div>
+
+                        <div>
+                            <h3 class="h6 mb-1">Phase 4 – AI Functionality</h3>
+                            <p class="small mb-0">
+                                Layer assistive AI features onto the established workflow: AI-assisted autosuggestions in Case
+                                Workspace, AI parsing of pasted reports into structured sections, and AI support within Teaching Files
+                                (case summaries, quiz generation, viva-style Q&amp;A), always respecting radiologist control and
+                                clinical safety.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
 
             <!-- Section 1 -->
             <section id="section-1" class="mb-4">
