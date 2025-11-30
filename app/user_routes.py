@@ -1853,6 +1853,11 @@ def create_user_report_template():
         nonlocal order_counter
         if not text:
             return
+
+        # Default export targets: keep sections visible to both smart_report and case_workspace
+        if export_targets is None:
+            export_targets = ["smart_report", "case_workspace"]
+
         sections.append(
             {
                 "id": section_id,
@@ -1861,7 +1866,7 @@ def create_user_report_template():
                 "type": "textarea",
                 "default_text": text,
                 "rich": False,
-                "export_targets": export_targets or [],
+                "export_targets": export_targets,
             }
         )
         order_counter += 10
@@ -1871,43 +1876,36 @@ def create_user_report_template():
         "indication",
         "Indication/Clinical history",
         indication_text,
-        ["smart_report.indication", "case_workspace.indication"],
     )
     add_section(
         "core_question",
         "Core question",
         core_question_text,
-        ["smart_report.core_question", "case_workspace.core_question"],
     )
     add_section(
         "comparison",
         "Comparison",
         comparison_text,
-        ["smart_report.comparison", "case_workspace.comparison"],
     )
     add_section(
         "technique",
         "Technique",
         technique_text,
-        ["smart_report.technique", "case_workspace.technique"],
     )
     add_section(
         "observations",
         "Observations / Findings",
         observations_text,
-        ["smart_report.observations", "case_workspace.observations"],
     )
     add_section(
         "conclusions",
         "Conclusion / Impression",
         conclusions_text,
-        ["smart_report.conclusions", "case_workspace.impression"],
     )
     add_section(
         "recommendations",
         "Recommendations",
         recommendations_text,
-        ["smart_report.recommendations", "case_workspace.recommendations"],
     )
 
     definition = {

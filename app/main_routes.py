@@ -543,6 +543,7 @@ def case_workspace():
                 module=getattr(tpl, "module", None),
                 tags=tpl.tags,
                 template_text=tpl_body,
+                definition_json=getattr(tpl, "definition_json", None),
             )
 
     # If no user template, fall back to an admin (WSCompanion) template
@@ -566,6 +567,7 @@ def case_workspace():
                     module=getattr(tpl, "module", None),
                     tags=tpl.tags,
                     template_text=tpl_body,
+                    definition_json=getattr(tpl, "definition_json", None),
                 )
 
     if active_template is not None:
