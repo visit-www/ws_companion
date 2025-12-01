@@ -15,6 +15,7 @@ from .models import (
     NormalMeasurement,
     UserReportTemplate,
     ModuleNames,
+    UserReportInstance,
 )
 from . import db
 from .util import (
@@ -52,6 +53,300 @@ main_bp = Blueprint(
     static_url_path='/static'
 )
 CORS(main_bp)
+
+#----------------------------------------------------------------
+# Phase 2c/3/4: unified diagnosis suggestion pipeline
+#----------------------------------------------------------------
+
+# Minimal static playbook so the helper is useful even with little app data.
+# Keys are (ModalityEnum.name, BodyPartEnum.name, canonical_core_key).
+SMART_DIAGNOSIS_SUGGESTION_PLAYBOOK = {
+    ("CT", "LUNG", "PE"): [
+        "Acute pulmonary embolism",
+        "Submassive pulmonary embolism",
+        "No CT evidence of pulmonary embolism",
+    ],
+    ("CT", "LUNG", "ILD"): [
+        "HRCT pattern most consistent with UIP",
+        "HRCT pattern indeterminate for UIP",
+        "No CT evidence of fibrotic interstitial lung disease",
+    ],
+    ("CT", "ABDOMEN", "APPENDICITIS"): [
+        "Acute uncomplicated appendicitis",
+        "Acute complicated appendicitis with perforation",
+        "No CT evidence of appendicitis",
+    ],
+    ("MRI", "SPINE", "CES"): [
+        "Large central disc prolapse with cauda equina compression",
+        "Multilevel degenerative canal stenosis – no definite cauda equina compression",
+        "No MRI evidence of cauda equina compression",
+    ],
+}
+
+
+def _canonical_core_question_key(core_question: str) -> str:
+    """
+    Map a free-text core clinical question to a small set of canonical keys
+    used by the static diagnosis playbook.
+
+    This is intentionally conservative and can be expanded gradually as needed.
+    """
+    if not core_question:
+        return ""
+
+    text = core_question.lower()
+
+    # Pulmonary embolism
+    if "pulmonary embol" in text or "pe" in text:
+        return "PE"
+
+    # Interstitial lung disease / fibrosis / UIP
+    if "ild" in text or "interstitial" in text or "fibrosis" in text or "uip" in text:
+        return "ILD"
+
+    # Appendicitis / appendix
+    if "appendicitis" in text or "appendix" in text or "rlq" in text:
+        return "APPENDICITIS"
+
+    # Cauda equina syndrome
+    if "cauda equina" in text or "ces" in text:
+        return "CES"
+
+    return ""
+
+
+def _pull_user_history_diagnosis_labels(context, user):
+    """
+    Tier A source: user's own saved report instances.
+
+    Returns a list of diagnosis strings (duplicates and empties are filtered
+    later in the aggregate step).
+    """
+    if isinstance(user, AnonymousUserMixin):
+        return []
+
+    modality_enum = context.get("modality_enum")
+    body_part_enum = context.get("body_part_enum")
+
+    q = db.session.query(UserReportInstance).filter(
+        UserReportInstance.user_id == user.id
+    )
+
+    if modality_enum is not None:
+        q = q.filter(UserReportInstance.modality == modality_enum)
+    if body_part_enum is not None:
+        q = q.filter(UserReportInstance.body_part == body_part_enum)
+
+    q = q.filter(UserReportInstance.diagnosis.isnot(None))
+
+    rows = q.order_by(UserReportInstance.id.desc()).limit(30).all()
+    return [row.diagnosis for row in rows if row.diagnosis]
+
+
+def _pull_template_diagnosis_labels(context, user):
+    """
+    Tier A source: admin and user report templates whose names can act as
+    diagnosis labels for the current structural context.
+    """
+    modality_enum = context.get("modality_enum")
+    body_part_enum = context.get("body_part_enum")
+    module_enum = context.get("module_enum")
+
+    suggestions = []
+
+    # Admin templates
+    tpl_q = db.session.query(AdminReportTemplate).filter(
+        AdminReportTemplate.is_active.is_(True)
+    )
+    if modality_enum is not None:
+        tpl_q = tpl_q.filter(AdminReportTemplate.modality == modality_enum)
+    if body_part_enum is not None:
+        tpl_q = tpl_q.filter(AdminReportTemplate.body_part == body_part_enum)
+    if module_enum is not None:
+        tpl_q = tpl_q.filter(AdminReportTemplate.module == module_enum)
+
+    for tpl in tpl_q.limit(20).all():
+        if tpl.template_name:
+            suggestions.append(tpl.template_name)
+
+    # User templates (if logged in)
+    if not isinstance(user, AnonymousUserMixin):
+        utpl_q = db.session.query(UserReportTemplate).filter(
+            UserReportTemplate.user_id == user.id
+        )
+        if modality_enum is not None:
+            utpl_q = utpl_q.filter(UserReportTemplate.modality == modality_enum)
+        if body_part_enum is not None:
+            utpl_q = utpl_q.filter(UserReportTemplate.body_part == body_part_enum)
+        if module_enum is not None:
+            utpl_q = utpl_q.filter(UserReportTemplate.module == module_enum)
+
+        for tpl in utpl_q.limit(20).all():
+            if tpl.template_name:
+                suggestions.append(tpl.template_name)
+
+    return suggestions
+
+
+def _pull_playbook_diagnosis_labels(context):
+    """
+    Tier B source: static, curated diagnosis labels keyed by modality/body-part/core.
+    """
+    modality_enum = context.get("modality_enum")
+    body_part_enum = context.get("body_part_enum")
+    core_question = context.get("core_question") or ""
+
+    if modality_enum is None or body_part_enum is None:
+        return []
+
+    core_key = _canonical_core_question_key(core_question)
+    if not core_key:
+        return []
+
+    key = (modality_enum.name, body_part_enum.name, core_key)
+    return SMART_DIAGNOSIS_SUGGESTION_PLAYBOOK.get(key, [])
+
+
+    # Core helper for Phase 2c/3/4:
+    # Given structural context + user, build a short list of smart diagnosis
+    # suggestion labels by aggregating from history, templates and playbook.
+def build_smart_diagnosis_suggestions(context, user):
+    """
+    Unified helper used by Phase 2c/3/4 diagnosis suggestion endpoint.
+
+    It aggregates suggestions from several tiers:
+
+    - User history and templates (Tier A, deterministic).
+    - Static playbook (Tier B, deterministic).
+    - Optional AI helper (Tier C, future; not implemented yet).
+
+    Returns a short, de-duplicated list of candidate diagnosis labels.
+    """
+    suggestions = []
+
+    # Tier A: personal/app content
+    suggestions.extend(_pull_user_history_diagnosis_labels(context, user))
+    suggestions.extend(_pull_template_diagnosis_labels(context, user))
+
+    # Tier B: static playbook for thin-slice coverage
+    if len(suggestions) < 3:
+        suggestions.extend(_pull_playbook_diagnosis_labels(context))
+
+    # Tier C (AI) intentionally omitted for now – will be added in Phase 4.
+
+    # Normalise, dedupe (case-insensitive) and truncate
+    seen = set()
+    cleaned = []
+    for text in suggestions:
+        if not text:
+            continue
+        norm = text.strip()
+        if not norm:
+            continue
+        key = norm.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        cleaned.append(norm)
+
+    return cleaned[:6]
+
+#----------------------------------------------------------------
+# Phase 2c: generic smart helper cards (section + selection)
+#----------------------------------------------------------------
+
+# Reusable helper card definitions (so we can attach them to multiple sections).
+WELLS_PE_HELPER_CARD = {
+    "kind": "SCORE_SUMMARY",
+    "title": "Wells score for pulmonary embolism",
+    "summary": "Clinical prediction rule estimating pre-test probability of pulmonary embolism.",
+    "bullets": [
+        "\u2265 4 points: PE likely (consider imaging).",
+        "&lt; 4 points: PE unlikely (consider D-dimer first in low-risk patients).",
+        "Use in conjunction with clinical judgement and local pathways.",
+    ],
+    "insert_options": [
+        {
+            "label": "Insert short Wells summary",
+            "text": "Wells score \u22654 (PE likely) \u2013 imaging with CTPA appropriate based on clinical risk.",
+        }
+    ],
+}
+
+# Minimal static playbook for contextual helpers.
+# Keys are (section, token).
+#
+# Section can be:
+#   - a specific logical section (e.g. "indication", "observations", "conclusion"), or
+#   - the special value "any" to indicate a wildcard helper that can be shown
+#     in multiple sections (used via a fallback in build_smart_helper_cards).
+SMART_HELPER_PLAYBOOK = {
+    # Wells score helper: primarily anchored to Indication, but also available
+    # as a generic helper in other sections via the ("any", "wells") key.
+    ("indication", "wells"): [WELLS_PE_HELPER_CARD],
+    ("any", "wells"): [WELLS_PE_HELPER_CARD],
+    # Core-question-level toolkit for ?PE cases
+    ("core_question", "pe"): [
+        {
+            "kind": "QUESTION_TOOLKIT",
+            "title": "Tool bundle for ?PE (CTPA)",
+            "summary": "Relevant tools for a case with suspected pulmonary embolism.",
+            "bullets": [
+                "CTPA imaging protocol.",
+                "CTPA/PE report templates (admin + user).",
+                "Checklist: RV/LV ratio, clot burden, alternative diagnoses.",
+                "Right heart strain/severity notes.",
+            ],
+            "insert_options": [],
+        }
+    ],
+}
+
+def _normalise_selection_token(selection_text: str) -> str:
+    """Normalise a text selection to a compact token used by the helper playbook."""
+    if not selection_text:
+        return ""
+    text = selection_text.strip().lower()
+    if "wells" in text:
+        return "wells"
+    if "pe" in text or "pulmonary embol" in text:
+        return "pe"
+    return ""
+
+def build_smart_helper_cards(context, selection_text: str, section: str, user):
+    """
+    Build helper cards for contextual smart assistance.
+    Thin-slice implementation for Phase 2c (PE/Wells examples only).
+
+    Matching strategy:
+    - Normalise the free-text selection into a compact token.
+    - First, look for helpers keyed to the exact (section, token).
+    - Then, if none or too few were found, also look for ("any", token)
+      so that some helpers can be reused across multiple sections without
+      duplicating card definitions.
+    """
+    token = _normalise_selection_token(selection_text)
+    if not token:
+        return []
+
+    section_key = (section or "").strip().lower() or "observations"
+
+    cards = []
+
+    # 1) Exact (section, token) matches
+    exact_cards = SMART_HELPER_PLAYBOOK.get((section_key, token), [])
+    if exact_cards:
+        cards.extend(exact_cards)
+
+    # 2) Wildcard helpers that apply to any section, e.g. ("any", "wells")
+    any_cards = SMART_HELPER_PLAYBOOK.get(("any", token), [])
+    if any_cards:
+        # Avoid naive duplication if the same card object is referenced in both
+        for card in any_cards:
+            if card not in cards:
+                cards.append(card)
+
+    return cards
 
 # *----------------------------------------------------------------
 # todo: Global Error Handling Setup
@@ -823,6 +1118,124 @@ def case_workspace():
         active_template=active_template,
         report_text_default=report_text_default,
     )
+
+
+# ---------------------------------------
+# Phase 2c: JSON endpoint for diagnosis suggestions
+@main_bp.route("/case_workspace/suggest_diagnosis_phrases", methods=["GET", "POST"])
+@login_required
+def smart_diagnosis_suggestions_route():
+    """
+    JSON endpoint used by the Case Workspace diagnosis helper (Phase 2c+).
+
+    Accepts structured case context and returns a list of candidate diagnosis
+    labels drawn from user history, templates, and a static playbook. Later,
+    optional AI helpers can be added as another tier in the same pipeline.
+    """
+    if request.method == "POST":
+        data = request.get_json(silent=True) or {}
+    else:
+        # For GET requests, treat query parameters as the payload so the endpoint
+        # can be called without CSRF complications from the frontend.
+        data = request.args.to_dict() if request.args else {}
+
+    modality_name = (data.get("modality") or "").strip() or None
+    body_part_name = (data.get("body_part") or "").strip() or None
+    module_name = (data.get("module") or "").strip() or None
+
+    indication = (data.get("indication") or "").strip()
+    core_question = (data.get("core_question") or "").strip()
+    current_diagnosis = (data.get("current_diagnosis") or "").strip()
+
+    modality_enum = None
+    body_part_enum = None
+    module_enum = None
+
+    if modality_name:
+        try:
+            modality_enum = ModalityEnum[modality_name]
+        except KeyError:
+            modality_enum = None
+
+    if body_part_name:
+        try:
+            body_part_enum = BodyPartEnum[body_part_name]
+        except KeyError:
+            body_part_enum = None
+
+    if module_name:
+        try:
+            module_enum = ModuleNames[module_name]
+        except KeyError:
+            module_enum = None
+
+    context = {
+        "modality_enum": modality_enum,
+        "body_part_enum": body_part_enum,
+        "module_enum": module_enum,
+        "indication": indication,
+        "core_question": core_question,
+        "current_diagnosis": current_diagnosis,
+        "imaging_pattern": (data.get("imaging_pattern") or "").strip(),
+        "ddx_shortlist": (data.get("ddx_shortlist") or "").strip(),
+        "leading_diagnosis": (data.get("leading_diagnosis") or "").strip(),
+        "supportive_findings": (data.get("supportive_findings") or "").strip(),
+        "alt_considerations": (data.get("alt_considerations") or "").strip(),
+        "red_flags": (data.get("red_flags") or "").strip(),
+    }
+
+    suggestions = build_smart_diagnosis_suggestions(context, current_user)
+
+    return jsonify({"suggestions": suggestions})
+
+
+# ---------------------------------------
+@main_bp.route("/case_workspace/smart_helper", methods=["GET"])
+@login_required
+def smart_helper_route():
+    """Generic smart helper endpoint for Case Workspace."""
+    section = (request.args.get("section") or "").strip().lower()
+    selection_text = (request.args.get("selection_text") or "").strip()
+
+    modality_name = (request.args.get("modality") or "").strip() or None
+    body_part_name = (request.args.get("body_part") or "").strip() or None
+    module_name = (request.args.get("module") or "").strip() or None
+
+    indication = (request.args.get("indication") or "").strip()
+    core_question = (request.args.get("core_question") or "").strip()
+
+    modality_enum = None
+    body_part_enum = None
+    module_enum = None
+
+    if modality_name:
+        try:
+            modality_enum = ModalityEnum[modality_name]
+        except KeyError:
+            modality_enum = None
+
+    if body_part_name:
+        try:
+            body_part_enum = BodyPartEnum[body_part_name]
+        except KeyError:
+            body_part_enum = None
+
+    if module_name:
+        try:
+            module_enum = ModuleNames[module_name]
+        except KeyError:
+            module_enum = None
+
+    context = {
+        "modality_enum": modality_enum,
+        "body_part_enum": body_part_enum,
+        "module_enum": module_enum,
+        "indication": indication,
+        "core_question": core_question,
+    }
+
+    cards = build_smart_helper_cards(context, selection_text, section, current_user)
+    return jsonify({"cards": cards})
 
 
 # ---------------------------------------

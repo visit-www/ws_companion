@@ -90,6 +90,16 @@
     .wsc-edit-labels .wsc-report-table td {
       box-shadow: 0 0 0 1px #f8d7da inset;
     }
+
+    .wsc-report-toolbar {
+      position: sticky;
+      top: 0;
+      z-index: 15;
+      background-color: #fafbfd; /* match Phase 2 card body background */
+      border-bottom: 1px solid #dee2e6;
+      padding-top: 0.25rem;
+      padding-bottom: 0.25rem;
+    }
   </style>
 
   <div class="row">
@@ -185,7 +195,7 @@
                                     user_template_id=t.id,
                                     source='left'
                                   ) }}"
-                          class="btn btn-sm btn-success-outline">
+                          class="btn btn-success" style="padding: 0.2rem 0.4rem; font-size: 0.7em;">
                           Use in workspace
                         </a>
                       </div>
@@ -226,7 +236,7 @@
                                      admin_template_id=t.id,
                                      source='left'
                                    ) }}"
-                           class="btn btn-sm btn-success">
+                           class="btn btn-success" style="padding: 0.2rem 0.4rem; font-size: 0.7em;">
                           Use in workspace
                         </a>
                       </div>
@@ -316,16 +326,25 @@
                   id="case-navigator-form">
               <input type="hidden" name="source" value="left">
 
-              <!-- Indication / history -->
+              <!-- Indication / Clinical History (unified block) -->
               <div class="col-12">
-                <label for="indication" class="form-label fw-semibold">
-                  Indication / Clinical History
-                </label>
+                <div class="d-flex justify-content-between align-items-center">
+                  <label for="indication" class="form-label fw-semibold mb-0">
+                    Indication / Clinical History
+                  </label>
+                  <button type="button"
+                          id="indication-smart-helper-btn"
+                          class="btn btn-sm btn-outline-secondary">
+                    Smart helper
+                  </button>
+                </div>
                 <textarea id="indication"
                           name="indication"
                           rows="2"
-                          class="form-control"
-                          placeholder="e.g. RUQ pain, fever, ?acute cholecystitis">{{ case.indication }}</textarea>
+                          class="form-control mt-1"
+                          placeholder="Enter detailed indication/clinical history here (e.g. SOB, pleuritic chest pain, Wells score 6, ?PE)">
+{{ case.indication or indication or '' }}</textarea>
+                <div id="indication-smart-helper-container" class="mt-2 small"></div>
               </div>
 
               <!-- Modality -->
@@ -475,17 +494,9 @@
               {% set sections = defn.get('sections', []) %}
               {% if sections %}
                 <div class="mb-3">
-                  <div class="small text-muted mb-1">
-                    Template sections
-                  </div>
-                  <div class="d-flex flex-wrap gap-1 bg-info-subtle">
-                    {% for section in sections %}
-                      {% set sec_label = section.get('label') or section.get('id') or ('Section ' ~ loop.index) %}
-                      <span class="badge rounded-pill text-dark border bg-info bg-opacity-50 m-1">
-                        {{ sec_label }}
-                      </span>
-                      <hr>
-                    {% endfor %}
+                  <div class="alert alert-info small mb-0">
+                    This template contains {{ sections|length }} structured section{{ 's' if sections|length != 1 else '' }}.
+                    In this phase you are still editing a single free‑text block; a section‑wise editor will be introduced later.
                   </div>
                 </div>
               {% else %}
@@ -513,50 +524,60 @@
                 <input type="hidden" name="core_question" value="{{ case.core_question or '' }}">
 
                 <div class="mb-2">
-                  <div class="d-flex justify-content-between align-items-center mb-1">
-                    <label for="reporting_text" class="form-label fw-semibold mb-0">
-                      Draft report text (Phase 2 workspace)
-                    </label>
-                    <div class="btn-group btn-group-sm" role="group" aria-label="Report view mode">
-                      <button type="button"
-                              class="btn btn-outline-secondary active"
-                              id="report-mode-edit">
-                        Edit
-                      </button>
-                      <button type="button"
-                              class="btn btn-outline-secondary"
-                              id="report-mode-view">
-                        View
-                      </button>
+                  <div class="d-flex justify-content-between align-items-center mb-1 wsc-report-toolbar">
+                    <div>
+                      <label for="reporting_text" class="form-label fw-semibold mb-0">
+                        Draft report text (Phase 2 workspace)
+                      </label>
                     </div>
-                  </div>
-
-                  <div class="d-flex justify-content-between align-items-center mb-1">
-                    <div class="form-text mb-0">
-                      This is your main reporting surface. Later phases will save this as <strong>UserReportInstance</strong> rows with diagnosis,
-                      institution, and service anchors, and can be linked to teaching files.
-                      <br>
-                      <small id="wsc-placeholder-count" class="text-muted"></small>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex flex-nowrap align-items-center gap-2">
+                      <div class="btn-group btn-group-sm" role="group" aria-label="Report view mode">
+                        <button type="button"
+                                class="btn btn-outline-info active m-2"
+                                id="report-mode-edit">
+                          Edit
+                        </button>
+                        <button type="button"
+                                class="btn btn-info m-2"
+                                id="report-mode-view">
+                          View
+                        </button>
+                      </div>
                       <button type="button"
-                              class="btn btn-sm btn-outline-warning"
+                              class="btn btn-sm btn-danger"
                               id="prev-placeholder-btn">
                         Prev [ ]
                       </button>
                       <button type="button"
-                              class="btn btn-sm btn-outline-warning"
+                              class="btn btn-sm btn-danger"
                               id="next-placeholder-btn">
                         Next [ ]
                       </button>
                       <button type="button"
-                              class="btn btn-sm btn-outline-secondary"
+                              class="btn btn-sm btn-outline-success"
                               id="copy-report-text-btn">
                         Copy text
+                      </button>
+                      <button type="button"
+                              id="report-smart-helper-btn"
+                              class="btn btn-sm btn-warning">
+                        Smart helper
+                      </button>
+                      <button type="button"
+                              id="workspace-help-btn"
+                              class="btn btn-sm btn-outline-secondary"
+                              title="How to use this workspace">
+                        How to use this case workspace
                       </button>
                     </div>
                   </div>
 
+                  <div class="small text-muted mb-1">
+                    <small id="wsc-placeholder-count" class="text-muted"></small>
+                  </div>
+
+                  <div id="workspace-help-container" class="mt-1 small"></div>
+                  <div id="report-smart-helper-container" class="mt-1 small"></div>
 
                   <textarea id="reporting_text"
                             name="report_text"
@@ -597,6 +618,15 @@
                           class="form-control form-control-sm"
                           placeholder="e.g. Acute PE, HRCT ILD – UIP pattern"
                           required>
+                    <div class="mt-1 d-flex align-items-center gap-2">
+                      <button type="button"
+                              class="btn btn-sm btn-outline-primary"
+                              id="diagnosis-suggest-btn">
+                        Get suggestions
+                      </button>
+                      <span class="small text-muted" id="diagnosis-suggest-status"></span>
+                    </div>
+                    <div class="mt-1" id="diagnosis-suggest-container"></div>
                   </div>
                   <div class="col-md-6">
                     <label for="institution_name" class="form-label fw-semibold mb-1">Institution / site (optional)</label>
@@ -980,47 +1010,351 @@
         'Your report still contains generic placeholder text in square brackets.\n\nDo you want to continue copying?'
       );
     }
+    // Phase 2c: Smart helper + workspace help + case navigator validation
     (function () {
-      const form = document.getElementById('case-navigator-form');
-      if (!form) return;
+      document.addEventListener('DOMContentLoaded', function () {
+        // --- Smart helper + workspace help ---
 
-      const modality = document.getElementById('modality');
-      const bodyPart = document.getElementById('body_part');
-      const modalityLabel = document.querySelector('label[for="modality"]');
-      const bodyPartLabel = document.querySelector('label[for="body_part"]');
-      const errorText = document.getElementById('case-nav-structural-error');
+        const helperBtn = document.getElementById('report-smart-helper-btn');
+        const reportInput = document.getElementById('reporting_text');
+        const helperContainer = document.getElementById('report-smart-helper-container');
+        const workspaceHelpBtn = document.getElementById('workspace-help-btn');
+        const workspaceHelpContainer = document.getElementById('workspace-help-container');
 
-      form.addEventListener('submit', function (evt) {
-        const modSelected = modality && modality.value.trim() !== '';
-        const bpSelected = bodyPart && bodyPart.value.trim() !== '';
+        if (helperBtn && reportInput && helperContainer) {
+          const smartHelperUrl = "{{ url_for('main_routes.smart_helper_route') }}";
 
-        // Reset previous visual state
-        [modality, bodyPart].forEach(function (el) {
-          if (!el) return;
-          el.classList.remove('is-invalid');
-        });
-        [modalityLabel, bodyPartLabel].forEach(function (lbl) {
-          if (!lbl) return;
-          lbl.classList.remove('text-danger');
-        });
-        if (errorText) {
-          errorText.classList.add('d-none');
-        }
+          function inferSectionFromText(fullText, cursorPos) {
+            if (!fullText) return 'observations';
 
-        // If neither modality nor body part is selected, block submit and highlight
-        if (!modSelected && !bpSelected) {
-          evt.preventDefault();
+            const pos = (typeof cursorPos === 'number' && cursorPos >= 0) ? cursorPos : fullText.length;
+            const upToCaret = fullText.slice(0, pos);
+            const lines = upToCaret.split(/\r?\n/);
 
-          if (modality) modality.classList.add('is-invalid');
-          if (bodyPart) bodyPart.classList.add('is-invalid');
+            let lastLabel = null;
 
-          if (modalityLabel) modalityLabel.classList.add('text-danger');
-          if (bodyPartLabel) bodyPartLabel.classList.add('text-danger');
+            lines.forEach(function (line) {
+              const trimmed = (line || '').trim();
+              const m = trimmed.match(/^(.{1,80}?):\s*$/);
+              if (m) {
+                lastLabel = m[1].toLowerCase();
+              }
+            });
 
-          if (errorText) {
-            errorText.classList.remove('d-none');
+            if (!lastLabel) {
+              return 'observations';
+            }
+
+            const key = lastLabel.replace(/\s+/g, ' ').trim();
+
+            if (/indication|clinical history|history/.test(key)) return 'indication';
+            if (/comparison/.test(key)) return 'comparison';
+            if (/technique|protocol/.test(key)) return 'technique';
+            if (/finding|observation|report|imaging/.test(key)) return 'observations';
+            if (/impression|conclusion|summary/.test(key)) return 'conclusion';
+            if (/recommendation|follow[- ]?up|plan/.test(key)) return 'recommendations';
+
+            return 'observations';
+          }
+
+          // Alt/Option + H → toggle Smart helper (on Mac: Option + H)
+          document.addEventListener('keydown', function (evt) {
+            if (!helperBtn || !reportInput || !helperContainer) return;
+
+            const code = evt.code || '';
+            const key = evt.key || '';
+
+            const isAltH =
+              evt.altKey &&
+              !evt.ctrlKey &&
+              !evt.metaKey &&
+              !evt.shiftKey &&
+              (
+                code === 'KeyH' ||   // physical H key, layout-independent
+                key === 'h' ||
+                key === 'H'
+              );
+
+            if (!isAltH) {
+              return;
+            }
+
+            evt.preventDefault();
+
+            // If helper suggestions are already visible, hide them on repeat Alt/Option+H.
+            if (helperContainer.children && helperContainer.children.length > 0) {
+              helperContainer.innerHTML = '';
+              return;
+            }
+
+            // Otherwise, trigger the Smart helper as usual.
+            helperBtn.click();
+          });
+
+          function clearHelperCards() {
+            helperContainer.innerHTML = '';
+          }
+
+          function renderHelperCards(cards) {
+            clearHelperCards();
+
+            if (!Array.isArray(cards) || !cards.length) {
+              const empty = document.createElement('div');
+              empty.className = 'text-muted';
+              empty.textContent = 'No smart helper suggestions for this selection yet.';
+              helperContainer.appendChild(empty);
+              return;
+            }
+
+            cards.forEach(function (card) {
+              if (!card || !card.title) return;
+
+              const wrapper = document.createElement('div');
+              wrapper.className = 'card card-body p-2 mb-2 border border-secondary-subtle';
+
+              const titleEl = document.createElement('div');
+              titleEl.className = 'fw-semibold small';
+              titleEl.textContent = card.title;
+              wrapper.appendChild(titleEl);
+
+              if (card.summary) {
+                const summaryEl = document.createElement('div');
+                summaryEl.className = 'small text-muted';
+                summaryEl.textContent = card.summary;
+                wrapper.appendChild(summaryEl);
+              }
+
+              if (Array.isArray(card.bullets) && card.bullets.length) {
+                const ul = document.createElement('ul');
+                ul.className = 'small mb-1';
+                card.bullets.forEach(function (b) {
+                  const li = document.createElement('li');
+                  li.textContent = b;
+                  ul.appendChild(li);
+                });
+                wrapper.appendChild(ul);
+              }
+
+              if (Array.isArray(card.insert_options) && card.insert_options.length) {
+                const btnBar = document.createElement('div');
+                btnBar.className = 'mt-1';
+
+                card.insert_options.forEach(function (opt) {
+                  if (!opt || !opt.text) return;
+                  const btn = document.createElement('button');
+                  btn.type = 'button';
+                  btn.className = 'btn btn-sm btn-outline-secondary me-1 mb-1';
+                  btn.textContent = opt.label || 'Insert';
+                  btn.addEventListener('click', function () {
+                    insertTextAtCaret(reportInput, opt.text);
+                    reportInput.focus();
+                  });
+                  btnBar.appendChild(btn);
+                });
+
+                wrapper.appendChild(btnBar);
+              }
+
+              helperContainer.appendChild(wrapper);
+            });
+          }
+
+          function renderWorkspaceHelpCard() {
+            if (!workspaceHelpContainer) return;
+
+            // Toggle off if already visible
+            if (workspaceHelpContainer.children.length > 0) {
+              workspaceHelpContainer.innerHTML = '';
+              return;
+            }
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'card card-body p-2 mb-2 border border-info-subtle';
+
+            const titleEl = document.createElement('div');
+            titleEl.className = 'fw-semibold small mb-1';
+            titleEl.textContent = 'How to use the Phase 2 workspace';
+            wrapper.appendChild(titleEl);
+
+            const list = document.createElement('ol');
+            list.className = 'small mb-2';
+
+            [
+              'Load a suitable template in Phase 1, then refine the text here in Phase 2.',
+              'Use Prev [ ] / Next [ ] (or Ctrl + ⌥ + ← / Ctrl + ⌥ + →) to jump between placeholders.',
+              'Type inside a [placeholder] then press Tab to remove the brackets once you are happy.',
+              'Place the cursor in a word or select a phrase and click Smart helper (or press Alt + H) for context-aware suggestions.',
+              'Toggle Edit / View to switch between plain text and a structured “smart report” view.'
+            ].forEach(function (tip) {
+              const li = document.createElement('li');
+              li.textContent = tip;
+              list.appendChild(li);
+            });
+
+            wrapper.appendChild(list);
+
+            const footer = document.createElement('div');
+            footer.className = 'd-flex justify-content-end';
+            const closeBtn = document.createElement('button');
+            closeBtn.type = 'button';
+            closeBtn.className = 'btn btn-sm btn-outline-secondary';
+            closeBtn.textContent = 'Hide tips';
+            closeBtn.addEventListener('click', function () {
+              workspaceHelpContainer.innerHTML = '';
+            });
+            footer.appendChild(closeBtn);
+            wrapper.appendChild(footer);
+
+            workspaceHelpContainer.innerHTML = '';
+            workspaceHelpContainer.appendChild(wrapper);
+          }
+
+          function getSelectionTextOrWord(inputEl) {
+            let text = '';
+            const start = inputEl.selectionStart;
+            const end = inputEl.selectionEnd;
+
+            if (typeof start === 'number' && typeof end === 'number' && end > start) {
+              text = inputEl.value.substring(start, end);
+            } else {
+              const value = inputEl.value || '';
+              const pos = typeof start === 'number' ? start : value.length;
+              let left = pos;
+              let right = pos;
+
+              while (left > 0 && /\S/.test(value.charAt(left - 1))) left--;
+              while (right < value.length && /\S/.test(value.charAt(right))) right++;
+              text = value.substring(left, right);
+            }
+
+            return text.trim();
+          }
+
+          function insertTextAtCaret(textarea, insertText) {
+            if (!textarea || !insertText) return;
+
+            const value = textarea.value || '';
+            const start = textarea.selectionStart || 0;
+            const end = textarea.selectionEnd || 0;
+
+            const before = value.slice(0, start);
+            const after = value.slice(end);
+
+            const needsSpaceBefore = before && !/\s$/.test(before);
+            const needsSpaceAfter = after && !/^\s/.test(after);
+
+            const prefix = needsSpaceBefore ? before + ' ' : before;
+            const suffix = needsSpaceAfter ? ' ' + after : after;
+
+            const newValue = prefix + insertText + suffix;
+            const caretPos = (prefix + insertText).length;
+
+            textarea.value = newValue;
+
+            try {
+              if (typeof textarea.setSelectionRange === 'function') {
+                textarea.setSelectionRange(caretPos, caretPos);
+              }
+            } catch (e) { }
+
+            // Trigger input event so other listeners (e.g. placeholder tracking) can update.
+            try {
+              const evt = new Event('input', { bubbles: true });
+              textarea.dispatchEvent(evt);
+            } catch (e) {
+              const evtLegacy = document.createEvent('Event');
+              evtLegacy.initEvent('input', true, true);
+              textarea.dispatchEvent(evtLegacy);
+            }
+          }
+
+          if (workspaceHelpBtn && workspaceHelpContainer) {
+            workspaceHelpBtn.addEventListener('click', function () {
+              renderWorkspaceHelpCard();
+            });
+          }
+
+          if (helperBtn && reportInput && helperContainer) {
+            helperBtn.addEventListener('click', function () {
+              clearHelperCards();
+
+              const selectionText = getSelectionTextOrWord(reportInput);
+              if (!selectionText) {
+                const msg = document.createElement('div');
+                msg.className = 'text-muted';
+                msg.textContent = 'Place the cursor in a word or select a phrase in the report, then click Smart helper.';
+                helperContainer.appendChild(msg);
+                return;
+              }
+
+              const caretPos = typeof reportInput.selectionStart === 'number'
+                ? reportInput.selectionStart
+                : (reportInput.value || '').length;
+              const sectionValue = inferSectionFromText(reportInput.value || '', caretPos);
+
+              const params = new URLSearchParams({
+                section: sectionValue,
+                selection_text: selectionText,
+                modality: "{{ case.modality_enum.name if case.modality_enum else '' }}",
+                body_part: "{{ case.body_part_enum.name if case.body_part_enum else '' }}",
+                module: "{{ case.module_enum.name if case.module_enum else '' }}",
+                indication: "{{ case.indication or '' }}",
+                core_question: "{{ case.core_question or '' }}"
+              });
+
+              fetch(smartHelperUrl + '?' + params.toString(), { method: 'GET' })
+                .then(function (resp) {
+                  if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                  return resp.json();
+                })
+                .then(function (data) {
+                  const cards = (data && data.cards) ? data.cards : [];
+                  renderHelperCards(cards);
+                })
+                .catch(function () {
+                  clearHelperCards();
+                  const err = document.createElement('div');
+                  err.className = 'text-danger';
+                  err.textContent = 'Unable to load smart helper suggestions.';
+                  helperContainer.appendChild(err);
+                });
+            });
           }
         }
+
+        // --- Case navigator validation (Phase 1) ---
+        const form = document.getElementById('case-navigator-form');
+        if (!form) return;
+
+        const modality = document.getElementById('modality');
+        const bodyPart = document.getElementById('body_part');
+        const modalityLabel = document.querySelector('label[for="modality"]');
+        const bodyPartLabel = document.querySelector('label[for="body_part"]');
+        const errorText = document.getElementById('case-nav-structural-error');
+
+        form.addEventListener('submit', function (evt) {
+          const modSelected = modality && modality.value.trim() !== '';
+          const bpSelected = bodyPart && bodyPart.value.trim() !== '';
+
+          [modality, bodyPart].forEach(function (el) {
+            if (!el) return;
+            el.classList.remove('is-invalid');
+          });
+          [modalityLabel, bodyPartLabel].forEach(function (lbl) {
+            if (!lbl) return;
+            lbl.classList.remove('text-danger');
+          });
+          if (errorText) errorText.classList.add('d-none');
+
+          if (!modSelected && !bpSelected) {
+            evt.preventDefault();
+            if (modality) modality.classList.add('is-invalid');
+            if (bodyPart) bodyPart.classList.add('is-invalid');
+            if (modalityLabel) modalityLabel.classList.add('text-danger');
+            if (bodyPartLabel) bodyPartLabel.classList.add('text-danger');
+            if (errorText) errorText.classList.remove('d-none');
+          }
+        });
       });
     })();
 
@@ -1204,18 +1538,40 @@
           return;
         }
 
-        // Place caret just after the opening '[' so user types inside the placeholder
-        const caretPos = item.start + 1;
+        // First, select the entire [placeholder] so the jump is visually obvious.
+        const selectionStart = item.start;
+        const selectionEnd = item.end;
 
         try {
           textarea.focus();
           if (typeof textarea.setSelectionRange === 'function') {
-            textarea.setSelectionRange(caretPos, caretPos);
+            textarea.setSelectionRange(selectionStart, selectionEnd);
+          }
+          // Make sure the selection is visible in the viewport.
+          if (typeof textarea.scrollIntoView === 'function') {
+            textarea.scrollIntoView({ block: 'nearest' });
           }
         } catch (e) {
           // ignore
         }
+
         setActivePlaceholderState(true);
+
+        // After a brief delay, collapse the selection so the caret is inside the placeholder,
+        // ready for typing. This keeps the strong visual cue but returns to a natural editing state.
+        const innerStart = Math.min(selectionStart + 1, selectionEnd);
+        const innerEnd = innerStart; // collapsed caret
+
+        window.setTimeout(function () {
+          try {
+            textarea.focus();
+            if (typeof textarea.setSelectionRange === 'function') {
+              textarea.setSelectionRange(innerStart, innerEnd);
+            }
+          } catch (e) {
+            // ignore
+          }
+        }, 350);
       }
 
       function updateCurrentPlaceholderFromCaret() {
@@ -1482,10 +1838,21 @@
           const before = textarea.value || '';
           const changed = removeBracketsAroundCurrentCaret();
           const after = textarea.value || '';
+
           if (changed && after !== before) {
-            // The change will be captured by the input handler as a single undo step
             // Prevent Tab from moving focus / inserting a tab character
             evt.preventDefault();
+
+            // Manually dispatch an input event so the change is captured by the
+            // input handler and recorded as a single undo step.
+            try {
+              const inputEvt = new Event('input', { bubbles: true });
+              textarea.dispatchEvent(inputEvt);
+            } catch (e) {
+              const inputEvtLegacy = document.createEvent('Event');
+              inputEvtLegacy.initEvent('input', true, true);
+              textarea.dispatchEvent(inputEvtLegacy);
+            }
           }
         }
       });
@@ -1841,5 +2208,281 @@
       // initial sync from sections to raw textarea
       rebuildFromSections();
     })();
-  </script>
+
+    (function () {
+      // Phase 2c: interactive helper for diagnosis suggestions.
+      // Attach listeners after DOMContentLoaded to ensure the elements exist.
+      document.addEventListener('DOMContentLoaded', function () {
+        const suggestBtn = document.getElementById('diagnosis-suggest-btn');
+        const diagnosisInput = document.getElementById('diagnosis');
+        const suggestContainer = document.getElementById('diagnosis-suggest-container');
+        const statusEl = document.getElementById('diagnosis-suggest-status');
+
+        if (!suggestBtn || !diagnosisInput || !suggestContainer) {
+          return;
+        }
+
+        // Hidden structural anchors from the form
+        function getHiddenValue(name) {
+          const el = document.querySelector('input[name="' + name + '"]');
+          return el ? (el.value || '') : '';
+        }
+
+        function getTextValue(id) {
+          const el = document.getElementById(id);
+          return el ? (el.value || '') : '';
+        }
+
+        const suggestUrl = "{{ url_for('main_routes.smart_diagnosis_suggestions_route') }}";
+
+        function clearSuggestions() {
+          suggestContainer.innerHTML = '';
+        }
+
+        function renderSuggestions(list) {
+          clearSuggestions();
+          if (!Array.isArray(list) || !list.length) {
+            const empty = document.createElement('div');
+            empty.className = 'small text-muted';
+            empty.textContent = 'No suggestions available for this context yet.';
+            suggestContainer.appendChild(empty);
+            return;
+          }
+
+          const intro = document.createElement('div');
+          intro.className = 'small text-muted mb-1';
+          intro.textContent = 'Click a suggestion to use it as your diagnosis label:';
+          suggestContainer.appendChild(intro);
+
+          list.forEach(function (text, idx) {
+            if (!text) return;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'btn btn-sm btn-outline-secondary me-1 mb-1 diagnosis-suggestion-pill';
+            btn.textContent = text;
+            btn.addEventListener('click', function () {
+              diagnosisInput.value = text;
+              try {
+                diagnosisInput.focus();
+                diagnosisInput.select();
+              } catch (e) {
+                // ignore
+              }
+            });
+            suggestContainer.appendChild(btn);
+          });
+        }
+
+        function setStatus(message) {
+          if (!statusEl) return;
+          statusEl.textContent = message || '';
+        }
+
+        suggestBtn.addEventListener('click', function () {
+          clearSuggestions();
+          setStatus('Thinking…');
+
+          const payload = {
+            current_diagnosis: getTextValue('diagnosis'),
+            indication: getHiddenValue('indication') || getTextValue('indication'),
+            modality: getHiddenValue('modality'),
+            body_part: getHiddenValue('body_part'),
+            module: getHiddenValue('module'),
+            core_question: getHiddenValue('core_question') || getTextValue('core_question'),
+            imaging_pattern: getTextValue('imaging_pattern'),
+            ddx_shortlist: getTextValue('ddx_shortlist'),
+            leading_diagnosis: getTextValue('leading_diagnosis'),
+            supportive_findings: getTextValue('supportive_findings'),
+            alt_considerations: getTextValue('alt_considerations'),
+            red_flags: getTextValue('red_flags')
+          };
+
+          // Fallback: if suggest URL is not configured for some reason, do nothing gracefully.
+          if (!suggestUrl) {
+            setStatus('');
+            return;
+          }
+
+          const params = new URLSearchParams(payload);
+          fetch(suggestUrl + '?' + params.toString(), {
+            method: 'GET'
+          })
+            .then(function (resp) {
+              if (!resp.ok) {
+                throw new Error('HTTP ' + resp.status);
+              }
+              return resp.json();
+            })
+            .then(function (data) {
+              setStatus('');
+              const suggestions = (data && data.suggestions) ? data.suggestions : [];
+              renderSuggestions(suggestions);
+            })
+            .catch(function () {
+              setStatus('Unable to fetch suggestions right now.');
+            });
+        });
+      });
+    })();
+
+    (function () {
+      // Phase 2c: Smart helper for Indication section (Wells / core rules, etc.).
+      document.addEventListener('DOMContentLoaded', function () {
+        const helperBtn = document.getElementById('indication-smart-helper-btn');
+        const indicationInput = document.getElementById('indication');
+        const helperContainer = document.getElementById('indication-smart-helper-container');
+
+        if (!helperBtn || !indicationInput || !helperContainer) {
+          return;
+        }
+
+        const smartHelperUrl = "{{ url_for('main_routes.smart_helper_route') }}";
+
+        function clearHelperCards() {
+          helperContainer.innerHTML = '';
+        }
+
+        function renderHelperCards(cards) {
+          clearHelperCards();
+
+          if (!Array.isArray(cards) || !cards.length) {
+            const empty = document.createElement('div');
+            empty.className = 'text-muted';
+            empty.textContent = 'No smart helper suggestions for this selection yet.';
+            helperContainer.appendChild(empty);
+            return;
+          }
+
+          cards.forEach(function (card) {
+            if (!card || !card.title) {
+              return;
+            }
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'card card-body p-2 mb-2 border border-secondary-subtle';
+
+            const titleEl = document.createElement('div');
+            titleEl.className = 'fw-semibold small';
+            titleEl.textContent = card.title;
+            wrapper.appendChild(titleEl);
+
+            if (card.summary) {
+              const summaryEl = document.createElement('div');
+              summaryEl.className = 'small text-muted';
+              summaryEl.textContent = card.summary;
+              wrapper.appendChild(summaryEl);
+            }
+
+            if (Array.isArray(card.bullets) && card.bullets.length) {
+              const ul = document.createElement('ul');
+              ul.className = 'small mb-1';
+              card.bullets.forEach(function (b) {
+                const li = document.createElement('li');
+                li.textContent = b;
+                ul.appendChild(li);
+              });
+              wrapper.appendChild(ul);
+            }
+
+            if (Array.isArray(card.insert_options) && card.insert_options.length) {
+              const btnBar = document.createElement('div');
+              btnBar.className = 'mt-1';
+
+              card.insert_options.forEach(function (opt) {
+                if (!opt || !opt.text) {
+                  return;
+                }
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn btn-sm btn-outline-secondary me-1 mb-1';
+                btn.textContent = opt.label || 'Insert';
+                btn.addEventListener('click', function () {
+                  const existing = indicationInput.value || '';
+                  const prefix = existing ? existing.trim() + ' ' : '';
+                  indicationInput.value = prefix + opt.text;
+                  indicationInput.focus();
+                });
+                btnBar.appendChild(btn);
+              });
+
+              wrapper.appendChild(btnBar);
+            }
+
+            helperContainer.appendChild(wrapper);
+          });
+        }
+
+        function getSelectionTextOrWord(inputEl) {
+          let text = '';
+          const start = inputEl.selectionStart;
+          const end = inputEl.selectionEnd;
+
+          if (typeof start === 'number' && typeof end === 'number' && end > start) {
+            text = inputEl.value.substring(start, end);
+          } else {
+            const value = inputEl.value || '';
+            const pos = typeof start === 'number' ? start : value.length;
+            let left = pos;
+            let right = pos;
+
+            // Expand to full "word" around the caret.
+            while (left > 0 && /\S/.test(value.charAt(left - 1))) {
+              left--;
+            }
+            while (right < value.length && /\S/.test(value.charAt(right))) {
+              right++;
+            }
+            text = value.substring(left, right);
+          }
+
+          return text.trim();
+        }
+
+        helperBtn.addEventListener('click', function () {
+          clearHelperCards();
+
+          const selectionText = getSelectionTextOrWord(indicationInput);
+          if (!selectionText) {
+            const msg = document.createElement('div');
+            msg.className = 'text-muted';
+            msg.textContent = 'Select a word or place the cursor inside a word in the Indication to see smart helpers.';
+            helperContainer.appendChild(msg);
+            return;
+          }
+
+          const params = new URLSearchParams({
+            section: 'indication',
+            selection_text: selectionText,
+            modality: "{{ case.modality_enum.name if case.modality_enum else '' }}",
+            body_part: "{{ case.body_part_enum.name if case.body_part_enum else '' }}",
+            module: "{{ case.module_enum.name if case.module_enum else '' }}",
+            indication: indicationInput.value || '',
+            core_question: "{{ case.core_question or '' }}"
+          });
+
+          fetch(smartHelperUrl + '?' + params.toString(), {
+            method: 'GET'
+          })
+            .then(function (resp) {
+              if (!resp.ok) {
+                throw new Error('HTTP ' + resp.status);
+              }
+              return resp.json();
+            })
+            .then(function (data) {
+              const cards = (data && data.cards) ? data.cards : [];
+              renderHelperCards(cards);
+            })
+            .catch(function () {
+              clearHelperCards();
+              const err = document.createElement('div');
+              err.className = 'text-danger';
+              err.textContent = 'Unable to load smart helper suggestions.';
+              helperContainer.appendChild(err);
+            });
+        });
+      });
+    })();
+
+    </script>
 {% endblock %}

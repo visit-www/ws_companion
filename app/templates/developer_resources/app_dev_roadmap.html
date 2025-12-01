@@ -94,8 +94,9 @@
                                 </li>
                                 <li class="mt-2">
                                     <strong>Phase 2c – Interactive helpers</strong><br>
-                                    Add interactive Case Workspace helpers: autosuggestions for measurements, diagnosis phrases,
-                                    and context-aware helper panels driven by modality, body part, and core clinical question.
+                                    Add interactive Case Workspace helpers wired through a unified suggestion pipeline: autosuggestions for measurements,
+                                    diagnosis labels and phrases, and context-aware helper panels driven by modality, body part, and core clinical question,
+                                    all operating on the canonical plain-text report representation.
                                 </li>
                                 <li class="mt-2">
                                     <strong>Phase 2d – Re-open saved reports</strong><br>
@@ -111,17 +112,19 @@
                                 Build a Teaching File / personal case library module where de-identified cases, key images,
                                 measurements and final reports can be saved and reused for academic teaching, viva preparation,
                                 and personal learning. Integrate tightly with Case Workspace so interesting cases can be promoted
-                                to Teaching Files with one click.
+                                to Teaching Files with one click, and allow the Teaching File corpus to act as an additional knowledge
+                                source feeding the same suggestion pipeline used by the Case Workspace helpers.
                             </p>
                         </div>
 
                         <div>
                             <h3 class="h6 mb-1">Phase 4 – AI Functionality</h3>
                             <p class="small mb-0">
-                                Layer assistive AI features onto the established workflow: AI-assisted autosuggestions in Case
-                                Workspace, AI parsing of pasted reports into structured sections, and AI support within Teaching Files
-                                (case summaries, quiz generation, viva-style Q&amp;A), always respecting radiologist control and
-                                clinical safety.
+                                Layer assistive AI features onto the established workflow as a final tier in the same helper pipeline:
+                                AI-assisted autosuggestions in Case Workspace (when local history and playbooks are insufficient),
+                                AI parsing of pasted reports into structured sections, and AI support within Teaching Files
+                                (case summaries, quiz generation, viva-style Q&amp;A), always with deterministic fallbacks and
+                                always respecting radiologist control and clinical safety.
                             </p>
                         </div>
                     </div>
@@ -416,6 +419,141 @@
                             <br>
                             <strong>Effect:</strong> The last few lines of the report become more consistent, clear, and clinically actionable.
                         </p>
+
+                        <h6>6.3 Contextual smart helpers – example workflow for ?PE</h6>
+                        <p>
+                            The smart helper engine should support the radiologist throughout the Phase 2 reporting loop using simple,
+                            contextual overlays rather than a heavy editor. The following infographic-style walkthrough assumes a case
+                            of shortness of breath with suspected pulmonary embolism (<code>?PE</code>), and shows how helpers appear at each
+                            stage of the report:
+                        </p>
+                        <ol class="small">
+                            <li>
+                                <strong>Indication section – clinical scores &amp; rules</strong>
+                                <ul>
+                                    <li>User enters: “SOB, pleuritic chest pain, Wells score 6, ?PE”.</li>
+                                    <li>Action: selects the words “Wells score” and clicks a small “Smart helper” button next to the Indication textarea (or uses a shortcut).</li>
+                                    <li>Helper overlay shows:
+                                        <ul>
+                                            <li>A <strong>Score summary card</strong> for Wells score for PE – brief description, cut‑off values, interpretation (e.g. PE likely/unlikely).</li>
+                                            <li>Optional actions:
+                                                <ul>
+                                                    <li>“Insert short Wells summary into report” – inserts a concise sentence in the Indication section.</li>
+                                                    <li>“Open full criteria” – opens a guideline/score reference in a side panel.</li>
+                                                </ul>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>
+                                <strong>Core question – tool bundle for the clinical question</strong>
+                                <ul>
+                                    <li>Core question already captured in Phase 1: “?PE”.</li>
+                                    <li>Action: with caret in the Core question field, user clicks the same “Smart helper” control.</li>
+                                    <li>Helper overlay shows a <strong>PE toolkit card</strong> that bundles:
+                                        <ul>
+                                            <li>Relevant imaging protocol(s) (e.g. CTPA protocol).</li>
+                                            <li>Relevant report templates (admin + user) for CTPA / PE studies.</li>
+                                            <li>Linked checklists (e.g. “For ?PE you must mention RV/LV ratio, alternative diagnoses, etc.”).</li>
+                                            <li>Relevant classification/score aids (e.g. severity/RV strain notes).</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>
+                                <strong>Comparison section – date helpers</strong>
+                                <ul>
+                                    <li>Text: “Compared to study dated: ____”.</li>
+                                    <li>Action: user clicks “Smart helper” while caret is in the Comparison field.</li>
+                                    <li>Helper overlay shows:
+                                        <ul>
+                                            <li>A small date helper card, allowing quick insertion of a normalised date format.</li>
+                                            <li>Optional phrasing snippets:
+                                                <ul>
+                                                    <li>“Compared with CTPA performed on DD/MM/YYYY.”</li>
+                                                    <li>“No prior imaging available for comparison.”</li>
+                                                </ul>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>
+                                <strong>Technique section – protocol-driven assistance</strong>
+                                <ul>
+                                    <li>Technique paragraph is present in the template (e.g. standard CTPA wording).</li>
+                                    <li>Action: user clicks “Smart helper” in the Technique field.</li>
+                                    <li>Helper overlay shows:
+                                        <ul>
+                                            <li>An <strong>Imaging protocol card</strong> for CT pulmonary angiography derived from the <code>ImagingProtocol</code> model.</li>
+                                            <li>Key details (contrast type, volume, rate, phases, coverage) with a one-click option to:
+                                                <ul>
+                                                    <li>“Insert standard technique paragraph” (replace current Technique text).</li>
+                                                    <li>“Insert as bullet list” if desired.</li>
+                                                </ul>
+                                            </li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>
+                                <strong>Observations / Findings – measurements, checklists &amp; staging</strong>
+                                <ul>
+                                    <li>User types findings, e.g. “Main pulmonary arteries opacified, no definite filling defect. RV appears enlarged…”.</li>
+                                    <li>Action: selects a term such as “RV enlarged” or “main pulmonary artery” and clicks “Smart helper”.</li>
+                                    <li>Helper overlay shows:
+                                        <ul>
+                                            <li><strong>Measurement cards</strong> from the <code>NormalMeasurement</code> module (e.g. normal PA diameter, RV/LV ratio thresholds).</li>
+                                            <li><strong>Checklist cards</strong> of “things not to forget” for PE reports (RV strain, alternative diagnoses, pleural effusions, etc.).</li>
+                                            <li><strong>Classification/staging cards</strong> if applicable (e.g. right heart strain criteria), but <em>not</em> full templates or imaging protocols in this section.</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>
+                                <strong>Conclusion / Impression – diagnosis &amp; differential sentences</strong>
+                                <ul>
+                                    <li>User navigates to the Conclusion/Impression section and clicks a dedicated “Diagnosis suggestions” button (the Phase 2c control).</li>
+                                    <li>The backend <code>build_smart_diagnosis_suggestions</code> helper aggregates:
+                                        <ul>
+                                            <li>Personal history (<code>UserReportInstance</code> diagnoses).</li>
+                                            <li>Templates and Teaching Files (when available).</li>
+                                            <li>Static PE playbook entries (e.g. “No CT evidence of acute PE”).</li>
+                                        </ul>
+                                    </li>
+                                    <li>Helper overlay shows:
+                                        <ul>
+                                            <li>Candidate <strong>diagnosis sentences</strong> such as:
+                                                <ul>
+                                                    <li>“No CT evidence of acute pulmonary embolism.”</li>
+                                                    <li>“Acute bilateral pulmonary emboli with CT features of right heart strain.”</li>
+                                                </ul>
+                                            </li>
+                                            <li>Optional <strong>differential diagnosis snippets</strong> based on pattern / DDX helpers.</li>
+                                        </ul>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li>
+                                <strong>Recommendations – actionable follow‑up snippets</strong>
+                                <ul>
+                                    <li>In the Recommendations section, clicking “Smart helper” surfaces context‑aware recommendation cards, for example:
+                                        <ul>
+                                            <li>“Recommend initiation of anticoagulation as per local protocol and appropriate clinical follow‑up.”</li>
+                                            <li>“No imaging follow‑up required solely for PE; advise follow‑up based on clinical course and risk profile.”</li>
+                                        </ul>
+                                    </li>
+                                    <li>Each recommendation is inserted as editable text so the radiologist retains full control.</li>
+                                </ul>
+                            </li>
+                        </ol>
+                        <p class="small">
+                            In all sections, the helper remains a lightweight overlay on top of the plain‑text editor: the radiologist can
+                            select a word or phrase, press a single helper control or shortcut, review 1–3 concise helper cards, and insert
+                            only the text they consider appropriate. This keeps the workspace fast, minimally intrusive, and aligned with
+                            real on‑call reporting behaviour.
+                        </p>
                     </div>
                 </div>
             </section>
@@ -518,6 +656,7 @@
                             <li><strong>FindingPattern</strong> – to model pattern → ddx links.</li>
                             <li><strong>DiagnosisGuide</strong> – to store diagnosis-centric DDX, key features, and staging pointers.</li>
                             <li><strong>TeachingFileCase</strong> (later) – for teaching case metadata and links.</li>
+                            <li><strong>SmartHelperCard</strong> – database-backed model for contextual helper cards (scores, toolkits, measurements, checklists, diagnosis sentences) manageable via Flask-Admin.</li>
                         </ul>
 
                         <h5>UX principles</h5>
@@ -530,6 +669,32 @@
                                     <li>Enable quick copy/insert for all generated phrases and checklists.</li>
                                 </ul>
                             </li>
+                        </ul>
+
+                        <h5>Helper architecture &amp; editor philosophy</h5>
+                        <p>
+                            Interactive helpers across Phases 2c, 3 and 4 should share a single architecture: a unified suggestion
+                            pipeline that operates on a canonical plain-text report representation and can aggregate suggestions
+                            from multiple tiers (local history, static playbooks, Teaching Files, and optional AI). The text editor
+                            remains a simple textarea in early phases, with rich exports (DOCX/PDF) and optional rich editors layered
+                            on top later, without changing the underlying helper contract.
+                        </p>
+                        <ul>
+                            <li>Case Workspace helpers call backend endpoints that accept structured case context and the current plain-text report, and return suggestion lists or text patches.</li>
+                            <li>Each endpoint aggregates suggestions from deterministic sources first (user history, templates, Teaching Files, static playbooks), only calling AI as a final tier when needed.</li>
+                            <li>The frontend treats helper responses uniformly, so new sources (e.g. Teaching Files or AI) can be added without changing the Case Workspace UI.</li>
+                        </ul>
+
+                        <h5>Smart helper content model &amp; admin workflow</h5>
+                        <p>
+                            Smart helper content (scores, toolkits, measurements, checklists, diagnosis sentences) should gradually
+                            move from hard-coded Python playbooks into a dedicated <code>SmartHelperCard</code> model so non-developers
+                            can manage it via Flask-Admin, similar to protocols, templates and measurements.
+                        </p>
+                        <ul>
+                            <li><code>SmartHelperCard</code> stores which section and token it applies to (e.g. <code>section='indication'</code>, <code>token='wells'</code>), optional filters for modality/body part/module, and card metadata such as <code>kind</code>, <code>title</code>, <code>summary</code>, <code>bullets_json</code> and <code>insert_options_json</code>, plus tags, priority and an <code>is_active</code> flag.</li>
+                            <li>The smart helper engine should first query the database for matching cards and only fall back to the small static Python playbooks when no database cards exist, keeping the code as a bootstrap/fallback layer.</li>
+                            <li>Over time, diagnosis helpers for the Conclusion/Impression section should also be expressed as <code>SmartHelperCard</code> entries (e.g. <code>section='conclusion'</code>, <code>kind='DIAGNOSIS_SENTENCE'</code>), so all contextual helpers share a single content system with an admin-friendly editing surface.</li>
                         </ul>
 
                         <p class="mb-0">
