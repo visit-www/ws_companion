@@ -9,6 +9,7 @@ import shutil
 import json
 from datetime import datetime, timezone
 from sqlalchemy import inspect, or_
+import re
 
 from . import db
 from .models import (
@@ -21,8 +22,14 @@ from .models import (
     AdminReportTemplate,
     ImagingProtocol,
     ClassificationSystem,
+    SmartHelperCard,
+    SmartHelperSectionEnum,
+    SmartHelperKindEnum,
 )
 from config import ANONYMOUS_USER_ID, userdir
+
+# For SmartHelperCard preview serialization
+from .util import serialize_smart_helper_card
 
 # ExtendModelView class for general model handling
 class ExtendModelView(ModelView):
@@ -248,7 +255,7 @@ class ReferenceAdmin(ModelView):
         db.session.delete(model)
         db.session.commit()
         
-from wtforms import StringField, TextAreaField
+from wtforms import StringField, TextAreaField, SelectField, FieldList, FormField, Form
 from flask_admin.form import rules
 import json
 
@@ -1241,3 +1248,577 @@ class ClassificationSystemAdmin(ModelView):
         'module',
         'tags',
     )
+
+
+class BulletGroupForm(Form):
+    title = StringField('List title (optional)')
+    style = SelectField(
+        'List type',
+        choices=[('bullets', 'Bullet list'), ('checkbox', 'Checkbox list')],
+        default='bullets',
+    )
+    items = TextAreaField(
+        'Items (one per line)',
+        render_kw={'rows': 4, 'placeholder': 'One item per line'}
+    )
+
+
+class TableForm(Form):
+    title = StringField('Table title (optional)')
+    data = TextAreaField(
+        'Table data (one row per line; columns separated by TAB or |; first row is header)',
+        render_kw={
+            'rows': 6,
+            'placeholder': 'Criterion | Points\nClinical signs of DVT | 3\nHeart rate > 100 bpm | 1.5',
+        },
+    )
+
+# --------------------------------------------------------------------------
+# SmartHelperCard admin view
+
+class SmartHelperCardAdmin(ModelView):
+    """Admin view for SmartHelperCard.
+
+    New design:
+    - No more clever parsing of one big textarea.
+    - Explicit bullet_groups (0–many) and tables (0–many) using FieldList + subforms.
+    - All structured data stored in definition_json["bullet_groups"] and definition_json["tables"].
+    """
+    create_template = 'admin/smart_helper_card_edit.html'
+    edit_template = 'admin/smart_helper_card_edit.html'
+
+    # Do not show raw JSON and audit fields directly
+    form_excluded_columns = (
+        "bullets_json",
+        "insert_options_json",
+        "definition_json",
+        "created_at",
+        "updated_at",
+    )
+
+    # List view configuration
+    column_list = (
+        "title",
+        "token",
+        "section",
+        "kind",
+        "modality",
+        "body_part",
+        "module",
+        "is_active",
+        "priority",
+        "updated_at",
+    )
+
+    column_filters = (
+        "section",
+        "kind",
+        "modality",
+        "body_part",
+        "module",
+        "is_active",
+    )
+
+    column_searchable_list = (
+        "title",
+        "token",
+        "summary",
+        "tags",
+    )
+
+    # Extra helper fields for editing JSON content via proper subforms
+    form_extra_fields = {
+        # Bullet / checkbox lists: 1–many groups (at least one empty subform by default)
+        "bullet_groups": FieldList(
+            FormField(BulletGroupForm),
+            min_entries=1,
+            label="Bullet / checkbox lists",
+        ),
+        # Tables: 1–many tables (at least one empty subform by default)
+        "tables": FieldList(
+            FormField(TableForm),
+            min_entries=1,
+            label="Tables (paste from Excel / Word)",
+        ),
+        # Insert options as raw JSON
+        "insert_options_json_text": TextAreaField(
+            "Insert options (advanced JSON)",
+            description=(
+                "Optional list of insertable report phrases.\n"
+                "Format: JSON array of objects, e.g.:\n"
+                "[\n"
+                "  {\"label\": \"Insert normal PE conclusion\", \"text\": \"No CT evidence of PE.\"}\n"
+                "]"
+            ),
+            render_kw={"rows": 4},
+        ),
+        # Full advanced definition JSON override (for power users)
+        "definition_json_text": TextAreaField(
+            "Advanced definition JSON",
+            description=(
+                "Optional advanced JSON for this helper card. "
+                "If provided and valid, it becomes the base definition into which "
+                "bullet_groups and tables are injected."
+            ),
+            render_kw={"rows": 6},
+        ),
+        # Read-only preview
+        "preview_block": TextAreaField(
+            "Preview (read-only)",
+            description=(
+                "Approximate rendering of this helper card based on bullets/tables. "
+                "This is for visual feedback only; edit the fields above to change it."
+            ),
+            render_kw={
+                "readonly": True,
+                "rows": 6,
+                "style": "font-size:0.85rem; background-color:#f8f9fa;",
+            },
+        ),
+    }
+
+    # Core form fields, grouped into logical sections
+    form_create_rules = form_edit_rules = [
+        # High-level toggles and filters
+        rules.FieldSet(
+            (
+                "is_active",
+                "section",
+                "kind",
+                "token",
+                "modality",
+                "body_part",
+                "module",
+                "min_age_years",
+                "max_age_years",
+                "sex",
+                "priority",
+                "tags",
+            ),
+            "Meta / filters",
+        ),
+
+        # Core content header
+        rules.FieldSet(
+            (
+                "title",
+                "summary",
+            ),
+            "Helper title & summary",
+        ),
+
+        # Bullet / checkbox lists and tables (tidied layout)
+        rules.Header("Lists & tables"),
+        rules.FieldSet(("bullet_groups",), "Bullet / checkbox lists"),
+        rules.HTML('<div style="clear:both; margin: 10px 0;"></div>'),
+        rules.FieldSet(("tables",), "Tables (paste from Excel / Word)"),
+
+        # Advanced JSON options
+        rules.Header("Advanced JSON options"),
+        "insert_options_json_text",
+        "definition_json_text",
+
+        # Read-only preview
+        rules.Header("Preview"),
+        "preview_block",
+    ]
+
+    def is_accessible(self):
+        return current_user.is_authenticated and current_user.is_admin
+
+    def inaccessible_callback(self, name, **kwargs):
+        flash("Admin access required.", "warning")
+        return redirect(url_for("app_user.login"))
+
+    # ---------- Small JSON helpers ----------
+
+    def _parse_json_text_generic(self, raw_value):
+        """Generic parser for JSON textareas.
+
+        - Empty -> None
+        - Non-empty -> attempt json.loads, flash warning on failure.
+        """
+        raw_value = (raw_value or "").strip()
+        if not raw_value:
+            return None
+        try:
+            return json.loads(raw_value)
+        except Exception as exc:
+            flash(f"Could not parse JSON: {exc}", "warning")
+            return None
+
+    def _stringify_json_generic(self, value):
+        if value is None:
+            return ""
+        try:
+            return json.dumps(value, indent=2, ensure_ascii=False)
+        except Exception:
+            return str(value)
+
+    def _parse_insert_options_text(self, raw_value):
+        """Parse insert options from JSON or a simple line-based format.
+
+        Supported formats:
+        - Proper JSON (e.g. [{"label": "...", "text": "..."}, ...])
+        - One option per line, either:
+          - "Label | Text"
+          - "Label: Text"
+          - or just "Text" (label == text)
+        """
+        raw = (raw_value or "").strip()
+        if not raw:
+            return None
+
+        # First try JSON (strict)
+        try:
+            return json.loads(raw)
+        except Exception:
+            pass
+
+        # Fallback: simple line-based syntax
+        lines = [ln.strip() for ln in raw.splitlines() if ln.strip()]
+        if not lines:
+            return None
+
+        options = []
+        for ln in lines:
+            label = text = ln
+            if "|" in ln:
+                parts = [p.strip() for p in ln.split("|", 1)]
+                if len(parts) == 2:
+                    label, text = parts
+            elif ":" in ln:
+                parts = [p.strip() for p in ln.split(":", 1)]
+                if len(parts) == 2:
+                    label, text = parts
+            options.append({"label": label, "text": text})
+
+        # Inform the user that we used the fallback parser
+        flash(
+            "Insert options saved using simple line format (label | text). "
+            "For full control, provide valid JSON.",
+            "info",
+        )
+        return options
+
+    # ---------- Save logic ----------
+
+    def _populate_base_fields(self, form, model):
+        """Populate only real model fields, skipping helper FieldLists/JSON preview fields."""
+        helper_names = {
+            "bullet_groups",
+            "tables",
+            "insert_options_json_text",
+            "definition_json_text",
+            "preview_block",
+        }
+        skip_names = helper_names.union({"csrf_token", "submit", "_continue_editing"})
+
+        for name, field in getattr(form, "_fields", {}).items():
+            if name in skip_names:
+                continue
+            try:
+                field.populate_obj(model, name)
+            except Exception:
+                # Ignore fields that cannot be directly populated (e.g. read-only helpers)
+                continue
+
+    def create_model(self, form):
+        """Custom create_model to avoid populate_obj issues with helper FieldLists."""
+        try:
+            model = self.model()
+            # Populate basic scalar/enum fields
+            self._populate_base_fields(form, model)
+            # Let on_model_change handle bullets/tables/JSON helpers
+            self.on_model_change(form, model, True)
+            db.session.add(model)
+            db.session.commit()
+        except Exception as exc:
+            db.session.rollback()
+            flash(f"Failed to create record: {exc}", "error")
+            return False
+        else:
+            return True
+
+    def update_model(self, form, model):
+        """Custom update_model to avoid populate_obj issues with helper FieldLists."""
+        try:
+            # Populate basic scalar/enum fields
+            self._populate_base_fields(form, model)
+            # Let on_model_change handle bullets/tables/JSON helpers
+            self.on_model_change(form, model, False)
+            db.session.add(model)
+            db.session.commit()
+        except Exception as exc:
+            db.session.rollback()
+            flash(f"Failed to update record: {exc}", "error")
+            return False
+        else:
+            return True
+
+    def on_model_change(self, form, model, is_created):
+        """Sync subforms into JSON columns before saving."""
+        # ---- Bullet groups -> bullets_json + definition_json["bullet_groups"] ----
+        bullet_groups = []
+        if hasattr(form, "bullet_groups"):
+            for entry in form.bullet_groups:
+                title = (entry.title.data or "").strip() or None
+                style = (entry.style.data or "bullets").strip()
+                if style not in ("bullets", "checkbox"):
+                    style = "bullets"
+                items_raw = entry.items.data or ""
+                items = [line.strip() for line in items_raw.splitlines() if line.strip()]
+                if not items:
+                    continue
+                bullet_groups.append(
+                    {
+                        "title": title,
+                        "style": style,
+                        "items": items,
+                    }
+                )
+
+        model.bullets_json = bullet_groups or None
+
+        # ---- Insert options from JSON textarea (with friendly fallback) ----
+        if hasattr(form, "insert_options_json_text"):
+            model.insert_options_json = self._parse_insert_options_text(
+                form.insert_options_json_text.data
+            )
+
+        # ---- Base definition_json ----
+        base_def = model.definition_json or {}
+
+        # Advanced override, if provided and valid
+        advanced = None
+        if hasattr(form, "definition_json_text") and form.definition_json_text.data:
+            advanced = self._parse_json_text_generic(form.definition_json_text.data)
+
+        if isinstance(advanced, dict):
+            base_def = advanced
+        elif isinstance(advanced, list):
+            base_def = {"sections": advanced}
+        elif not isinstance(base_def, dict):
+            base_def = {}
+
+        # Ensure meta exists
+        base_def.setdefault("meta", {})
+
+        # ---- Tables from FieldList(TableForm) -> definition_json["tables"] ----
+        tables_struct = []
+        splitter = re.compile(r"\t|\|")
+
+        if hasattr(form, "tables"):
+            for entry in form.tables:
+                # Each entry is a FormField(TableForm); use the inner form for fields
+                inner = getattr(entry, "form", entry)
+
+                raw_data = (getattr(getattr(inner, "data", None), "data", "") or "").strip()
+                if not raw_data:
+                    continue
+
+                title = (getattr(inner, "title").data or "").strip() or None
+
+                lines = [ln.strip() for ln in raw_data.splitlines() if ln.strip()]
+                if not lines:
+                    continue
+
+                # First line assumed header; if it produces no real cells, we'll auto-generate
+                header_cells = [c.strip() for c in splitter.split(lines[0])] if lines else []
+
+                # If header row is effectively empty, treat all lines as data and auto-header
+                if not any(header_cells):
+                    data_rows_raw = []
+                    max_cols = 0
+                    for ln in lines:
+                        cells = [c.strip() for c in splitter.split(ln)]
+                        if not any(cells):
+                            continue
+                        data_rows_raw.append(cells)
+                        max_cols = max(max_cols, len(cells))
+
+                    if max_cols == 0:
+                        continue
+
+                    headers = [f"Col {i+1}" for i in range(max_cols)]
+                    rows = []
+                    for cells in data_rows_raw:
+                        if len(cells) < max_cols:
+                            cells = cells + [""] * (max_cols - len(cells))
+                        else:
+                            cells = cells[:max_cols]
+                        rows.append(cells)
+                else:
+                    headers = header_cells
+                    max_cols = len(headers)
+                    rows = []
+                    for ln in lines[1:]:
+                        cells = [c.strip() for c in splitter.split(ln)]
+                        if not any(cells):
+                            continue
+                        if len(cells) < max_cols:
+                            cells = cells + [""] * (max_cols - len(cells))
+                        else:
+                            cells = cells[:max_cols]
+                        rows.append(cells)
+
+                if not rows:
+                    continue
+
+                tables_struct.append(
+                    {
+                        "title": title,
+                        "headers": headers,
+                        "rows": rows,
+                    }
+                )
+
+        if tables_struct:
+            base_def["tables"] = tables_struct
+        else:
+            base_def.pop("tables", None)
+
+        if bullet_groups:
+            base_def["bullet_groups"] = bullet_groups
+        else:
+            base_def.pop("bullet_groups", None)
+
+        # Assign back
+        model.definition_json = base_def or None
+
+        return super().on_model_change(form, model, is_created)
+
+    # ---------- Prefill logic ----------
+
+    def on_form_prefill(self, form, id):
+        """Populate FieldLists and JSON textareas from the model before editing."""
+        model = self.get_one(id)
+        if not model:
+            return super().on_form_prefill(form, id)
+
+        definition = model.definition_json or {}
+
+        # ---- Bullet groups ----
+        bullet_groups = definition.get("bullet_groups")
+        if bullet_groups is None:
+            bullet_groups = model.bullets_json
+
+        if hasattr(form, "bullet_groups") and isinstance(bullet_groups, list):
+            # Clear any default empty entries
+            while len(form.bullet_groups.entries):
+                form.bullet_groups.pop_entry()
+
+            for group in bullet_groups:
+                if not isinstance(group, dict):
+                    continue
+                sub = form.bullet_groups.append_entry()
+                sub.title.data = group.get("title") or ""
+                style = group.get("style") or "bullets"
+                if style not in ("bullets", "checkbox"):
+                    style = "bullets"
+                sub.style.data = style
+                items = group.get("items") or []
+                if isinstance(items, list):
+                    sub.items.data = "\n".join(str(i) for i in items)
+                else:
+                    sub.items.data = str(items)
+
+        # Ensure at least one empty bullet group entry if none exist
+        if hasattr(form, "bullet_groups") and not form.bullet_groups.entries:
+            form.bullet_groups.append_entry()
+
+        # ---- Tables ----
+        tables_struct = definition.get("tables") or []
+
+        if hasattr(form, "tables") and isinstance(tables_struct, list):
+            while len(form.tables.entries):
+                form.tables.pop_entry()
+
+            for tbl in tables_struct:
+                if not isinstance(tbl, dict):
+                    continue
+                sub = form.tables.append_entry()
+                inner = getattr(sub, "form", sub)
+                inner.title.data = (tbl.get("title") or "")
+
+                headers = tbl.get("headers") or []
+                rows = tbl.get("rows") or []
+                lines = []
+                if headers:
+                    lines.append(" | ".join(str(h) for h in headers))
+                for row in rows:
+                    lines.append(" | ".join(str(c) for c in (row or [])))
+                inner.data.data = "\n".join(lines)
+
+        # Ensure at least one empty table entry if none exist
+        if hasattr(form, "tables") and not form.tables.entries:
+            form.tables.append_entry()
+
+        # ---- Insert options JSON ----
+        if hasattr(form, "insert_options_json_text"):
+            form.insert_options_json_text.data = self._stringify_json_generic(
+                model.insert_options_json
+            )
+
+        # ---- Full definition JSON ----
+        if hasattr(form, "definition_json_text"):
+            form.definition_json_text.data = self._stringify_json_generic(
+                model.definition_json
+            )
+
+        # ---- Preview ----
+        if hasattr(form, "preview_block") and model:
+            try:
+                vm = serialize_smart_helper_card(model) or {}
+
+                def _vm_get(obj, key, default=None):
+                    if isinstance(obj, dict):
+                        return obj.get(key, default)
+                    return getattr(obj, key, default)
+
+                lines = []
+                title = _vm_get(vm, "title") or getattr(model, "title", None) or "(No title)"
+                kind_label = _vm_get(vm, "kind_label") or _vm_get(vm, "kind") or (
+                    str(model.kind) if hasattr(model, "kind") else "Info"
+                )
+                section_label = _vm_get(vm, "section_label") or _vm_get(vm, "section") or (
+                    str(model.section) if hasattr(model, "section") else "Any section"
+                )
+                meta = _vm_get(vm, "meta_text") or ""
+
+                lines.append(f"Title: {title}")
+                lines.append(f"Kind: {kind_label} | Section: {section_label}")
+                if meta:
+                    lines.append(f"Context: {meta}")
+
+                display_mode = _vm_get(vm, "display_mode") or "list"
+                rows = _vm_get(vm, "rows") or []
+                bullets = _vm_get(vm, "bullets") or []
+
+                lines.append("")
+                if display_mode == "table" and rows:
+                    lines.append("Table mode (label: value):")
+                    for r in rows:
+                        lbl = _vm_get(r, "label", "")
+                        val = _vm_get(r, "value_html", "")
+                        lines.append(f"- {lbl}: {val}")
+                elif bullets:
+                    lines.append("List mode (bullets):")
+                    for b in bullets:
+                        lines.append(f"- {b}")
+                else:
+                    summary = (
+                        _vm_get(vm, "summary_html")
+                        or _vm_get(vm, "summary")
+                        or ""
+                    ).strip()
+                    if summary:
+                        lines.append("Summary:")
+                        lines.append(summary)
+
+                form.preview_block.data = "\n".join(lines) if lines else "No preview available yet."
+            except Exception as exc:
+                flash(f"Could not build SmartHelper preview: {exc}", "warning")
+                form.preview_block.data = ""
+
+        return super().on_form_prefill(form, id)

@@ -772,6 +772,434 @@ def get_case_checklists(
     return []
 
 
+# Helper to parse named tables from raw text (for SmartHelper cards)
+def parse_named_tables_from_text(raw_text: str):
+    """Parse one or more tables from free-form SmartHelper text.
+
+    Supported patterns (can be mixed in the same field):
+
+    1) Explicit "Table:" titles
+
+        Table: Wells score – clinical features
+        Criterion | Points
+        Clinical signs of DVT | 3
+        Heart rate > 100 bpm  | 1.5
+
+        ---
+
+        Table: Wells score – risk modifiers
+        Factor | Weight | col3
+        Immobilisation > 3 days | 1 | col3
+        Previous DVT/PE        | 1.5 | col3
+
+    2) Implicit titles with blank-line / separator separation
+
+        This first table
+        label | cols
+        label1 | row1
+        label2 | row2
+
+        The second table (separated by blank line)
+        labels | col1 | col2
+        ...
+
+    Rules:
+    - Blank lines OR lines consisting only of separator characters
+      ("-", "—", "–", "|", ".", "_") act as table separators.
+    - Lines starting with "Table" or "Table:" (case-insensitive) are treated
+      as explicit titles for the *following* table block.
+    - Within a block, if there is no explicit title and the first non-empty
+      line contains no "|" or TAB characters, that line is treated as an
+      implicit title and removed from the data rows.
+    - Columns are split on TAB first, otherwise on "|".
+    - If the header row is effectively empty, default headers
+      "Col 1", "Col 2", ... are synthesised using the maximum number of
+      columns seen in the data rows.
+    - All data rows are normalised to the same number of columns as the
+      header (padding with empty strings or truncating as needed).
+    """
+    if not raw_text:
+        return []
+
+    lines = [ln.rstrip("\n\r") for ln in raw_text.splitlines()]
+
+    def is_separator(line: str) -> bool:
+        stripped = line.strip()
+        if not stripped:
+            return True
+        # treat lines made only of common separator characters as separators
+        sep_chars = set(stripped)
+        if sep_chars and sep_chars.issubset(set("-|—–._")):
+            return True
+        return False
+
+    table_blocks: list[tuple[str | None, list[str]]] = []
+    current_title: str | None = None
+    current_lines: list[str] = []
+
+    def flush_block() -> None:
+        nonlocal current_title, current_lines
+        if current_lines:
+            table_blocks.append((current_title, current_lines))
+        current_title = None
+        current_lines = []
+
+    for line in lines:
+        stripped = line.strip()
+
+        # Explicit "Table:" / "Table" title line
+        m = re.match(r"^table\s*:?(.*)$", stripped, re.IGNORECASE)
+        if m:
+            # Close any previous block, then start a new titled block
+            flush_block()
+            title_text = (m.group(1) or "").strip() or None
+            current_title = title_text
+            continue
+
+        # Separator between tables
+        if is_separator(line):
+            flush_block()
+            continue
+
+        # Otherwise, just accumulate as part of the current block
+        current_lines.append(line)
+
+    # Flush the final block
+    flush_block()
+
+    table_sections: list[dict] = []
+
+    for idx, (title, block_lines) in enumerate(table_blocks):
+        # Drop any leading completely empty lines inside the block
+        block_lines = [ln for ln in block_lines if ln.strip()]
+        if not block_lines:
+            continue
+
+        # Implicit title: first line without column separators
+        implicit_title = None
+        first_line = block_lines[0]
+        if not title and ("|" not in first_line and "\t" not in first_line):
+            implicit_title = first_line.strip() or None
+            block_lines = block_lines[1:]
+
+        if not block_lines:
+            # No data rows after stripping implicit title
+            continue
+
+        row_cells: list[list[str]] = []
+        for ln in block_lines:
+            if "\t" in ln:
+                cells = [c.strip() for c in ln.split("\t")]
+            elif "|" in ln:
+                cells = [c.strip() for c in ln.split("|")]
+            else:
+                cells = [ln.strip()]
+
+            # Skip completely empty rows
+            if not any(cells):
+                continue
+            row_cells.append(cells)
+
+        if not row_cells:
+            continue
+
+        header_cells = row_cells[0]
+        data_rows = row_cells[1:]
+
+        # If header is effectively empty, synthesise from max data row length
+        if not any((h or "").strip() for h in header_cells):
+            max_cols = max((len(r) for r in data_rows), default=len(header_cells))
+            if max_cols <= 0:
+                continue
+            header_cells = [f"Col {i + 1}" for i in range(max_cols)]
+
+        # Normalise data rows to the header column count
+        col_count = len(header_cells)
+        normalised_rows: list[list[str]] = []
+        for row in data_rows:
+            if not isinstance(row, list):
+                row = list(row)
+            cells = list(row)
+            if len(cells) < col_count:
+                cells = cells + ["" for _ in range(col_count - len(cells))]
+            elif len(cells) > col_count:
+                cells = cells[:col_count]
+            normalised_rows.append(cells)
+
+        if not normalised_rows:
+            continue
+
+        section_title = title or implicit_title or f"Table {len(table_sections) + 1}"
+
+        table_sections.append(
+            {
+                "title": section_title,
+                "headers": header_cells,
+                "rows": normalised_rows,
+            }
+        )
+
+    return table_sections
+
+# SmartHelperCard serialization helper (for view-model construction)
+def serialize_smart_helper_card(card):
+    """
+    Build a dict representation for a SmartHelperCard instance suitable for rendering in the UI.
+    This helper is used both in:
+      - Flask-Admin (preview in SmartHelperCardAdmin)
+      - Case Workspace smart helper drawer
+    """
+
+    def _enum_to_str(value):
+        """
+        Safely normalise enum-like or plain values to a string.
+        - If value has a `.value` attribute (Enum), use that.
+        - Otherwise, fall back to str(value).
+        - None becomes an empty string.
+        """
+        if value is None:
+            return ""
+        if hasattr(value, "value"):
+            return str(value.value)
+        return str(value)
+
+    # Optional meta/definition JSON for advanced formatting (table title, pre‑structured rows, etc.)
+    meta = getattr(card, "definition_json", None)
+    if not isinstance(meta, dict):
+        # Some implementations might store helper meta in a generic "meta" field instead.
+        meta = getattr(card, "meta", None)
+        if not isinstance(meta, dict):
+            meta = {}
+
+    # 1) Kind/section keys (normalised as lowercase strings)
+    raw_kind = _enum_to_str(getattr(card, "kind", None))
+    raw_section = _enum_to_str(getattr(card, "section", None))
+
+    kind_key = raw_kind.lower()
+    section_key = raw_section.lower()
+
+    # 2) Kind label and badge class
+    if "score" in kind_key:
+        kind_label = "Score"
+        kind_badge_class = "badge badge-sm badge-small bg-primary"
+    elif "measurement" in kind_key:
+        kind_label = "Measurement"
+        kind_badge_class = "badge badge-sm badge-small bg-info text-dark"
+    elif "classification" in kind_key:
+        kind_label = "Classification"
+        kind_badge_class = "badge badge-sm badge-small bg-warning text-dark"
+    elif "checklist" in kind_key:
+        kind_label = "Checklist"
+        kind_badge_class = "badge badge-sm badge-small bg-success"
+    elif "conclusion" in kind_key:
+        kind_label = "Conclusion"
+        kind_badge_class = "badge badge-sm badge-small bg-dark"
+    elif "recommendation" in kind_key:
+        kind_label = "Recommendation"
+        kind_badge_class = "badge badge-sm badge-small bg-dark"
+    else:
+        kind_label = "Info"
+        kind_badge_class = "badge badge-sm badge-small bg-secondary"
+
+    # 3) Section label
+    section_labels = {
+        "indication": "Indication",
+        "comparison": "Comparison",
+        "technique": "Technique",
+        "observations": "Observations",
+        "conclusion": "Conclusion",
+        "recommendations": "Recommendations",
+    }
+    section_label = section_labels.get(section_key, "Any section")
+
+    # 4) Display mode, bullets, and tables
+    table_title = ""
+
+    # Display style may be stored as a plain string or an Enum; normalise to lowercase string.
+    raw_display_mode = getattr(card, "display_style", "auto")
+    display_mode = _enum_to_str(raw_display_mode).strip().lower() or "auto"
+
+    # Bullets are stored as a simple list on the model; keep behaviour but normalise to strings.
+    bullets = getattr(card, "bullets", None)
+    if not isinstance(bullets, list):
+        bullets = []
+    bullets = [
+        str(b)
+        for b in bullets
+        if isinstance(b, (str, int, float))
+    ]
+
+    # --- New multi-table support via raw table text -------------------------
+    # Prefer explicit raw table text fields on the card if present; otherwise,
+    # fall back to definition_json/meta entries. This keeps things robust while
+    # still allowing us to evolve the admin UI.
+    raw_table_text = ""
+
+    if hasattr(card, "table_rows_raw"):
+        raw_table_text = getattr(card, "table_rows_raw") or ""
+    elif hasattr(card, "table_rows"):
+        # Primary admin UI field: raw multi-table text
+        raw_table_text = getattr(card, "table_rows") or ""
+    elif hasattr(card, "table_text"):
+        raw_table_text = getattr(card, "table_text") or ""
+    else:
+        # Fallback: some earlier versions may have stored the raw text inside
+        # definition_json under generic keys.
+        raw_table_text = (
+            meta.get("table_text")
+            or meta.get("table_rows_raw")
+            or ""
+        )
+
+    table_sections = []
+    if isinstance(raw_table_text, str) and raw_table_text.strip():
+        table_sections = parse_named_tables_from_text(raw_table_text)
+
+    # Legacy meta-based table support (list-of-lists/tuples in definition_json["table_rows"])
+    structured_rows = None
+    raw_rows = meta.get("table_rows") or meta.get("rows")
+    inner_meta = meta.get("meta") if isinstance(meta.get("meta"), dict) else None
+    if not isinstance(raw_rows, list) and inner_meta and isinstance(inner_meta, dict):
+        raw_rows = inner_meta.get("table_rows") or inner_meta.get("rows")
+
+    if not table_sections and isinstance(raw_rows, list):
+        # Two supported legacy shapes:
+        # 1) List of dicts with explicit label/value/value_html (simple label/value mode).
+        # 2) List of row lists/tuples representing a single full table (multi-column mode),
+        #    where the first row is the header and remaining rows are data.
+        if raw_rows and all(isinstance(r, (list, tuple)) for r in raw_rows):
+            header_cells = list(raw_rows[0]) if raw_rows[0] is not None else []
+            data_rows = raw_rows[1:] if len(raw_rows) > 1 else []
+
+            # If header row is empty, synthesise default column names
+            if not any(str(c).strip() for c in header_cells):
+                max_cols = 0
+                for row in data_rows:
+                    try:
+                        max_cols = max(max_cols, len(row))
+                    except TypeError:
+                        continue
+                if max_cols > 0:
+                    header_cells = [f"Col {i+1}" for i in range(max_cols)]
+
+            # Normalise all rows to the same column length as header
+            col_count = len(header_cells)
+            normalised_data = []
+            for row in data_rows:
+                if not isinstance(row, (list, tuple)):
+                    continue
+                cells = list(row)
+                if len(cells) < col_count:
+                    cells = cells + ["" for _ in range(col_count - len(cells))]
+                elif len(cells) > col_count:
+                    cells = cells[:col_count]
+                normalised_data.append(cells)
+
+            # We keep the legacy single-table behaviour here by wrapping this
+            # as a single table section entry; the template can still render
+            # it using the same machinery as the new multi-table format.
+            table_sections = [
+                {
+                    "title": meta.get("table_title", "").strip() if isinstance(meta.get("table_title"), str) else "",
+                    "headers": header_cells,
+                    "rows": normalised_data,
+                }
+            ]
+        else:
+            tmp_rows = []
+            for r in raw_rows:
+                if not isinstance(r, dict):
+                    continue
+                label = str(r.get("label", "")).strip()
+                value_html = str(r.get("value_html", r.get("value", "")) or "").strip()
+                if not label and not value_html:
+                    continue
+                tmp_rows.append({
+                    "label": label,
+                    "value_html": value_html,
+                })
+            if tmp_rows:
+                structured_rows = tmp_rows
+
+    # Decide how to expose rows vs bullets for the UI
+    rows = []
+    if structured_rows:
+        rows = structured_rows
+        if display_mode == "auto":
+            display_mode = "table"
+    else:
+        if display_mode in ("table", "auto"):
+            # Parse "Label: value" bullets into tabular rows if possible
+            label_val_re = re.compile(r'^([^:]{1,80}):\s*(.+)$')
+            parsed = []
+            for bullet in bullets:
+                m = label_val_re.match(bullet)
+                if m:
+                    parsed.append({
+                        "label": m.group(1).strip(),
+                        "value_html": m.group(2).strip(),
+                    })
+                else:
+                    parsed = None
+                    break
+
+            if parsed and len(parsed) > 0:
+                rows = parsed
+                if display_mode == "auto":
+                    display_mode = "table"
+            else:
+                # Fallback to list mode if auto/table cannot be satisfied
+                rows = []
+                display_mode = "list"
+        elif display_mode == "list":
+            rows = []
+
+    # 5) Meta text line (token, modality, body_part, module)
+    meta_parts = []
+    token = getattr(card, "token", None)
+    if token:
+        meta_parts.append(str(token))
+
+    modality = getattr(card, "modality", None)
+    if modality:
+        val = getattr(modality, "value", None)
+        meta_parts.append(val if val is not None else str(modality))
+
+    body_part = getattr(card, "body_part", None)
+    if body_part:
+        val = getattr(body_part, "value", None)
+        pretty = val if val is not None else str(body_part)
+        pretty = pretty.replace("_", " ").title()
+        meta_parts.append(pretty)
+
+    module = getattr(card, "module", None)
+    if module:
+        val = getattr(module, "value", None)
+        pretty = val if val is not None else str(module)
+        pretty = pretty.replace("_", " ").title()
+        meta_parts.append(pretty)
+
+    meta_text = " • ".join([part for part in meta_parts if part])
+
+    # 6) Build result dict
+    result = {
+        "id": getattr(card, "id", None),
+        "title": getattr(card, "title", None),
+        "summary_html": getattr(card, "summary", "") or "",
+        "kind_label": kind_label,
+        "kind_badge_class": kind_badge_class,
+        "section_label": section_label,
+        "meta_text": meta_text,
+        "display_mode": display_mode,
+        "rows": rows,
+        "bullets": bullets if display_mode == "list" else [],
+        "insert_options": getattr(card, "insert_options", None) or [],
+        "tags": getattr(card, "tags", None) or "",
+        "table_title": table_title,
+        "table_sections": table_sections,
+    }
+    return result
+
 #------------
 # Helper function for AdminReportTemplate and UserReportTemplate
 #-------
@@ -1773,7 +2201,7 @@ def create_report_template_pdf(data, return_path_only=False):
     
     # Observations
     # setting styles for observation fields :
-    
+
     # Section name in bold and blue color
     section_style = ParagraphStyle(
         name='SectionStyle',
@@ -1781,14 +2209,14 @@ def create_report_template_pdf(data, return_path_only=False):
         leading=16,
         textColor=colors.HexColor('#0066CC'),
         spaceAfter=4
-        )
+    )
     detail_style = ParagraphStyle(
         name='DetailStyle',
         fontSize=12,
         leading=15,
         leftIndent=20,
         spaceAfter=6
-        )
+    )
     heading_style = ParagraphStyle(
         name='HeadingStyle',
         fontSize=14,
@@ -1798,87 +2226,26 @@ def create_report_template_pdf(data, return_path_only=False):
         spaceBefore=12
     )
     elements.append(Paragraph('Observations:', heading_style))
-    
+
     # Ensure observations is always a list, with a default entry if the list is empty or None
-    
-    observations = data.get('observations', [])  # Default to an empty list if observations is None
-    section_name = ""
-    detail = ""
+    observations = data.get('observations') or []
+    if not isinstance(observations, list):
+        observations = []
 
-    for obs in observations:
-        if obs is None:  # Skip if the observation itself is None
-            continue
+    if not observations:
+        # If there are no observations, add a default line
+        elements.append(Paragraph('No observations provided', detail_style))
+    else:
+        for obs in observations:
+            # Skip any non-dict observation
+            if not isinstance(obs, dict):
+                continue
 
-        # Initialize defaults for each observation
-        section_name = "Section"
-        detail = "No details provided"
-    
-        for key, value in obs.items():
-            if key == 'section':
-                section_name = value if value else 'Section'  # Handle empty or None values
-            elif key == 'details':
-                detail = value if value else 'No details provided'  # Handle empty or None values
+            # Extract section and details with sensible defaults
+            section_name = obs.get('section') or 'Section'
+            detail = obs.get('details') or 'No details provided'
 
-        # Add section and detail to the document
-        section_paragraph = Paragraph(f"{section_name}:", section_style)
-        elements.append(section_paragraph)
-        detail_paragraph = Paragraph(detail, detail_style)
-        elements.append(detail_paragraph)
-
-    # Conclusions
-    add_section('Conclusions:', data.get('conclusions', 'No conclusions provided'))
-    
-    # Recommendations
-    add_section('Recommendations:', data.get('recommendations', 'No recommendations provided'))
-    
-    # Signature and Date
-    signature_style = ParagraphStyle(
-        name='SignatureStyle',
-        fontSize=12,
-        leading=15,
-        spaceAfter=12,
-        spaceBefore=36
-    )
-    registration_style=ParagraphStyle(
-        name='RegistrationStyle',
-        fontSize=12,
-        leading=15,
-        spaceAfter=12,
-        spaceBefore=8,
-        italic=True
-    )
-    signature_text = f"Reported and electronically signed by:                  "
-    registration_no="Registration Number:               "
-    signature_date = f"Dated: {datetime.now().strftime('%Y-%m-%d')}"
-    elements.append(Paragraph(signature_text, signature_style))
-    elements.append(Paragraph(registration_no, registration_style))
-    elements.append(Paragraph(signature_date, signature_style))
-    
-    # Footer
-    def add_footer(canvas, doc):
-        footer_text = 'SmartReportTemplates\nBrought to you by WSCompanion: because every Hero needs a companion'
-        canvas.saveState()
-        canvas.setFont('Helvetica', 10)
-        canvas.setFillColor(colors.HexColor('#6B8E23'))
-        width, height = doc.pagesize
-        footer_lines = footer_text.split('\n')
-        y = 15 * mm
-        for line in footer_lines:
-            canvas.drawCentredString(width / 2.0, y, line)
-            y -= 12  # Move up for next line
-        canvas.restoreState()
-    
-    # Build the PDF
-    doc.build(elements, onFirstPage=add_footer, onLaterPages=add_footer)
-    
-    buffer.seek(0)
-    
-    if return_path_only:
-        # Save buffer to a temporary file
-        temp_pdf_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
-        temp_pdf_file.write(buffer.getvalue())
-        temp_pdf_file.close()
-        return temp_pdf_file.name
-    else:   
-        # Return the buffer for direct download
-        return buffer
+            # Add section name
+            elements.append(Paragraph(f'{section_name}:', section_style))
+            # Add details text
+            elements.append(Paragraph(detail, detail_style))
