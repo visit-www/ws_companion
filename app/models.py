@@ -434,7 +434,161 @@ class NormalMeasurement(Base):
     def __repr__(self) -> str:
         return f"<NormalMeasurement(id={self.id}, name='{self.name}')>"
         
+# *----------------------------------------------------------------
+# Model for samrt helper playbook and smart helper cards:
 
+# Enums and model for Smart Helper cards (Phase 2c/3 pipeline)
+class SmartHelperSectionEnum(PyEnum):
+    ANY = 'any'
+    INDICATION = 'indication'
+    COMPARISON = 'comparison'
+    TECHNIQUE = 'technique'
+    OBSERVATIONS = 'observations'
+    CONCLUSION = 'conclusion'
+    RECOMMENDATIONS = 'recommendations'
+
+class SmartHelperKindEnum(PyEnum):
+    INFO = 'info'  # generic info / teaching / summary
+    TECHNIQUE = 'technique'  # protocol, acquisition, positioning, phases
+    MEASUREMENT = 'measurement'  # normal values, how-to-measure
+    CLASSIFICATION = 'classification'  # TNM, RADS, staging systems
+    SCORE = 'score'  # Wells, PERC, CHA2DS2-VASc, CHA2DS2-VASc, etc.
+    DIFFERENTIAL = 'differential'  # structured differential diagnosis / reasoning
+    CHECKLIST = 'checklist'  # QA / safety / “before you authorise” checks
+    CONCLUSION_SENTENCE = 'conclusion_sentence'  # impression / diagnosis phrasing
+    RECOMMENDATION_SENTENCE = 'recommendation_sentence'  # follow-up / management phrasing
+    PITFALL = 'pitfall'  # mimics, common misses, red flags
+    OTHER = 'other'
+
+class SmartHelperCard(Base):
+    """
+    Core model for inline smart helper content in Case Workspace.
+
+    This is designed to be:
+    - STRUCTURALLY FILTERABLE:
+      section + kind + token + modality/body_part/module act as anchors.
+    - ADMIN-FRIENDLY:
+      title/summary/tags/priority are simple form fields.
+      bullets_json and insert_options_json are JSON blobs but can be edited via
+      a structured Flask-Admin UI or pasted as raw JSON.
+    - FUTURE-PROOF:
+      definition_json allows extra metadata later without migrations.
+    """
+    __tablename__ = 'smart_helper_cards'
+
+    id: so.Mapped[int] = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
+
+    # Target section within the report (or ANY)
+    section: so.Mapped[SmartHelperSectionEnum] = sa.Column(
+        sa.Enum(SmartHelperSectionEnum, name='smart_helper_section_enum'),
+        nullable=False,
+        index=True,
+        default=SmartHelperSectionEnum.ANY,
+    )
+
+    # Semantic type of card (info, checklist, measurement, diagnosis sentence, etc.)
+    kind: so.Mapped[SmartHelperKindEnum] = sa.Column(
+        sa.Enum(SmartHelperKindEnum, name='smart_helper_kind_enum'),
+        nullable=False,
+        index=True,
+        default=SmartHelperKindEnum.INFO,
+    )
+
+    # Trigger token from the user selection text (e.g. "wells", "PE", "PERC")
+    token: so.Mapped[Optional[str]] = sa.Column(
+        sa.String(255),
+        nullable=True,
+        index=True,
+        doc="Primary trigger token or keyword. Matching is handled in Python (exact/contains/etc.).",
+    )
+
+    # Structural filters so helpers are context-aware
+    modality: so.Mapped[Optional[ModalityEnum]] = sa.Column(
+        sa.Enum(ModalityEnum, name='modality_enum'),
+        nullable=True,
+        index=True,
+    )
+
+    body_part: so.Mapped[Optional[BodyPartEnum]] = sa.Column(
+        sa.Enum(BodyPartEnum, name='body_part_enum'),
+        nullable=True,
+        index=True,
+    )
+
+    module: so.Mapped[Optional[ModuleNames]] = sa.Column(
+        sa.Enum(ModuleNames, name='module_name'),
+        nullable=True,
+        index=True,
+    )
+
+    # Optional simple demographic filters (for future extension)
+    min_age_years: so.Mapped[Optional[int]] = sa.Column(sa.Integer, nullable=True)
+    max_age_years: so.Mapped[Optional[int]] = sa.Column(sa.Integer, nullable=True)
+    sex: so.Mapped[Optional[str]] = sa.Column(
+        sa.String(10),
+        nullable=True,
+        doc="Optional: 'male', 'female', or 'any'. Not enforced.",
+    )
+
+    # Human-readable content for the card
+    title: so.Mapped[str] = sa.Column(sa.String(255), nullable=False)
+    summary: so.Mapped[Optional[str]] = sa.Column(sa.Text, nullable=True)
+
+    # JSON payloads used by the Case Workspace smart helper renderer
+    # bullets_json: list of bullet strings
+    bullets_json: so.Mapped[Optional[dict]] = sa.Column(
+        sa.JSON,
+        nullable=True,
+        doc="JSON array of bullet strings, e.g. ['Point 1', 'Point 2'].",
+    )
+
+    # insert_options_json: list of {label, text} objects
+    insert_options_json: so.Mapped[Optional[dict]] = sa.Column(
+        sa.JSON,
+        nullable=True,
+        doc="JSON array of objects: [{ 'label': 'Insert normal sentence', 'text': 'No evidence of PE.' }, ...].",
+    )
+
+    # Generic JSON for advanced metadata / future fields
+    definition_json: so.Mapped[Optional[dict]] = sa.Column(
+        sa.JSON,
+        nullable=True,
+        doc="Flexible JSON for extra metadata or specialised helper types.",
+    )
+
+    tags: so.Mapped[Optional[str]] = sa.Column(
+        sa.Text,
+        nullable=True,
+        doc="Comma-separated or JSON-encoded tags for search and admin filtering.",
+    )
+
+    # Activation and ranking
+    is_active: so.Mapped[bool] = sa.Column(sa.Boolean, nullable=False, default=True, index=True)
+    priority: so.Mapped[int] = sa.Column(
+        sa.Integer,
+        nullable=False,
+        default=0,
+        doc="Higher priority helpers are shown first for a given token/context.",
+    )
+
+    # Audit fields
+    created_at: so.Mapped[datetime] = sa.Column(
+        sa.DateTime,
+        default=datetime.now(timezone.utc),
+        nullable=False,
+    )
+    updated_at: so.Mapped[datetime] = sa.Column(
+        sa.DateTime,
+        default=datetime.now(timezone.utc),
+        onupdate=datetime.now(timezone.utc),
+        nullable=False,
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<SmartHelperCard(id={self.id}, token={self.token!r}, "
+            f"section={self.section.value}, kind={self.kind.value}, priority={self.priority})>"
+        )
 
 # *----------------------------------------------------------------
 # Models for User Data and Preferences:

@@ -1074,3 +1074,8 @@ body {
 .protocol-rich-text table td {
   white-space: nowrap;
 }
+
+.badge-sm {
+  font-size: 0.75em; /* Makes the font 75% the size of its parent */
+  padding: 0.25em 0.4em; /* Reduces the padding around the text */
+}

@@ -100,6 +100,120 @@
       padding-top: 0.25rem;
       padding-bottom: 0.25rem;
     }
+
+    /* --- Smart helper card and table styles --- */
+    .smart-helper-card {
+      border-left: 4px solid #6cb2eb;
+      background: #f7fbff;
+      margin-bottom: 0.75rem;
+    }
+    .smart-helper-card .card-header {
+      background: #eaf3fa;
+      padding: 0.4rem 0.75rem;
+    }
+    .smart-helper-card-title {
+      font-size: 0.98em;
+      font-weight: 600;
+      margin-bottom: 0.1rem;
+    }
+    .smart-helper-card-meta {
+      color: #6c757d;
+      font-size: 0.87em;
+      text-align: right;
+      margin-left: auto;
+    }
+    .smart-helper-table {
+      width: 100%;
+      font-size: 0.95em;
+      border-collapse: collapse;
+      margin-bottom: 0.5rem;
+    }
+    .smart-helper-table th {
+      text-align: right;
+      background: #f0f3f7;
+      color: #7c8a96;
+      font-weight: 600;
+      padding: 0.3rem 0.7rem 0.3rem 0.2rem;
+      width: 40%;
+      border: none;
+      vertical-align: top;
+      white-space: normal;
+    }
+    .smart-helper-table td {
+      text-align: left;
+      background: #fff;
+      padding: 0.3rem 0.2rem 0.3rem 0.7rem;
+      border: none;
+      vertical-align: top;
+      white-space: normal;
+    }
+    /* Per-column coloring for smart helper tables */
+    .smart-helper-table th:nth-child(1),
+    .smart-helper-table td:nth-child(1) {
+      background: #e8f4ff;
+      color: #405060;
+    }
+    .smart-helper-table th:nth-child(2),
+    .smart-helper-table td:nth-child(2) {
+      background: #f6fbf0;
+      color: #4e6150;
+    }
+    .smart-helper-table th:nth-child(3),
+    .smart-helper-table td:nth-child(3) {
+      background: #f9f5ff;
+      color: #5b4e61;
+    }
+    .smart-helper-table th:nth-child(4),
+    .smart-helper-table td:nth-child(4) {
+      background: #fff9f3;
+      color: #665b4e;
+    }
+    .smart-helper-table th:nth-child(5),
+    .smart-helper-table td:nth-child(5) {
+      background: #f3faff;
+      color: #4e5e66;
+    }
+
+    .wsc-editor-layout {
+      display: flex;
+      gap: 0.5rem;
+      align-items: flex-start;
+      width: 100%;
+    }
+    .wsc-editor-layout .wsc-helper-col {
+      display: none;
+      flex: 0 0 0;
+      max-width: 0;
+    }
+    .wsc-editor-layout .wsc-editor-col {
+      flex: 1 1 auto;
+      max-width: 100%;
+    }
+    .wsc-editor-layout.wsc-helper-visible .wsc-helper-col {
+      display: block;
+      flex: 0 0 33%;
+      max-width: 33%;
+    }
+    .wsc-editor-layout.wsc-helper-visible .wsc-editor-col {
+      flex: 0 0 67%;
+      max-width: 67%;
+    }
+    @media (max-width: 767.98px) {
+      .wsc-editor-layout {
+        flex-direction: column;
+      }
+      .wsc-editor-layout .wsc-helper-col,
+      .wsc-editor-layout.wsc-helper-visible .wsc-helper-col {
+        display: block;
+        flex: 0 0 auto;
+        max-width: 100%;
+      }
+      .wsc-editor-layout .wsc-editor-col,
+      .wsc-editor-layout.wsc-helper-visible .wsc-editor-col {
+        flex: 1 1 auto;
+        max-width: 100%;
+      }
+    }
   </style>
 
   <div class="row">
@@ -572,40 +686,54 @@
                     </div>
                   </div>
 
-                  <div class="small text-muted mb-1">
-                    <small id="wsc-placeholder-count" class="text-muted"></small>
-                  </div>
+                  <div id="report-editor-layout" class="wsc-editor-layout mt-1">
+                    <!-- Left: Smart helper drawer (collapsible) -->
+                    <div id="reportSmartHelperPanel" class="wsc-helper-col">
+                      <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small text-muted">Smart helper suggestions</span>
+                      </div>
+                      <div id="reportSmartHelperDrawer" class="collapse show">
+                        <div id="report-smart-helper-container" class="mt-1 small"></div>
+                      </div>
+                    </div>
 
-                  <div id="workspace-help-container" class="mt-1 small"></div>
-                  <div id="report-smart-helper-container" class="mt-1 small"></div>
+                    <!-- Right: editor, placeholder info, and workspace help -->
+                    <div class="wsc-editor-col">
+                      <div class="small text-muted mb-1">
+                        <small id="wsc-placeholder-count" class="text-muted"></small>
+                      </div>
 
-                  <textarea id="reporting_text"
-                            name="report_text"
-                            class="form-control form-control-sm"
-                            rows="12"
-                            placeholder="Refine the selected template text here.">{{ report_text_default or '' }}</textarea>
-                  <script>
-                    (function() {
-                      const ta = document.getElementById('reporting_text');
-                      if (!ta) return;
+                      <div id="workspace-help-container" class="mt-1 small"></div>
 
-                      function autoResize() {
-                        ta.style.height = 'auto';
-                        ta.style.height = ta.scrollHeight + 'px';
-                      }
+                      <textarea id="reporting_text"
+                                name="report_text"
+                                class="form-control form-control-sm mt-1"
+                                rows="12"
+                                placeholder="Refine the selected template text here.">{{ report_text_default or '' }}</textarea>
+                      <script>
+                        (function() {
+                          const ta = document.getElementById('reporting_text');
+                          if (!ta) return;
 
-                      // Trigger resize on input
-                      ta.addEventListener('input', autoResize);
+                          function autoResize() {
+                            ta.style.height = 'auto';
+                            ta.style.height = ta.scrollHeight + 'px';
+                          }
 
-                      // Trigger on page load (initial template)
-                      window.addEventListener('load', autoResize);
-                    })();
-                  </script>
+                          // Trigger resize on input
+                          ta.addEventListener('input', autoResize);
 
-                  <div id="reporting_text_view"
-                      class="form-control form-control-sm bg-warning-subtle d-none"
-                      style="white-space: pre-wrap; min-height: 12rem;">
-                    {{ report_text_default or '' }}
+                          // Trigger on page load (initial template)
+                          window.addEventListener('load', autoResize);
+                        })();
+                      </script>
+
+                      <div id="reporting_text_view"
+                          class="form-control form-control-sm bg-warning-subtle d-none mt-1"
+                          style="white-space: pre-wrap; min-height: 12rem;">
+                        {{ report_text_default or '' }}
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -1020,6 +1148,7 @@
         const helperContainer = document.getElementById('report-smart-helper-container');
         const workspaceHelpBtn = document.getElementById('workspace-help-btn');
         const workspaceHelpContainer = document.getElementById('workspace-help-container');
+        const editorLayout = document.getElementById('report-editor-layout');
 
         if (helperBtn && reportInput && helperContainer) {
           const smartHelperUrl = "{{ url_for('main_routes.smart_helper_route') }}";
@@ -1084,6 +1213,9 @@
             // If helper suggestions are already visible, hide them on repeat Alt/Option+H.
             if (helperContainer.children && helperContainer.children.length > 0) {
               helperContainer.innerHTML = '';
+              if (editorLayout) {
+                editorLayout.classList.remove('wsc-helper-visible');
+              }
               return;
             }
 
@@ -1106,44 +1238,412 @@
               return;
             }
 
+            // Helper: check if all bullets match "Label: Value"
+            function allBulletsAreLabelValue(bullets) {
+              if (!Array.isArray(bullets) || !bullets.length) return false;
+              return bullets.every(function (b) {
+                return typeof b === 'string' && /^([^:]{1,80}):\s*(.+)$/.test(b);
+              });
+            }
+
             cards.forEach(function (card) {
               if (!card || !card.title) return;
 
-              const wrapper = document.createElement('div');
-              wrapper.className = 'card card-body p-2 mb-2 border border-secondary-subtle';
+              const kindKey = (card.kind || 'info').toString().toLowerCase();
+              const sectionKey = (card.section || '').toString().toLowerCase();
 
-              const titleEl = document.createElement('div');
-              titleEl.className = 'fw-semibold small';
-              titleEl.textContent = card.title;
-              wrapper.appendChild(titleEl);
+              let kindLabel = 'Info';
+              let kindBadgeClass = 'badge bg-secondary';
 
-              if (card.summary) {
-                const summaryEl = document.createElement('div');
-                summaryEl.className = 'small text-muted';
-                summaryEl.textContent = card.summary;
-                wrapper.appendChild(summaryEl);
+              if (kindKey.indexOf('score') !== -1) {
+                kindLabel = 'Score';
+                kindBadgeClass = 'badge bg-primary';
+              } else if (kindKey.indexOf('measurement') !== -1) {
+                kindLabel = 'Measurement';
+                kindBadgeClass = 'badge bg-info text-dark';
+              } else if (kindKey.indexOf('classification') !== -1) {
+                kindLabel = 'Classification';
+                kindBadgeClass = 'badge bg-warning text-dark';
+              } else if (kindKey.indexOf('checklist') !== -1) {
+                kindLabel = 'Checklist';
+                kindBadgeClass = 'badge bg-success';
+              } else if (kindKey.indexOf('conclusion') !== -1) {
+                kindLabel = 'Conclusion';
+                kindBadgeClass = 'badge bg-dark';
+              } else if (kindKey.indexOf('recommendation') !== -1) {
+                kindLabel = 'Recommendation';
+                kindBadgeClass = 'badge bg-dark';
               }
 
-              if (Array.isArray(card.bullets) && card.bullets.length) {
-                const ul = document.createElement('ul');
-                ul.className = 'small mb-1';
-                card.bullets.forEach(function (b) {
-                  const li = document.createElement('li');
-                  li.textContent = b;
-                  ul.appendChild(li);
+              let sectionLabel = 'Any section';
+              if (sectionKey === 'indication') sectionLabel = 'Indication';
+              else if (sectionKey === 'comparison') sectionLabel = 'Comparison';
+              else if (sectionKey === 'technique') sectionLabel = 'Technique';
+              else if (sectionKey === 'observations') sectionLabel = 'Observations';
+              else if (sectionKey === 'conclusion') sectionLabel = 'Conclusion';
+              else if (sectionKey === 'recommendations') sectionLabel = 'Recommendations';
+
+              const wrapper = document.createElement('div');
+              wrapper.className = 'card mb-2 shadow-sm smart-helper-card';
+
+              const header = document.createElement('div');
+              header.className = 'card-header d-flex justify-content-between align-items-center py-1';
+
+              const badgeContainer = document.createElement('div');
+
+              const kindBadge = document.createElement('span');
+              kindBadge.className = kindBadgeClass + ' rounded-pill me-1';
+              kindBadge.textContent = kindLabel;
+              badgeContainer.appendChild(kindBadge);
+
+              const sectionBadge = document.createElement('span');
+              sectionBadge.className = 'badge bg-light text-muted border rounded-pill';
+              sectionBadge.textContent = sectionLabel;
+              badgeContainer.appendChild(sectionBadge);
+
+              header.appendChild(badgeContainer);
+
+              const meta = document.createElement('small');
+              meta.className = 'smart-helper-card-meta';
+              const metaParts = [];
+              if (card.token) metaParts.push(card.token);
+              if (card.modality) metaParts.push(card.modality);
+              if (card.body_part) metaParts.push(card.body_part.replace(/_/g, ' ').toLowerCase());
+              if (card.module) metaParts.push(card.module.replace(/_/g, ' ').toLowerCase());
+              if (metaParts.length) {
+                meta.textContent = metaParts.join(' \u2022 ');
+              }
+              header.appendChild(meta);
+
+              wrapper.appendChild(header);
+
+              const body = document.createElement('div');
+              body.className = 'card-body p-2';
+
+              const titleEl = document.createElement('h6');
+              titleEl.className = 'card-title mb-1 small fw-semibold smart-helper-card-title';
+              titleEl.textContent = card.title;
+              body.appendChild(titleEl);
+
+              // Prefer summary_html (already safely built on the backend) and fall back to plain summary
+              const summaryHtml = card.summary_html || card.summary;
+              if (summaryHtml) {
+                const summaryEl = document.createElement('p');
+                summaryEl.className = 'card-text small text-muted mb-2';
+                summaryEl.innerHTML = summaryHtml;
+                body.appendChild(summaryEl);
+              }
+
+              // Normalise modern sections from either snake_case or camelCase keys
+              const tableSections = Array.isArray(card.table_sections)
+                ? card.table_sections
+                : (Array.isArray(card.tableSections) ? card.tableSections : []);
+
+              const bulletSections = Array.isArray(card.bullet_sections)
+                ? card.bullet_sections
+                : (Array.isArray(card.bulletSections) ? card.bulletSections : []);
+
+              const hasTableSections = tableSections.length > 0;
+              const hasBulletSections = bulletSections.length > 0;
+              const rows = Array.isArray(card.rows) ? card.rows : [];
+              const bullets = Array.isArray(card.bullets) ? card.bullets : [];
+
+              let usedModernSections = false;
+
+              // --- Modern table sections (unlimited tables / unlimited columns) ---
+              if (hasTableSections) {
+                usedModernSections = true;
+                tableSections.forEach(function (section, idx) {
+                  if (!section) return;
+
+                  const tableTitle = section.title || ('Table ' + (idx + 1));
+                  const headers = Array.isArray(section.headers) ? section.headers : [];
+                  const dataRows = Array.isArray(section.rows) ? section.rows : [];
+
+                  if (!headers.length && !dataRows.length) {
+                    return;
+                  }
+
+                  if (tableTitle) {
+                    const tableTitleEl = document.createElement('div');
+                    tableTitleEl.className = 'small fw-semibold mb-1';
+                    tableTitleEl.innerHTML = tableTitle;
+                    body.appendChild(tableTitleEl);
+                  }
+
+                  const table = document.createElement('table');
+                  table.className = 'table table-sm mb-2 smart-helper-table';
+
+                  if (headers.length) {
+                    const thead = document.createElement('thead');
+                    const trHead = document.createElement('tr');
+                    headers.forEach(function (h) {
+                      const th = document.createElement('th');
+                      th.textContent = h;
+                      trHead.appendChild(th);
+                    });
+                    thead.appendChild(trHead);
+                    table.appendChild(thead);
+                  }
+
+                  if (dataRows.length) {
+                    const tbody = document.createElement('tbody');
+                    dataRows.forEach(function (rowArr) {
+                      if (!rowArr) return;
+                      const tr = document.createElement('tr');
+                      // Support row as plain array of cells, or as { cells: [...] }
+                      const cells = Array.isArray(rowArr)
+                        ? rowArr
+                        : (Array.isArray(rowArr.cells) ? rowArr.cells : []);
+                      cells.forEach(function (cell) {
+                        const td = document.createElement('td');
+                        td.innerHTML = cell || '';
+                        tr.appendChild(td);
+                      });
+                      // Only append if there is at least one cell
+                      if (tr.children.length > 0) {
+                        tbody.appendChild(tr);
+                      }
+                    });
+                    table.appendChild(tbody);
+                  }
+
+                  body.appendChild(table);
                 });
-                wrapper.appendChild(ul);
+              }
+
+              // --- Modern bullet / checklist sections (multiple titled blocks) ---
+              if (hasBulletSections) {
+                usedModernSections = true;
+                bulletSections.forEach(function (section, idx) {
+                  if (!section) return;
+                  const items = Array.isArray(section.items) ? section.items : [];
+                  if (!items.length) return;
+
+                  const block = document.createElement('div');
+                  block.className = 'mb-2';
+
+                  const title = section.title || ('Bullet list ' + (idx + 1));
+                  if (title) {
+                    const titleEl = document.createElement('div');
+                    titleEl.className = 'small fw-semibold mb-1';
+                    titleEl.innerHTML = title;
+                    block.appendChild(titleEl);
+                  }
+
+                  const style = (section.style || 'bullets').toString().toLowerCase();
+
+                  if (style === 'checkbox' || style === 'checkboxes') {
+                    const ul = document.createElement('ul');
+                    ul.className = 'list-unstyled mb-1';
+                    items.forEach(function (item) {
+                      const li = document.createElement('li');
+                      li.className = 'd-flex align-items-start small';
+                      const checkbox = document.createElement('input');
+                      checkbox.type = 'checkbox';
+                      checkbox.className = 'form-check-input me-2 mt-0';
+                      checkbox.disabled = true;
+                      const span = document.createElement('span');
+                      span.className = 'form-check-label';
+                      span.innerHTML = item;
+                      li.appendChild(checkbox);
+                      li.appendChild(span);
+                      ul.appendChild(li);
+                    });
+                    block.appendChild(ul);
+                  } else {
+                    const ul = document.createElement('ul');
+                    ul.className = 'small mb-1 ps-3';
+                    items.forEach(function (item) {
+                      const li = document.createElement('li');
+                      li.innerHTML = item;
+                      ul.appendChild(li);
+                    });
+                    block.appendChild(ul);
+                  }
+
+                  body.appendChild(block);
+                });
+              }
+
+              // --- Legacy fallback for older cards (rows + bullets) ---
+              if (!usedModernSections) {
+                if (rows.length) {
+                  // New: treat legacy rows as multi-column table data derived from label/value.
+                  // Build tableBlocks as array of { title, rows }.
+                  const tableBlocks = [];
+                  let currentBlock = null;
+                  let hasTableTitle = false;
+                  rows.forEach(function (row) {
+                    if (!row) return;
+                    const label = row.label || row.key || row.name || '';
+                    const valueHtml = row.value_html || row.value || row.text || row.description || '';
+                    // Combine label and value into a single line, then split into cells.
+                    const rawLine = (label ? label : '') + (valueHtml ? ('|' + valueHtml) : '');
+                    const cells = rawLine.split(/[\t|]/).map(function (c) {
+                      return (c || '').trim();
+                    });
+                    // Determine the first non-empty, non-dash cell
+                    const firstNonEmptyCell = cells.find(function (c) {
+                      return c && !/^-+$/.test(c);
+                    }) || '';
+                    // Table title marker: first non-empty cell starts with "Table:"
+                    if (typeof firstNonEmptyCell === 'string' && /^table:/i.test(firstNonEmptyCell)) {
+                      // If currentBlock exists and has rows, push it.
+                      if (currentBlock && Array.isArray(currentBlock.rows) && currentBlock.rows.length) {
+                        tableBlocks.push(currentBlock);
+                      }
+                      currentBlock = {
+                        title: firstNonEmptyCell.replace(/^table:/i, '').trim(),
+                        rows: []
+                      };
+                      hasTableTitle = true;
+                      // Do not add a data row for this line.
+                      return;
+                    }
+                    // A separator row is one where all cells are empty or made only of dashes.
+                    const nonEmpty = cells.filter(function (c) {
+                      return c && !/^-+$/.test(c);
+                    });
+                    const isSeparator = nonEmpty.length === 0;
+                    if (isSeparator) {
+                      if (currentBlock && currentBlock.rows.length) {
+                        tableBlocks.push(currentBlock);
+                        currentBlock = null;
+                      }
+                      return;
+                    }
+                    // Only keep rows that have at least one non-empty, non-dash cell.
+                    if (nonEmpty.length) {
+                      if (!currentBlock) {
+                        currentBlock = { title: '', rows: [] };
+                      }
+                      currentBlock.rows.push(cells);
+                    }
+                  });
+                  if (currentBlock && currentBlock.rows.length) {
+                    tableBlocks.push(currentBlock);
+                  }
+                  // If we still have nothing meaningful, fall back to a very simple 2-column rendering
+                  // to avoid breaking older content completely.
+                  if (!tableBlocks.length) {
+                    if (card.table_title) {
+                      const tableTitleEl = document.createElement('div');
+                      tableTitleEl.className = 'small fw-semibold mb-1';
+                      tableTitleEl.innerHTML = card.table_title;
+                      body.appendChild(tableTitleEl);
+                    }
+                    const table = document.createElement('table');
+                    table.className = 'table table-sm mb-2 smart-helper-table';
+                    rows.forEach(function (row) {
+                      if (!row) return;
+                      const label = row.label || row.key || row.name || '';
+                      const valueHtml = row.value_html || row.value || row.text || row.description || '';
+                      if (!label && !valueHtml) return;
+                      const tr = document.createElement('tr');
+                      const th = document.createElement('th');
+                      th.textContent = label;
+                      const td = document.createElement('td');
+                      td.innerHTML = valueHtml;
+                      tr.appendChild(th);
+                      tr.appendChild(td);
+                      table.appendChild(tr);
+                    });
+                    body.appendChild(table);
+                  } else {
+                    // Render one table per block.
+                    tableBlocks.forEach(function (block, blockIndex) {
+                      if (!Array.isArray(block.rows) || !block.rows.length) return;
+                      // Determine tableTitle.
+                      let tableTitle = '';
+                      if (block.title) {
+                        tableTitle = block.title;
+                      } else if (card.table_title) {
+                        tableTitle = tableBlocks.length > 1
+                          ? (card.table_title + ' – Table ' + (blockIndex + 1))
+                          : card.table_title;
+                      } else {
+                        tableTitle = 'Table ' + (blockIndex + 1);
+                      }
+                      if (tableTitle) {
+                        const tableTitleEl = document.createElement('div');
+                        tableTitleEl.className = 'small fw-semibold mb-1';
+                        tableTitleEl.innerHTML = tableTitle;
+                        body.appendChild(tableTitleEl);
+                      }
+                      const headerCells = block.rows[0] || [];
+                      const dataRows = block.rows.slice(1);
+                      const table = document.createElement('table');
+                      table.className = 'table table-sm mb-2 smart-helper-table';
+                      if (headerCells.length) {
+                        const thead = document.createElement('thead');
+                        const trHead = document.createElement('tr');
+                        headerCells.forEach(function (h) {
+                          const th = document.createElement('th');
+                          th.textContent = (h || '').toString();
+                          trHead.appendChild(th);
+                        });
+                        thead.appendChild(trHead);
+                        table.appendChild(thead);
+                      }
+                      if (dataRows.length) {
+                        const tbody = document.createElement('tbody');
+                        dataRows.forEach(function (rowCells) {
+                          if (!Array.isArray(rowCells) || !rowCells.length) return;
+                          const tr = document.createElement('tr');
+                          rowCells.forEach(function (cell) {
+                            const td = document.createElement('td');
+                            td.innerHTML = cell || '';
+                            tr.appendChild(td);
+                          });
+                          tbody.appendChild(tr);
+                        });
+                        table.appendChild(tbody);
+                      }
+                      body.appendChild(table);
+                    });
+                  }
+                } else if (bullets.length) {
+                  // Bullets: render as 2-col table if all match "Label: Value", else as list
+                  if (allBulletsAreLabelValue(bullets)) {
+                    const table = document.createElement('table');
+                    table.className = 'table table-sm mb-2 smart-helper-table';
+                    bullets.forEach(function (b) {
+                      const m = b.match(/^([^:]{1,80}):\s*(.+)$/);
+                      if (!m) return;
+                      const tr = document.createElement('tr');
+                      const th = document.createElement('th');
+                      th.textContent = m[1];
+                      const td = document.createElement('td');
+                      td.innerHTML = m[2];
+                      tr.appendChild(th);
+                      tr.appendChild(td);
+                      table.appendChild(tr);
+                    });
+                    body.appendChild(table);
+                  } else {
+                    const ul = document.createElement('ul');
+                    ul.className = 'small mb-2 ps-3';
+                    bullets.forEach(function (b) {
+                      const li = document.createElement('li');
+                      // Allow inline HTML in bullet text from trusted admin content
+                      li.innerHTML = b;
+                      ul.appendChild(li);
+                    });
+                    body.appendChild(ul);
+                  }
+                }
               }
 
               if (Array.isArray(card.insert_options) && card.insert_options.length) {
                 const btnBar = document.createElement('div');
-                btnBar.className = 'mt-1';
+                btnBar.className = 'd-flex flex-wrap gap-1 mt-1 mb-1';
 
                 card.insert_options.forEach(function (opt) {
                   if (!opt || !opt.text) return;
                   const btn = document.createElement('button');
                   btn.type = 'button';
-                  btn.className = 'btn btn-sm btn-outline-secondary me-1 mb-1';
+                  btn.className = 'btn btn-xs btn-outline-warning py-0 px-2 text-start text-wrap font-monospace small bg-light';
                   btn.textContent = opt.label || 'Insert';
                   btn.addEventListener('click', function () {
                     insertTextAtCaret(reportInput, opt.text);
@@ -1152,9 +1652,23 @@
                   btnBar.appendChild(btn);
                 });
 
-                wrapper.appendChild(btnBar);
+                // Add helper text describing what the buttons do
+                const insertInfo = document.createElement('div');
+                insertInfo.className = 'small text-muted mb-1';
+                insertInfo.textContent = 'Click a button to insert its statement directly into your report.';
+                body.appendChild(insertInfo);
+
+                body.appendChild(btnBar);
               }
 
+              if (card.tags) {
+                const tagsEl = document.createElement('div');
+                tagsEl.className = 'mt-1 small text-muted';
+                tagsEl.textContent = card.tags;
+                body.appendChild(tagsEl);
+              }
+
+              wrapper.appendChild(body);
               helperContainer.appendChild(wrapper);
             });
           }
@@ -1276,6 +1790,14 @@
 
           if (helperBtn && reportInput && helperContainer) {
             helperBtn.addEventListener('click', function () {
+              if (helperContainer.children && helperContainer.children.length > 0) {
+                helperContainer.innerHTML = '';
+                if (editorLayout) {
+                  editorLayout.classList.remove('wsc-helper-visible');
+                }
+                return;
+              }
+
               clearHelperCards();
 
               const selectionText = getSelectionTextOrWord(reportInput);
@@ -1284,6 +1806,9 @@
                 msg.className = 'text-muted';
                 msg.textContent = 'Place the cursor in a word or select a phrase in the report, then click Smart helper.';
                 helperContainer.appendChild(msg);
+                if (editorLayout) {
+                  editorLayout.classList.add('wsc-helper-visible');
+                }
                 return;
               }
 
@@ -1310,6 +1835,9 @@
                 .then(function (data) {
                   const cards = (data && data.cards) ? data.cards : [];
                   renderHelperCards(cards);
+                  if (editorLayout) {
+                    editorLayout.classList.add('wsc-helper-visible');
+                  }
                 })
                 .catch(function () {
                   clearHelperCards();
@@ -1317,6 +1845,9 @@
                   err.className = 'text-danger';
                   err.textContent = 'Unable to load smart helper suggestions.';
                   helperContainer.appendChild(err);
+                  if (editorLayout) {
+                    editorLayout.classList.add('wsc-helper-visible');
+                  }
                 });
             });
           }

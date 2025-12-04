@@ -16,6 +16,9 @@ from .models import (
     UserReportTemplate,
     ModuleNames,
     UserReportInstance,
+    SmartHelperCard,
+    SmartHelperSectionEnum,
+    SmartHelperKindEnum,
 )
 from . import db
 from .util import (
@@ -26,6 +29,7 @@ from .util import (
     _clean_search_text,
     _body_part_matches,
     render_report_template_to_text,
+    serialize_smart_helper_card,
 )
 from sqlalchemy import or_, func
 from flask_cors import CORS
@@ -302,6 +306,7 @@ SMART_HELPER_PLAYBOOK = {
     ],
 }
 
+
 def _normalise_selection_token(selection_text: str) -> str:
     """Normalise a text selection to a compact token used by the helper playbook."""
     if not selection_text:
@@ -313,18 +318,257 @@ def _normalise_selection_token(selection_text: str) -> str:
         return "pe"
     return ""
 
-def build_smart_helper_cards(context, selection_text: str, section: str, user):
-    """
-    Build helper cards for contextual smart assistance.
-    Thin-slice implementation for Phase 2c (PE/Wells examples only).
 
-    Matching strategy:
-    - Normalise the free-text selection into a compact token.
-    - First, look for helpers keyed to the exact (section, token).
-    - Then, if none or too few were found, also look for ("any", token)
-      so that some helpers can be reused across multiple sections without
-      duplicating card definitions.
+
+# ---- SmartHelperCard token splitting and matching helpers ----
+def _split_card_tokens(raw_token: str):
     """
+    Split a SmartHelperCard.token string into normalised tokens.
+
+    Semantics for the token field:
+    - Comma-separated list of variants (e.g. "sob, shortness of breath, wells score").
+    - Case-insensitive.
+    - Internal whitespace normalised to single spaces, e.g. "WELLS   score" -> "wells score".
+    """
+    if not raw_token:
+        return []
+
+    tokens = []
+    for part in raw_token.split(","):
+        canon = re.sub(r"\s+", " ", part.strip().lower())
+        if canon:
+            tokens.append(canon)
+    return tokens
+
+def _selection_matches_card(selection_text: str, raw_token: str) -> bool:
+    """
+    Decide whether a given SmartHelperCard (with a raw comma-separated token string)
+    should match the current selection text.
+
+    Rules:
+    - If the card has no token (empty/NULL), treat it as a generic helper that always matches.
+    - Otherwise, parse its token field into a list of normalised tokens.
+    - Normalise the selection text (lowercase, collapse whitespace).
+    - A card matches if ANY of its tokens appears as a contiguous substring in the
+      normalised selection text, e.g.:
+        - token "sob" matches "sob" or "SOB with chest pain".
+        - token "wells score" only matches if "wells score" appears with the words adjacent.
+    """
+    tokens = _split_card_tokens(raw_token)
+    # No explicit tokens means "generic" helper for the matching section/context.
+    if not tokens:
+        return True
+
+    if not selection_text:
+        return False
+
+    selection_canon = re.sub(r"\s+", " ", selection_text.strip().lower())
+    if not selection_canon:
+        return False
+
+    for tok in tokens:
+        if tok in selection_canon:
+            return True
+    return False
+
+# ---- DB-backed smart helper card builder ----
+def _build_smart_helper_cards_from_db(context, selection_text: str, section: str):
+    """Primary source for smart helper cards using SmartHelperCard.
+
+    Matching strategy (updated):
+    - Section filter: allow helpers whose section is either the specific section
+      (e.g. INDICATION, OBSERVATIONS) or ANY.
+    - Structural filters: if modality/body_part/module are present in context,
+      prefer helpers that match them but also allow generic (NULL) helpers.
+    - Token matching: All cards for the filtered section/context are loaded, and
+      then Python logic applies flexible token matching (case-insensitive, comma-separated
+      variants, multi-word tokens require adjacency) to the selection text.
+    - If a card has no token, it always matches.
+
+    Returns a list of dicts ready for JSON serialisation.
+    """
+    modality_enum = context.get("modality_enum")
+    body_part_enum = context.get("body_part_enum")
+    module_enum = context.get("module_enum")
+
+    # Map the free-text section string to SmartHelperSectionEnum
+    section_key = (section or "").strip().lower()
+    section_enum = None
+    if section_key == "indication":
+        section_enum = SmartHelperSectionEnum.INDICATION
+    elif section_key == "comparison":
+        section_enum = SmartHelperSectionEnum.COMPARISON
+    elif section_key == "technique":
+        section_enum = SmartHelperSectionEnum.TECHNIQUE
+    elif section_key == "observations":
+        section_enum = SmartHelperSectionEnum.OBSERVATIONS
+    elif section_key == "conclusion":
+        section_enum = SmartHelperSectionEnum.CONCLUSION
+    elif section_key == "recommendations":
+        section_enum = SmartHelperSectionEnum.RECOMMENDATIONS
+
+    # We always allow ANY plus the concrete section (if resolved)
+    section_filters = [SmartHelperSectionEnum.ANY]
+    if section_enum is not None:
+        section_filters.append(section_enum)
+
+    q = db.session.query(SmartHelperCard).filter(
+        SmartHelperCard.is_active.is_(True),
+        SmartHelperCard.section.in_(section_filters),
+    )
+
+    # Structural filters: match exact, or allow generic (NULL) helpers.
+    if modality_enum is not None:
+        q = q.filter(
+            or_(
+                SmartHelperCard.modality == modality_enum,
+                SmartHelperCard.modality.is_(None),
+            )
+        )
+    if body_part_enum is not None:
+        q = q.filter(
+            or_(
+                SmartHelperCard.body_part == body_part_enum,
+                SmartHelperCard.body_part.is_(None),
+            )
+        )
+    if module_enum is not None:
+        q = q.filter(
+            or_(
+                SmartHelperCard.module == module_enum,
+                SmartHelperCard.module.is_(None),
+            )
+        )
+
+    # Order by priority (higher first) then title for stability
+    rows = (
+        q.order_by(
+            SmartHelperCard.priority.desc(),
+            SmartHelperCard.title.asc(),
+        )
+        .limit(20)
+        .all()
+    )
+
+    cards = []
+    for row in rows:
+        # Skip cards whose token list does not match the current selection text
+        if not _selection_matches_card(selection_text, row.token or ""):
+            continue
+        # Convert enums to their value/name representation for JSON
+        section_value = None
+        if row.section is not None:
+            section_value = (
+                row.section.value
+                if isinstance(row.section, SmartHelperSectionEnum)
+                else str(row.section)
+            )
+
+        kind_value = None
+        if row.kind is not None:
+            kind_value = (
+                row.kind.value
+                if isinstance(row.kind, SmartHelperKindEnum)
+                else str(row.kind)
+            )
+
+        card_obj = SimpleNamespace(
+            id=row.id,
+            title=row.title,
+            summary=row.summary or "",
+            kind=kind_value or "info",
+            section=section_value,
+            bullets=row.bullets_json or [],
+            insert_options=row.insert_options_json or [],
+            tags=row.tags or "",
+            token=row.token,
+            modality=row.modality,
+            body_part=row.body_part,
+            module=row.module,
+            display_style=getattr(row, "display_style", "auto"),
+            definition_json=(
+                row.definition_json
+                if isinstance(getattr(row, "definition_json", None), dict)
+                else None
+            ),
+        )
+
+        # Build unified bullet_sections and table_sections from definition_json
+        bullet_sections = []
+        table_sections = []
+
+        if card_obj.definition_json:
+            # Bullet groups
+            groups = card_obj.definition_json.get("bullet_groups") or []
+            for g in groups:
+                items = g.get("items") or []
+                if isinstance(items, list):
+                    bullet_sections.append({
+                        "title": g.get("title") or None,
+                        "items": items,
+                        "style": g.get("style") or "bullets",
+                    })
+
+            # Tables
+            tables = card_obj.definition_json.get("tables") or []
+            for t in tables:
+                table_sections.append({
+                    "title": t.get("title") or None,
+                    "headers": t.get("headers") or [],
+                    "rows": t.get("rows") or [],
+                })
+
+        # Fallback to legacy bullets_json if no modern bullets exist
+        if not bullet_sections and card_obj.bullets:
+            bullet_sections.append({
+                "title": None,
+                "items": card_obj.bullets,
+                "style": "bullets",
+            })
+
+        # Serialize card
+        vm = serialize_smart_helper_card(card_obj)
+
+        # Inject new fields for frontend
+        vm["bullet_sections"] = bullet_sections
+        vm["table_sections"] = table_sections
+        vm["insert_options"] = card_obj.insert_options or []
+
+        # Add compatibility fields for frontend
+        vm["kind"] = card_obj.kind
+        vm["section"] = section_value
+        vm["summary"] = vm.get("summary_html", "")
+        vm["token"] = card_obj.token
+        vm["modality"] = row.modality.name if row.modality is not None else None
+        vm["body_part"] = row.body_part.name if row.body_part is not None else None
+        vm["module"] = row.module.name if row.module is not None else None
+        cards.append(vm)
+
+    return cards
+
+def build_smart_helper_cards(context, selection_text: str, section: str, user):
+    """Build helper cards for contextual smart assistance.
+
+    Phase 2c+ strategy:
+    - Primary source: SmartHelperCard rows in the database, filtered by
+      section, selection text, and structural context.
+    - Fallback: static SMART_HELPER_PLAYBOOK for early bootstrap content
+      (e.g. Wells score for PE) so the feature remains useful even with
+      sparse DB content.
+    """
+    # Normalise selection text (may be an empty string if nothing is selected)
+    selection_text = selection_text or ""
+
+    # 1) Try database-backed smart helper cards first, using the raw selection text.
+    #    Card tokens are matched in Python (case-insensitive, comma-separated variants,
+    #    multi-word tokens requiring adjacency).
+    db_cards = _build_smart_helper_cards_from_db(context, selection_text, section)
+    if db_cards:
+        return db_cards
+
+    # 2) Fallback to the static playbook logic (existing behaviour) using the
+    #    older normalised-token mapping (_normalise_selection_token) for
+    #    bootstrap helpers such as Wells/PE.
     token = _normalise_selection_token(selection_text)
     if not token:
         return []
@@ -333,18 +577,64 @@ def build_smart_helper_cards(context, selection_text: str, section: str, user):
 
     cards = []
 
-    # 1) Exact (section, token) matches
+    # Exact (section, token) matches
     exact_cards = SMART_HELPER_PLAYBOOK.get((section_key, token), [])
     if exact_cards:
-        cards.extend(exact_cards)
+        for c in exact_cards:
+            card_obj = SimpleNamespace(
+                id=None,
+                title=c.get("title"),
+                summary=c.get("summary", ""),
+                kind=c.get("kind", "info"),
+                section=section_key,
+                bullets=c.get("bullets", []),
+                insert_options=c.get("insert_options", []),
+                tags=c.get("tags", ""),
+                token=c.get("token"),
+                modality=None,
+                body_part=None,
+                module=None,
+                display_style=c.get("display_style", "auto"),
+            )
+            vm = serialize_smart_helper_card(card_obj)
+            vm["kind"] = card_obj.kind
+            vm["section"] = card_obj.section
+            vm["summary"] = vm.get("summary_html", "")
+            vm["token"] = card_obj.token
+            vm["modality"] = None
+            vm["body_part"] = None
+            vm["module"] = None
+            cards.append(vm)
 
-    # 2) Wildcard helpers that apply to any section, e.g. ("any", "wells")
+    # Wildcard helpers that apply to any section, e.g. ("any", "wells")
     any_cards = SMART_HELPER_PLAYBOOK.get(("any", token), [])
     if any_cards:
-        # Avoid naive duplication if the same card object is referenced in both
-        for card in any_cards:
-            if card not in cards:
-                cards.append(card)
+        for c in any_cards:
+            card_obj = SimpleNamespace(
+                id=None,
+                title=c.get("title"),
+                summary=c.get("summary", ""),
+                kind=c.get("kind", "info"),
+                section=section_key,
+                bullets=c.get("bullets", []),
+                insert_options=c.get("insert_options", []),
+                tags=c.get("tags", ""),
+                token=c.get("token"),
+                modality=None,
+                body_part=None,
+                module=None,
+                display_style=c.get("display_style", "auto"),
+            )
+            vm = serialize_smart_helper_card(card_obj)
+            vm["kind"] = card_obj.kind
+            vm["section"] = card_obj.section
+            vm["summary"] = vm.get("summary_html", "")
+            vm["token"] = card_obj.token
+            vm["modality"] = None
+            vm["body_part"] = None
+            vm["module"] = None
+            if vm not in cards:
+                cards.append(vm)
 
     return cards
 
@@ -1435,7 +1725,7 @@ import os
 def static_preview(filename):
     # Go up one level from /app/ to project root
     preview_folder = os.path.abspath(os.path.join(current_app.root_path, '..', 'user_data', 'preview_reports'))
-    file_path = os.path.join(preview_folder, filename)
+    file_path = os.path.jvoin(preview_folder, filename)
 
     if not os.path.exists(file_path):
         return abort(404)
@@ -1444,3 +1734,4 @@ def static_preview(filename):
         return send_file(file_path, as_attachment=False)
     except Exception:
         return abort(403)
+    

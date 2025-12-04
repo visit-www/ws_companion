@@ -92,7 +92,21 @@ def create_app():
     
     # Import models and add to Flask-Admin here to avoid circular import
     with app.app_context():
-        from .models import User, Content, UserData, Reference, UserFeedback, UserContentState, UserProfile, UserReportTemplate, AdminReportTemplate, CategoryNames, ModuleNames, InteractionTypeEnum
+        from .models import (
+            User,
+            Content,
+            UserData,
+            Reference,
+            UserFeedback,
+            UserContentState,
+            UserProfile,
+            UserReportTemplate,
+            AdminReportTemplate,
+            CategoryNames,
+            ModuleNames,
+            InteractionTypeEnum,
+            SmartHelperCard,
+        )
         from .admin_views import (
             MyModelView,
             UserModelView,
@@ -102,6 +116,7 @@ def create_app():
             NormalMeasurementAdmin,
             AdminReportTemplateAdmin,
             ClassificationSystemAdmin,
+            SmartHelperCardAdmin,
         )
 
     # Register Models in Flask-Admin
@@ -115,6 +130,7 @@ def create_app():
 # Imaging protocols
     flask_admin.add_view(ImagingProtocolAdmin(ImagingProtocol, db.session,endpoint='imaging_protocols', name='Imaging Protocols'))
     flask_admin.add_view(NormalMeasurementAdmin(NormalMeasurement, db.session, endpoint='normal_measurements', name='Normal Measurements'))
+    flask_admin.add_view(SmartHelperCardAdmin(SmartHelperCard, db.session, endpoint='smart_helper_cards', name='Smart Helper Cards'))
     # Register user-related models with ModelView
     flask_admin.add_view(UserModelView(User, db.session, endpoint='users'))
     flask_admin.add_view(ExtendModelView(UserData, db.session, endpoint='user_data'))

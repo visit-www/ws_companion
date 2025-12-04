@@ -1,0 +1,214 @@
+{% extends admin_base_template %}
+{% import 'admin/lib.html' as lib with context %}
+
+{% block head %}
+{{ super() }}
+{{ lib.form_css() }}
+<style>
+  .smart-helper-section-title {
+    font-size: 1rem;
+    font-weight: 500;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+  }
+  .smart-helper-subtitle {
+    font-size: 0.95rem;
+    font-weight: 400;
+    margin-bottom: 0.25rem;
+  }
+  #bullet-groups-container textarea,
+  #tables-container textarea {
+    width: 100%;
+    max-width: 100%;
+  }
+  .smart-helper-group-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    background-color: #fafafa;
+  }
+  .smart-helper-group-card .form-group {
+    margin-bottom: 0.4rem;
+  }
+  .smart-helper-inline-label {
+    font-size: 0.85rem;
+    font-weight: 400;
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="container-fluid">
+    <h2>{{ admin_view.name or _gettext('Edit Smart Helper Card') }}</h2>
+
+    {# standard flash messages, etc. #}
+
+    {# Use the same basic form skeleton as default edit.html, but we will
+    override the bullet_groups and tables fields below with nicer layout #}
+
+    {% call lib.form_tag() %}
+    {# Hidden fields (CSRF, id, etc.) #}
+    {% if form.hidden_tag is defined %}
+        {{ form.hidden_tag() }}
+    {% else %}
+        {% if csrf_token %}
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        {% endif %}
+        {% for f in form if f.widget.input_type == 'hidden' %}
+            {{ f }}
+        {% endfor %}
+    {% endif %}
+
+    {# Render all non-hidden fields except bullet_groups, tables, and advanced JSON/preview helpers using the standard helper #}
+    {% for f in form if f.widget.input_type != 'hidden' and f.name not in ('bullet_groups', 'tables', 'insert_options_json_text', 'definition_json_text', 'preview_block') %}
+        {% if form_opts %}
+            {% set kwargs = form_opts.widget_args.get(f.short_name, {}) %}
+        {% else %}
+            {% set kwargs = {} %}
+        {% endif %}
+        {{ lib.render_field(form, f, kwargs) }}
+    {% endfor %}
+    <hr>
+    <h5 class="smart-helper-section-title">Lists &amp; tables</h5>
+
+    <div class="row">
+        <div class="col-md-12 mb-3">
+            <div id="bullet-groups-container">
+                {% for subform in form.bullet_groups %}
+                    <div class="smart-helper-group-card">
+                        <div class="form-group">
+                            <label class="smart-helper-inline-label" for="{{ subform.title.id }}">{{ subform.title.label.text }}</label>
+                            {{ subform.title() }}
+                        </div>
+                        <div class="form-group">
+                            <label class="smart-helper-inline-label" for="{{ subform.style.id }}">{{ subform.style.label.text }}</label>
+                            {{ subform.style() }}
+                        </div>
+                        <div class="form-group">
+                            <label class="smart-helper-inline-label" for="{{ subform.items.id }}">{{ subform.items.label.text }}</label>
+                            {{ subform.items(rows=4) }}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary mt-2" id="add-bullet-group">
+                + Add list
+            </button>
+        </div>
+
+        <div class="col-md-12">
+            <div id="tables-container">
+                {% for subform in form.tables %}
+                    <div class="smart-helper-group-card">
+                        <div class="form-group">
+                            <label class="smart-helper-inline-label" for "{{ subform.title.id }}">{{ subform.title.label.text }}</label>
+                            {{ subform.title() }}
+                        </div>
+                        <div class="form-group">
+                            <label class="smart-helper-inline-label" for="{{ subform.data.id }}">{{ subform.data.label.text }}</label>
+                            {{ subform.data(rows=4) }}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="btn btn-sm btn-secondary mt-2" id="add-table-group">
+                + Add table
+            </button>
+        </div>
+    </div>
+
+    {# Advanced fields come after lists & tables #}
+    {% if form.insert_options_json_text is defined %}
+        {% if form_opts %}
+            {% set kwargs = form_opts.widget_args.get(form.insert_options_json_text.short_name, {}) %}
+        {% else %}
+            {% set kwargs = {} %}
+        {% endif %}
+        {{ lib.render_field(form, form.insert_options_json_text, kwargs) }}
+    {% endif %}
+    {% if form.definition_json_text is defined %}
+        {% if form_opts %}
+            {% set kwargs = form_opts.widget_args.get(form.definition_json_text.short_name, {}) %}
+        {% else %}
+            {% set kwargs = {} %}
+        {% endif %}
+        {{ lib.render_field(form, form.definition_json_text, kwargs) }}
+    {% endif %}
+    {% if form.preview_block is defined %}
+        {% if form_opts %}
+            {% set kwargs = form_opts.widget_args.get(form.preview_block.short_name, {}) %}
+        {% else %}
+            {% set kwargs = {} %}
+        {% endif %}
+        {{ lib.render_field(form, form.preview_block, kwargs) }}
+    {% endif %}
+
+    {# Standard form buttons (Save / Cancel / Save & continue, etc.) #}
+    {{ lib.render_form_buttons(cancel_url, is_modal=is_modal) }}
+
+    {% endcall %}
+</div>
+{% endblock %}
+
+{% block tail %}
+{{ super() }}
+{{ lib.form_js() }}
+
+<script>
+    (function () {
+        // Helper: clone the last entry of a FieldList container and adjust its index
+        function cloneLastFieldListEntry(containerId, prefix) {
+            var container = document.getElementById(containerId);
+            if (!container) return;
+
+            var groups = container.children;  // treat each direct child as a group entry
+            if (groups.length === 0) return;
+
+            var last = groups[groups.length - 1];
+            var clone = last.cloneNode(true);
+
+            // Increment index in all name/id attributes: prefix-0-foo -> prefix-1-foo, etc.
+            var newIndex = groups.length;
+
+            clone.querySelectorAll('[name], [id], [for]').forEach(function (el) {
+                ['name', 'id', 'for'].forEach(function (attr) {
+                    var val = el.getAttribute(attr);
+                    if (val) {
+                        // Replace -<oldIndex>- with -<newIndex>-
+                        val = val.replace(new RegExp(prefix + '-(\\d+)-'), prefix + '-' + newIndex + '-');
+                        el.setAttribute(attr, val);
+                    }
+                });
+
+                // Clear values for inputs / textareas in the new clone
+                if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                    if (el.type === 'checkbox' || el.type === 'radio') {
+                        el.checked = false;
+                    } else {
+                        el.value = '';
+                    }
+                }
+            });
+
+            container.appendChild(clone);
+        }
+
+        // Wire up buttons
+        var addBulletBtn = document.getElementById('add-bullet-group');
+        if (addBulletBtn) {
+            addBulletBtn.addEventListener('click', function () {
+                // "bullet_groups" is the FieldList name, WTForms IDs are usually bullet_groups-0-...
+                cloneLastFieldListEntry('bullet-groups-container', 'bullet_groups');
+            });
+        }
+
+        var addTableBtn = document.getElementById('add-table-group');
+        if (addTableBtn) {
+            addTableBtn.addEventListener('click', function () {
+                cloneLastFieldListEntry('tables-container', 'tables');
+            });
+        }
+    })();
+</script>
+{% endblock %}
