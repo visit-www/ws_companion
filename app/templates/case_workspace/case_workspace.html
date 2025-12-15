@@ -126,6 +126,7 @@
       width: 100%;
       font-size: 0.95em;
       border-collapse: collapse;
+      border: 1px solid #dee2e6;
       margin-bottom: 0.5rem;
     }
     .smart-helper-table th {
@@ -135,7 +136,7 @@
       font-weight: 600;
       padding: 0.3rem 0.7rem 0.3rem 0.2rem;
       width: 40%;
-      border: none;
+      border: 1px solid #dee2e6;
       vertical-align: top;
       white-space: normal;
     }
@@ -143,7 +144,7 @@
       text-align: left;
       background: #fff;
       padding: 0.3rem 0.2rem 0.3rem 0.7rem;
-      border: none;
+      border: 1px solid #dee2e6;
       vertical-align: top;
       white-space: normal;
     }
@@ -214,6 +215,24 @@
         max-width: 100%;
       }
     }
+
+    /* Inline spinner for helper status */
+    .helper-status-spinner {
+      display: inline-block;
+      width: 1em;
+      height: 1em;
+      border: 2px solid currentColor;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: helper-spin 0.8s linear infinite;
+      margin-right: 6px;
+      vertical-align: text-bottom;
+    }
+    @keyframes helper-spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
   </style>
 
   <div class="row">
@@ -253,6 +272,22 @@
             <h3 class="h6 mb-0">Case Navigator – Smart Tools</h3>
           </div>
           <div class="card-body small">
+            {% if ai_quota_info %}
+              <div class="d-flex align-items-center justify-content-between mb-2">
+                <span class="text-muted">
+                  AI smart helper card quota
+                  <span class="text-secondary" title="Need more? In Phase 6 you'll be able to buy extra quota or upgrade your plan.">?</span>
+                </span>
+                {% if ai_quota_info.quota is none %}
+                  <span class="badge bg-success-subtle text-success">Unlimited</span>
+                {% else %}
+                  <span class="badge bg-light text-muted">
+                    {{ ai_quota_info.remaining }} / {{ ai_quota_info.quota }} left today
+                  </span>
+                {% endif %}
+              </div>
+              <hr class="my-2">
+            {% endif %}
             <p class="text-muted mb-2">
               Suggestions are based on your clinical history, modality, body part, core question, and any tool search.
             </p>
@@ -442,23 +477,15 @@
 
               <!-- Indication / Clinical History (unified block) -->
               <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center">
-                  <label for="indication" class="form-label fw-semibold mb-0">
-                    Indication / Clinical History
-                  </label>
-                  <button type="button"
-                          id="indication-smart-helper-btn"
-                          class="btn btn-sm btn-outline-secondary">
-                    Smart helper
-                  </button>
-                </div>
+                <label for="indication" class="form-label fw-semibold mb-0">
+                  Indication / Clinical History
+                </label>
                 <textarea id="indication"
                           name="indication"
                           rows="2"
                           class="form-control mt-1"
                           placeholder="Enter detailed indication/clinical history here (e.g. SOB, pleuritic chest pain, Wells score 6, ?PE)">
 {{ case.indication or indication or '' }}</textarea>
-                <div id="indication-smart-helper-container" class="mt-2 small"></div>
               </div>
 
               <!-- Modality -->
@@ -638,18 +665,30 @@
                 <input type="hidden" name="core_question" value="{{ case.core_question or '' }}">
 
                 <div class="mb-2">
-                  <div class="d-flex justify-content-between align-items-center mb-1 wsc-report-toolbar">
-                    <div>
-                      <label for="reporting_text" class="form-label fw-semibold mb-0">
-                        Draft report text (Phase 2 workspace)
-                      </label>
-                    </div>
-                    <div class="d-flex flex-nowrap align-items-center gap-2">
-                      <div class="btn-group btn-group-sm" role="group" aria-label="Report view mode">
-                        <button type="button"
-                                class="btn btn-outline-info active m-2"
-                                id="report-mode-edit">
-                          Edit
+                      <div class="d-flex justify-content-between align-items-center mb-1 wsc-report-toolbar">
+                        <div>
+                          <label for="reporting_text" class="form-label fw-semibold mb-0">
+                            Draft report text (Phase 2 workspace)
+                          </label>
+                        </div>
+                      <div class="d-flex flex-nowrap align-items-center gap-2">
+                        <div class="input-group input-group-sm" style="width: 260px;">
+                          <input type="text"
+                                 id="manual-smart-helper-input-inline"
+                                 class="form-control"
+                                 placeholder="Ask Smart helper...">
+                          <button class="btn btn-outline-secondary"
+                                  type="button"
+                                  id="manual-smart-helper-btn-inline">
+                            Ask
+                          </button>
+                        </div>
+                        <div id="helper-status-inline" class="small text-muted ms-2" aria-live="polite"></div>
+                        <div class="btn-group btn-group-sm" role="group" aria-label="Report view mode">
+                          <button type="button"
+                                  class="btn btn-outline-info active m-2"
+                                  id="report-mode-edit">
+                            Edit
                         </button>
                         <button type="button"
                                 class="btn btn-info m-2"
@@ -676,6 +715,15 @@
                               id="report-smart-helper-btn"
                               class="btn btn-sm btn-warning">
                         Smart helper
+                        {% if ai_quota_info %}
+                          <span class="badge bg-light text-muted ms-1" title="AI smart helper card quota">
+                            {% if ai_quota_info.quota is none %}
+                              Unlimited
+                            {% else %}
+                              {{ ai_quota_info.remaining }} / {{ ai_quota_info.quota }}
+                            {% endif %}
+                          </span>
+                        {% endif %}
                       </button>
                       <button type="button"
                               id="workspace-help-btn"
@@ -693,6 +741,18 @@
                         <span class="small text-muted">Smart helper suggestions</span>
                       </div>
                       <div id="reportSmartHelperDrawer" class="collapse show">
+                        <div class="input-group input-group-sm mb-2">
+                          <input type="text"
+                                 id="manual-smart-helper-input"
+                                 class="form-control"
+                                 placeholder="Ask Smart helper (e.g., 'what is CTSI score?')">
+                          <button class="btn btn-outline-secondary"
+                                  type="button"
+                                  id="manual-smart-helper-btn">
+                            Ask
+                          </button>
+                        </div>
+                        <div id="helper-status" class="small text-muted mb-2" aria-live="polite"></div>
                         <div id="report-smart-helper-container" class="mt-1 small"></div>
                       </div>
                     </div>
@@ -1143,15 +1203,81 @@
       document.addEventListener('DOMContentLoaded', function () {
         // --- Smart helper + workspace help ---
 
-        const helperBtn = document.getElementById('report-smart-helper-btn');
+          const helperBtn = document.getElementById('report-smart-helper-btn');
+          const manualHelperBtn = document.getElementById('manual-smart-helper-btn');
+          const manualHelperInput = document.getElementById('manual-smart-helper-input');
+          const manualHelperBtnInline = document.getElementById('manual-smart-helper-btn-inline');
+          const manualHelperInputInline = document.getElementById('manual-smart-helper-input-inline');
         const reportInput = document.getElementById('reporting_text');
         const helperContainer = document.getElementById('report-smart-helper-container');
         const workspaceHelpBtn = document.getElementById('workspace-help-btn');
         const workspaceHelpContainer = document.getElementById('workspace-help-container');
         const editorLayout = document.getElementById('report-editor-layout');
+        const helperStatus = document.getElementById('helper-status');
+        const helperStatusInline = document.getElementById('helper-status-inline');
+        let lastHelperToken = '';
+
+        function setHelperStatus(message, level, isHtml) {
+          const cls = level === 'error' ? 'text-danger' : level === 'warn' ? 'text-warning' : 'text-muted';
+          [helperStatus, helperStatusInline].forEach(function (el) {
+            if (!el) return;
+            if (isHtml) {
+              el.innerHTML = message || '';
+            } else {
+              el.textContent = message || '';
+            }
+            el.className = 'small ' + cls;
+          });
+        }
+
+        function normalizeToken(text) {
+          return (text || '').trim().toLowerCase();
+        }
 
         if (helperBtn && reportInput && helperContainer) {
           const smartHelperUrl = "{{ url_for('main_routes.smart_helper_route') }}";
+
+          function fetchHelper(paramsObj, statusMessage) {
+            clearHelperCards();
+            if (statusMessage) {
+              setHelperStatus('<span class="helper-status-spinner"></span>' + statusMessage, 'info', true);
+            }
+            const params = new URLSearchParams(paramsObj);
+            console.log('[SmartHelper] fetch start', smartHelperUrl + '?' + params.toString());
+
+            return fetch(smartHelperUrl + '?' + params.toString(), { method: 'GET' })
+              .then(function (resp) {
+                console.log('[SmartHelper] response status', resp.status);
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                return resp.json();
+              })
+              .then(function (data) {
+                console.log('[SmartHelper] response data', data);
+                const cards = (data && data.cards) ? data.cards : [];
+                const related = (data && data.related) ? data.related : {};
+                renderHelperCards(cards);
+                renderRelated(related);
+                if (editorLayout) {
+                  editorLayout.classList.add('wsc-helper-visible');
+                }
+                // Do not surface status texts here; placeholder cards will show their own message.
+                setHelperStatus('', 'info');
+              })
+              .catch(function (err) {
+                console.error('[SmartHelper] fetch error', err);
+                clearHelperCards();
+                const errDiv = document.createElement('div');
+                errDiv.className = 'text-danger';
+                errDiv.textContent = 'Unable to load smart helper suggestions.';
+                helperContainer.appendChild(errDiv);
+                const isTimeout = err && err.message && err.message.toLowerCase().indexOf('timeout') !== -1;
+                const msg = isTimeout ? 'Timed out. Primary model may be slow; please retry or switch provider.' : 'Unable to load smart helper suggestions.';
+                setHelperStatus(msg, 'error');
+                if (editorLayout) {
+                  editorLayout.classList.add('wsc-helper-visible');
+                }
+              });
+          }
 
           function inferSectionFromText(fullText, cursorPos) {
             if (!fullText) return 'observations';
@@ -1209,17 +1335,6 @@
             }
 
             evt.preventDefault();
-
-            // If helper suggestions are already visible, hide them on repeat Alt/Option+H.
-            if (helperContainer.children && helperContainer.children.length > 0) {
-              helperContainer.innerHTML = '';
-              if (editorLayout) {
-                editorLayout.classList.remove('wsc-helper-visible');
-              }
-              return;
-            }
-
-            // Otherwise, trigger the Smart helper as usual.
             helperBtn.click();
           });
 
@@ -1301,6 +1416,31 @@
               sectionBadge.textContent = sectionLabel;
               badgeContainer.appendChild(sectionBadge);
 
+              // Source badge for AI/static/manual helpers
+              const source = (card.source || '').toString().toLowerCase();
+              const sourceDetail = (card.source_detail || '').toString().toLowerCase();
+              if (source) {
+                const sourceBadge = document.createElement('span');
+                sourceBadge.className = 'badge rounded-pill ms-1';
+                if (source === 'ai-verified' || sourceDetail === 'ai-verified') {
+                  sourceBadge.classList.add('bg-info', 'text-dark');
+                  sourceBadge.textContent = 'AI — verified & updated';
+                } else if (source === 'ai-unverified' || source === 'ai') {
+                  sourceBadge.classList.add('bg-info', 'text-dark');
+                  sourceBadge.textContent = (sourceDetail === 'ai-new') ? 'AI — new (unverified)' : 'AI — unverified';
+                } else if (source === 'playbook' || source === 'static') {
+                  sourceBadge.classList.add('bg-secondary');
+                  sourceBadge.textContent = 'Playbook';
+                } else if (source === 'admin' || source === 'db' || source === 'curated') {
+                  sourceBadge.classList.add('bg-secondary');
+                  sourceBadge.textContent = 'Curated';
+                } else {
+                  sourceBadge.classList.add('bg-secondary');
+                  sourceBadge.textContent = 'Smart helper';
+                }
+                badgeContainer.appendChild(sourceBadge);
+              }
+
               header.appendChild(badgeContainer);
 
               const meta = document.createElement('small');
@@ -1319,6 +1459,30 @@
 
               const body = document.createElement('div');
               body.className = 'card-body p-2';
+
+              // If this is a status/placeholder card, show only the status message and skip the rest
+              if ((card.source === 'ai-status') || (card.source_detail === 'ai-no-card')) {
+                const msg = card.summary || (card.bullets && card.bullets[0]) || 'No card generated.';
+                const statusEl = document.createElement('div');
+                statusEl.className = 'text-danger small border border-danger rounded p-2 bg-white';
+                statusEl.textContent = msg;
+                body.appendChild(statusEl);
+                wrapper.appendChild(body);
+                helperContainer.appendChild(wrapper);
+                return;
+              }
+
+              // If this is a status/placeholder card, show only the status message and skip the rest
+              if ((card.source === 'ai-status') || (card.source_detail === 'ai-no-card')) {
+                const msg = card.summary || (card.bullets && card.bullets[0]) || 'No card generated.';
+                const statusEl = document.createElement('div');
+                statusEl.className = 'text-warning small';
+                statusEl.textContent = msg;
+                body.appendChild(statusEl);
+                wrapper.appendChild(body);
+                helperContainer.appendChild(wrapper);
+                return;
+              }
 
               const titleEl = document.createElement('h6');
               titleEl.className = 'card-title mb-1 small fw-semibold smart-helper-card-title';
@@ -1670,7 +1834,86 @@
 
               wrapper.appendChild(body);
               helperContainer.appendChild(wrapper);
-            });
+                // Add regenerate-with-DeepSeek action when fallback card is shown
+                if (card.source_detail === 'ai-new-fallback-openai') {
+                  const btnRow = document.createElement('div');
+                  btnRow.className = 'd-flex justify-content-end';
+                  const regenBtn = document.createElement('button');
+                  regenBtn.type = 'button';
+                  regenBtn.className = 'btn btn-sm btn-outline-primary';
+                  regenBtn.textContent = 'Regenerate with DeepSeek';
+                  regenBtn.addEventListener('click', function () {
+                    const q = card.token || card.title || '';
+                    if (!q) return;
+                    const paramsObj = {
+                      section: 'observations',
+                      selection_text: q,
+                      modality: "{{ case.modality_enum.name if case.modality_enum else '' }}",
+                      body_part: "{{ case.body_part_enum.name if case.body_part_enum else '' }}",
+                      module: "{{ case.module_enum.name if case.module_enum else '' }}",
+                      indication: "{{ case.indication or '' }}",
+                      core_question: "{{ case.core_question or '' }}",
+                      return_url: window.location.href,
+                      force_ai: 'true',
+                      force_provider: 'deepseek',
+                      force_timeout: 60,
+                      replace_fallback: 'true'
+                    };
+                    fetchHelper(paramsObj, 'Regenerating with DeepSeek (60s timeout)...');
+                  });
+                  btnRow.appendChild(regenBtn);
+                  body.appendChild(btnRow);
+                }
+
+              });
+          }
+
+          function renderRelated(related) {
+            const hasContent = related &&
+              ((related.protocols && related.protocols.length) ||
+               (related.classifications && related.classifications.length) ||
+               (related.measurements && related.measurements.length) ||
+               (related.admin_templates && related.admin_templates.length) ||
+               (related.user_templates && related.user_templates.length));
+            if (!hasContent) return;
+
+            const box = document.createElement('div');
+            box.className = 'card mb-2 shadow-sm';
+            const header = document.createElement('div');
+            header.className = 'card-header py-1';
+            header.innerHTML = '<strong>Related tools</strong>';
+            box.appendChild(header);
+
+            const body = document.createElement('div');
+            body.className = 'card-body py-2';
+
+            const addList = function(title, items) {
+              if (!items || !items.length) return;
+              const h = document.createElement('div');
+              h.className = 'fw-semibold small mb-1';
+              h.textContent = title;
+              body.appendChild(h);
+              const ul = document.createElement('ul');
+              ul.className = 'small mb-2';
+              items.forEach(function(it) {
+                const li = document.createElement('li');
+                const a = document.createElement('a');
+                a.href = it.url || '#';
+                a.textContent = it.name || 'View';
+                li.appendChild(a);
+                ul.appendChild(li);
+              });
+              body.appendChild(ul);
+            };
+
+            addList('Imaging protocols', related.protocols);
+            addList('Classifications', related.classifications);
+            addList('Measurements', related.measurements);
+            addList('Admin templates', related.admin_templates);
+            addList('Your templates', related.user_templates);
+
+            box.appendChild(body);
+            helperContainer.appendChild(box);
           }
 
           function renderWorkspaceHelpCard() {
@@ -1788,10 +2031,15 @@
             });
           }
 
-          if (helperBtn && reportInput && helperContainer) {
+if (helperBtn && reportInput && helperContainer) {
             helperBtn.addEventListener('click', function () {
-              if (helperContainer.children && helperContainer.children.length > 0) {
-                helperContainer.innerHTML = '';
+              const selectionText = getSelectionTextOrWord(reportInput);
+              const normSelection = normalizeToken(selectionText);
+              const hasVisibleHelpers = helperContainer.children && helperContainer.children.length > 0;
+
+              // Toggle close if same selection (or empty) while helpers are visible
+              if (hasVisibleHelpers && (!selectionText || normSelection === lastHelperToken)) {
+                clearHelperCards();
                 if (editorLayout) {
                   editorLayout.classList.remove('wsc-helper-visible');
                 }
@@ -1799,8 +2047,8 @@
               }
 
               clearHelperCards();
+              lastHelperToken = normSelection;
 
-              const selectionText = getSelectionTextOrWord(reportInput);
               if (!selectionText) {
                 const msg = document.createElement('div');
                 msg.className = 'text-muted';
@@ -1815,40 +2063,95 @@
               const caretPos = typeof reportInput.selectionStart === 'number'
                 ? reportInput.selectionStart
                 : (reportInput.value || '').length;
-              const sectionValue = inferSectionFromText(reportInput.value || '', caretPos);
+            const sectionValue = inferSectionFromText(reportInput.value || '', caretPos);
 
-              const params = new URLSearchParams({
-                section: sectionValue,
-                selection_text: selectionText,
-                modality: "{{ case.modality_enum.name if case.modality_enum else '' }}",
-                body_part: "{{ case.body_part_enum.name if case.body_part_enum else '' }}",
-                module: "{{ case.module_enum.name if case.module_enum else '' }}",
-                indication: "{{ case.indication or '' }}",
-                core_question: "{{ case.core_question or '' }}"
+            const params = new URLSearchParams({
+              section: sectionValue,
+              selection_text: selectionText,
+              modality: "{{ case.modality_enum.name if case.modality_enum else '' }}",
+              body_part: "{{ case.body_part_enum.name if case.body_part_enum else '' }}",
+              module: "{{ case.module_enum.name if case.module_enum else '' }}",
+              indication: "{{ case.indication or '' }}",
+              core_question: "{{ case.core_question or '' }}",
+              return_url: window.location.href,
+              force_ai: 'true'
+            });
+
+            const loading = document.createElement('div');
+            loading.className = 'text-muted small';
+            loading.textContent = 'Generating smart helper cards...';
+            helperContainer.appendChild(loading);
+            console.log('[SmartHelper] selection fetch start', smartHelperUrl + '?' + params.toString());
+
+            fetch(smartHelperUrl + '?' + params.toString(), { method: 'GET' })
+              .then(function (resp) {
+                console.log('[SmartHelper] selection response status', resp.status);
+                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                return resp.json();
+              })
+              .then(function (data) {
+                console.log('[SmartHelper] selection response data', data);
+                const cards = (data && data.cards) ? data.cards : [];
+                const related = (data && data.related) ? data.related : {};
+                renderHelperCards(cards);
+                renderRelated(related);
+                if (editorLayout) {
+                  editorLayout.classList.add('wsc-helper-visible');
+                }
+            })
+            .catch(function (err) {
+              console.error('[SmartHelper] selection fetch error', err);
+              clearHelperCards();
+              const errDiv = document.createElement('div');
+              errDiv.className = 'text-danger';
+              errDiv.textContent = 'Unable to load smart helper suggestions.';
+              helperContainer.appendChild(errDiv);
+              if (editorLayout) {
+                editorLayout.classList.add('wsc-helper-visible');
+              }
               });
+            });
+          }
 
-              fetch(smartHelperUrl + '?' + params.toString(), { method: 'GET' })
-                .then(function (resp) {
-                  if (!resp.ok) throw new Error('HTTP ' + resp.status);
-                  return resp.json();
-                })
-                .then(function (data) {
-                  const cards = (data && data.cards) ? data.cards : [];
-                  renderHelperCards(cards);
-                  if (editorLayout) {
-                    editorLayout.classList.add('wsc-helper-visible');
-                  }
-                })
-                .catch(function () {
-                  clearHelperCards();
-                  const err = document.createElement('div');
-                  err.className = 'text-danger';
-                  err.textContent = 'Unable to load smart helper suggestions.';
-                  helperContainer.appendChild(err);
-                  if (editorLayout) {
-                    editorLayout.classList.add('wsc-helper-visible');
-                  }
-                });
+          function manualAsk(question) {
+            const q = (question || '').trim();
+            if (!q) {
+              setHelperStatus('Type a question for the smart helper.', 'warn');
+              return false;
+            }
+            clearHelperCards();
+            lastHelperToken = normalizeToken(q);
+            setHelperStatus('Generating smart helper cards...', 'info');
+            const paramsObj = {
+              section: 'observations',
+              selection_text: q,
+              modality: "{{ case.modality_enum.name if case.modality_enum else '' }}",
+              body_part: "{{ case.body_part_enum.name if case.body_part_enum else '' }}",
+              module: "{{ case.module_enum.name if case.module_enum else '' }}",
+              indication: "{{ case.indication or '' }}",
+              core_question: "{{ case.core_question or '' }}",
+              return_url: window.location.href,
+              force_ai: 'true'
+            };
+
+            console.log('[SmartHelper] manual fetch start', smartHelperUrl, paramsObj);
+            fetchHelper(paramsObj, 'Generating smart helper cards...');
+            return true;
+          }
+
+          if (manualHelperBtn && manualHelperInput && helperContainer) {
+            manualHelperBtn.addEventListener('click', function () {
+              if (!manualAsk(manualHelperInput.value)) {
+                manualHelperInput.focus();
+              }
+            });
+          }
+
+          if (manualHelperBtnInline && manualHelperInputInline && helperContainer) {
+            manualHelperBtnInline.addEventListener('click', function () {
+              if (!manualAsk(manualHelperInputInline.value)) {
+                manualHelperInputInline.focus();
+              }
             });
           }
         }
@@ -2856,164 +3159,9 @@
       });
     })();
 
-    (function () {
-      // Phase 2c: Smart helper for Indication section (Wells / core rules, etc.).
-      document.addEventListener('DOMContentLoaded', function () {
-        const helperBtn = document.getElementById('indication-smart-helper-btn');
-        const indicationInput = document.getElementById('indication');
-        const helperContainer = document.getElementById('indication-smart-helper-container');
+    
+    // Indication smart helper removed in Phase 1 panel
 
-        if (!helperBtn || !indicationInput || !helperContainer) {
-          return;
-        }
-
-        const smartHelperUrl = "{{ url_for('main_routes.smart_helper_route') }}";
-
-        function clearHelperCards() {
-          helperContainer.innerHTML = '';
-        }
-
-        function renderHelperCards(cards) {
-          clearHelperCards();
-
-          if (!Array.isArray(cards) || !cards.length) {
-            const empty = document.createElement('div');
-            empty.className = 'text-muted';
-            empty.textContent = 'No smart helper suggestions for this selection yet.';
-            helperContainer.appendChild(empty);
-            return;
-          }
-
-          cards.forEach(function (card) {
-            if (!card || !card.title) {
-              return;
-            }
-
-            const wrapper = document.createElement('div');
-            wrapper.className = 'card card-body p-2 mb-2 border border-secondary-subtle';
-
-            const titleEl = document.createElement('div');
-            titleEl.className = 'fw-semibold small';
-            titleEl.textContent = card.title;
-            wrapper.appendChild(titleEl);
-
-            if (card.summary) {
-              const summaryEl = document.createElement('div');
-              summaryEl.className = 'small text-muted';
-              summaryEl.textContent = card.summary;
-              wrapper.appendChild(summaryEl);
-            }
-
-            if (Array.isArray(card.bullets) && card.bullets.length) {
-              const ul = document.createElement('ul');
-              ul.className = 'small mb-1';
-              card.bullets.forEach(function (b) {
-                const li = document.createElement('li');
-                li.textContent = b;
-                ul.appendChild(li);
-              });
-              wrapper.appendChild(ul);
-            }
-
-            if (Array.isArray(card.insert_options) && card.insert_options.length) {
-              const btnBar = document.createElement('div');
-              btnBar.className = 'mt-1';
-
-              card.insert_options.forEach(function (opt) {
-                if (!opt || !opt.text) {
-                  return;
-                }
-                const btn = document.createElement('button');
-                btn.type = 'button';
-                btn.className = 'btn btn-sm btn-outline-secondary me-1 mb-1';
-                btn.textContent = opt.label || 'Insert';
-                btn.addEventListener('click', function () {
-                  const existing = indicationInput.value || '';
-                  const prefix = existing ? existing.trim() + ' ' : '';
-                  indicationInput.value = prefix + opt.text;
-                  indicationInput.focus();
-                });
-                btnBar.appendChild(btn);
-              });
-
-              wrapper.appendChild(btnBar);
-            }
-
-            helperContainer.appendChild(wrapper);
-          });
-        }
-
-        function getSelectionTextOrWord(inputEl) {
-          let text = '';
-          const start = inputEl.selectionStart;
-          const end = inputEl.selectionEnd;
-
-          if (typeof start === 'number' && typeof end === 'number' && end > start) {
-            text = inputEl.value.substring(start, end);
-          } else {
-            const value = inputEl.value || '';
-            const pos = typeof start === 'number' ? start : value.length;
-            let left = pos;
-            let right = pos;
-
-            // Expand to full "word" around the caret.
-            while (left > 0 && /\S/.test(value.charAt(left - 1))) {
-              left--;
-            }
-            while (right < value.length && /\S/.test(value.charAt(right))) {
-              right++;
-            }
-            text = value.substring(left, right);
-          }
-
-          return text.trim();
-        }
-
-        helperBtn.addEventListener('click', function () {
-          clearHelperCards();
-
-          const selectionText = getSelectionTextOrWord(indicationInput);
-          if (!selectionText) {
-            const msg = document.createElement('div');
-            msg.className = 'text-muted';
-            msg.textContent = 'Select a word or place the cursor inside a word in the Indication to see smart helpers.';
-            helperContainer.appendChild(msg);
-            return;
-          }
-
-          const params = new URLSearchParams({
-            section: 'indication',
-            selection_text: selectionText,
-            modality: "{{ case.modality_enum.name if case.modality_enum else '' }}",
-            body_part: "{{ case.body_part_enum.name if case.body_part_enum else '' }}",
-            module: "{{ case.module_enum.name if case.module_enum else '' }}",
-            indication: indicationInput.value || '',
-            core_question: "{{ case.core_question or '' }}"
-          });
-
-          fetch(smartHelperUrl + '?' + params.toString(), {
-            method: 'GET'
-          })
-            .then(function (resp) {
-              if (!resp.ok) {
-                throw new Error('HTTP ' + resp.status);
-              }
-              return resp.json();
-            })
-            .then(function (data) {
-              const cards = (data && data.cards) ? data.cards : [];
-              renderHelperCards(cards);
-            })
-            .catch(function () {
-              clearHelperCards();
-              const err = document.createElement('div');
-              err.className = 'text-danger';
-              err.textContent = 'Unable to load smart helper suggestions.';
-              helperContainer.appendChild(err);
-            });
-        });
-      });
-    })();
 
     </script>
 {% endblock %}

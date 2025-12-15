@@ -1,8 +1,10 @@
 from flask_admin.contrib.sqla import ModelView
+from flask_admin import expose
 from flask_admin.form import FileUploadField
 from flask import redirect, url_for, flash, request
 from flask_login import current_user
 from wtforms_sqlalchemy.fields import QuerySelectField
+from wtforms import SelectField
 from werkzeug.utils import secure_filename
 import os
 import shutil
@@ -142,6 +144,11 @@ class MyModelView(ModelView):
 class UserModelView(ModelView):
     column_display_pk = True
     column_hide_backrefs = False
+
+    form_widget_args = {
+        "ai_calls_used_today": {"readonly": True},
+        "ai_calls_last_reset": {"readonly": True},
+    }
 
     def is_accessible(self):
         return current_user.is_authenticated and current_user.is_admin
@@ -1305,8 +1312,14 @@ class SmartHelperCardAdmin(ModelView):
         "modality",
         "body_part",
         "module",
+        "source",
+        "source_detail",
         "is_active",
         "priority",
+        "bullets_preview",
+        "tables_preview",
+        "generated_for_token",
+        "expires_at",
         "updated_at",
     )
 
@@ -1317,6 +1330,8 @@ class SmartHelperCardAdmin(ModelView):
         "body_part",
         "module",
         "is_active",
+        "source",
+        "source_detail",
     )
 
     column_searchable_list = (
@@ -1375,6 +1390,14 @@ class SmartHelperCardAdmin(ModelView):
                 "style": "font-size:0.85rem; background-color:#f8f9fa;",
             },
         ),
+        "bullets_json_preview": TextAreaField(
+            "Stored bullets_json (read-only)",
+            render_kw={"readonly": True, "rows": 3, "style": "font-family: monospace; font-size: 0.85rem;"},
+        ),
+        "definition_json_preview": TextAreaField(
+            "Stored definition_json (read-only)",
+            render_kw={"readonly": True, "rows": 4, "style": "font-family: monospace; font-size: 0.85rem;"},
+        ),
     }
 
     # Core form fields, grouped into logical sections
@@ -1393,6 +1416,11 @@ class SmartHelperCardAdmin(ModelView):
                 "max_age_years",
                 "sex",
                 "priority",
+                "source_detail",
+                "source",
+                "generated_for_token",
+                "generated_hash",
+                "expires_at",
                 "tags",
             ),
             "Meta / filters",
@@ -1421,6 +1449,8 @@ class SmartHelperCardAdmin(ModelView):
         # Read-only preview
         rules.Header("Preview"),
         "preview_block",
+        "bullets_json_preview",
+        "definition_json_preview",
     ]
 
     def is_accessible(self):
@@ -1429,6 +1459,92 @@ class SmartHelperCardAdmin(ModelView):
     def inaccessible_callback(self, name, **kwargs):
         flash("Admin access required.", "warning")
         return redirect(url_for("app_user.login"))
+
+    form_widget_args = {
+        # AI provenance fields should generally be read-only in the admin UI
+        "generated_for_token": {"readonly": True},
+        "generated_hash": {"readonly": True},
+    }
+
+    column_formatters = {
+        "bullets_preview": lambda v, c, m, p: SmartHelperCardAdmin._format_bullets(m),
+        "tables_preview": lambda v, c, m, p: SmartHelperCardAdmin._format_tables(m),
+    }
+
+    form_overrides = {
+        "source": SelectField,
+        "source_detail": SelectField,
+    }
+
+    form_args = {
+        "source": {
+            "choices": [
+                ("playbook", "Playbook (static)"),
+                ("admin", "Admin (curated in DB)"),
+                ("ai-unverified", "AI generated (unverified)"),
+                ("ai-verified", "AI generated (verified/updated)"),
+            ]
+        },
+        "source_detail": {
+            "choices": [
+                ("", "None"),
+                ("ai-new", "AI generated (new)"),
+                ("ai-verified", "AI verified/updated"),
+                ("ai-db", "AI cached in DB"),
+            ]
+        },
+    }
+
+    form_choices = {
+        "source": [
+            ("playbook", "Playbook (static)"),
+            ("admin", "Admin (curated in DB)"),
+            ("ai-unverified", "AI generated (unverified)"),
+            ("ai-verified", "AI generated (verified/updated)"),
+        ],
+        "source_detail": [
+            ("", "None"),
+            ("ai-verified", "AI verified/updated"),
+        ],
+    }
+
+    column_labels = {
+        "bullets_preview": "Bullets",
+        "tables_preview": "Tables",
+    }
+
+    @expose("/edit/", methods=("GET", "POST"))
+    def edit_view(self, *args, **kwargs):
+        """
+        Flask-Admin injects cls=self; strip it then delegate to base.
+        """
+        kwargs.pop("cls", None)
+        try:
+            return super().edit_view(*args, **kwargs)
+        except TypeError:
+            kwargs.pop("cls", None)
+            return super().edit_view(*args, **kwargs)
+
+    @staticmethod
+    def _format_bullets(model):
+        try:
+            bullets = model.bullets_json or []
+            if not isinstance(bullets, list):
+                return ""
+            return f"{len(bullets)} bullet(s)"
+        except Exception:
+            return ""
+
+    @staticmethod
+    def _format_tables(model):
+        try:
+            definition = model.definition_json or {}
+            tables = definition.get("tables") if isinstance(definition, dict) else []
+            if not tables:
+                return ""
+            return f"{len(tables)} table(s)"
+        except Exception:
+            return ""
 
     # ---------- Small JSON helpers ----------
 
@@ -1763,6 +1879,16 @@ class SmartHelperCardAdmin(ModelView):
         # ---- Full definition JSON ----
         if hasattr(form, "definition_json_text"):
             form.definition_json_text.data = self._stringify_json_generic(
+                model.definition_json
+            )
+
+        # ---- Read-only previews of stored JSON ----
+        if hasattr(form, "bullets_json_preview"):
+            form.bullets_json_preview.data = self._stringify_json_generic(
+                model.bullets_json
+            )
+        if hasattr(form, "definition_json_preview"):
+            form.definition_json_preview.data = self._stringify_json_generic(
                 model.definition_json
             )
 
