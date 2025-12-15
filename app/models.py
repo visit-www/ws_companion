@@ -152,6 +152,10 @@ class User(UserMixin, Base):
     totp_secret:so.Mapped[Optional[str]] = sa.Column(sa.String(32), nullable=True)
     recovery_phone: so.Mapped[Optional[str]] = sa.Column(sa.String(20), unique=True, nullable=True)  # Updated to Optional
     recovery_email: so.Mapped[Optional[str]] = sa.Column(sa.String(150), unique=True, nullable=True)  # Updated to Optional
+    # AI helper usage controls
+    ai_calls_used_today: so.Mapped[int] = sa.Column(sa.Integer, nullable=False, default=0)
+    ai_calls_last_reset: so.Mapped[Optional[datetime]] = sa.Column(sa.DateTime, nullable=True)
+    ai_daily_quota_override: so.Mapped[Optional[int]] = sa.Column(sa.Integer, nullable=True)
     cpd_logs: so.Mapped[list["CPDLog"]] = so.relationship( "CPDLog", back_populates="user", cascade="all, delete-orphan")
     def set_password(self, password):
         self.password = generate_password_hash(password)
@@ -560,6 +564,39 @@ class SmartHelperCard(Base):
         sa.Text,
         nullable=True,
         doc="Comma-separated or JSON-encoded tags for search and admin filtering.",
+    )
+
+    # Provenance for AI-generated helpers
+    source: so.Mapped[str] = sa.Column(
+        sa.String(20),
+        nullable=False,
+        default="manual",
+        server_default="manual",
+        index=True,
+        doc="Origin of the card: e.g. 'manual' (admin-authored) or 'ai'.",
+    )
+    source_detail: so.Mapped[Optional[str]] = sa.Column(
+        sa.String(50),
+        nullable=True,
+        index=True,
+        doc="Additional provenance detail, e.g. 'ai-verified'.",
+    )
+    generated_for_token: so.Mapped[Optional[str]] = sa.Column(
+        sa.String(255),
+        nullable=True,
+        index=True,
+        doc="Normalized token/selection text that triggered AI generation.",
+    )
+    generated_hash: so.Mapped[Optional[str]] = sa.Column(
+        sa.String(64),
+        nullable=True,
+        index=True,
+        doc="Hash of section+selection+context to avoid duplicate AI generations.",
+    )
+    expires_at: so.Mapped[Optional[datetime]] = sa.Column(
+        sa.DateTime,
+        nullable=True,
+        doc="Optional expiry to allow refreshing AI-generated cards.",
     )
 
     # Activation and ranking

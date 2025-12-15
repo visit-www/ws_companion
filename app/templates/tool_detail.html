@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">
+      {% if tool_type == "protocol" %}Imaging Protocol{% elif tool_type == "classification" %}Classification{% elif tool_type == "measurement" %}Measurement{% elif tool_type == "admin_template" %}Admin Template{% else %}Template{% endif %}
+    </h3>
+    {% if return_url %}
+      <a href="{{ return_url }}" class="btn btn-sm btn-outline-secondary">Back to Case Workspace</a>
+    {% else %}
+      <a href="{{ url_for('main_routes.case_workspace') }}" class="btn btn-sm btn-outline-secondary">Back to Case Workspace</a>
+    {% endif %}
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="card-title">{{ tool.name if tool.name else tool.template_name }}</h5>
+      {% if tool.description %}
+        <p class="card-text text-muted">{{ tool.description }}</p>
+      {% endif %}
+
+      <dl class="row small">
+        {% if tool.modality %}<dt class="col-sm-3">Modality</dt><dd class="col-sm-9">{{ tool.modality.value if tool.modality else tool.modality }}</dd>{% endif %}
+        {% if tool.body_part %}<dt class="col-sm-3">Body part</dt><dd class="col-sm-9">{{ tool.body_part.value if tool.body_part else tool.body_part }}</dd>{% endif %}
+        {% if tool.module %}<dt class="col-sm-3">Module</dt><dd class="col-sm-9">{{ tool.module.value if tool.module else tool.module }}</dd>{% endif %}
+        {% if tool.version %}<dt class="col-sm-3">Version</dt><dd class="col-sm-9">{{ tool.version }}</dd>{% endif %}
+        {% if tool.tags %}<dt class="col-sm-3">Tags</dt><dd class="col-sm-9">{{ tool.tags }}</dd>{% endif %}
+      </dl>
+
+      {% if tool_type == "measurement" and tool.reference_text %}
+        <div class="mb-2">
+          <strong>Reference</strong>
+          <div class="text-muted">{{ tool.reference_text }}</div>
+        </div>
+      {% endif %}
+
+      {% if tool_type in ["admin_template", "user_template"] and tool.definition_json %}
+        <div class="mt-3">
+          <strong>Template definition</strong>
+          <pre class="small bg-light p-2 border rounded">{{ tool.definition_json | tojson(indent=2) }}</pre>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

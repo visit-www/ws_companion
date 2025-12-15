@@ -37,16 +37,17 @@
         </form>
     </div>
 
-    {# Total hit count across all result groups #}
-    {% set total_hits =
-        (content_results|length)
-        + (refrences_results|length)
-        + (protocol_results|length)
-        + (classification_results|length)
-        + (adminreporttemplates_results|length)
-        + (userreportemplates_results|length)
-        + (measurement_results|length)
-    %}
+{# Total hit count across all result groups #}
+{% set total_hits =
+    (content_results|length)
+    + (refrences_results|length)
+    + (protocol_results|length)
+    + (classification_results|length)
+    + (adminreporttemplates_results|length)
+    + (userreportemplates_results|length)
+    + (measurement_results|length)
+    + (smart_helper_results|length)
+%}
 
     {% if total_hits == 0 %}
         <div class="alert alert-light border d-flex align-items-center" role="alert">
@@ -108,6 +109,13 @@
             <span class="badge rounded-pill bg-danger-subtle text-danger border">
                 <i class="bi bi-rulers me-1"></i>
                 Normal Values ({{ measurement_results|length }})
+            </span>
+            {% endif %}
+
+            {% if smart_helper_results %}
+            <span class="badge rounded-pill bg-secondary border text-muted">
+                <i class="bi bi-lightbulb me-1"></i>
+                Smart Helpers ({{ smart_helper_results|length }})
             </span>
             {% endif %}
         </div>
@@ -454,6 +462,55 @@
                                 {% if m.tags %}
                                 <small class="text-muted d-block">
                                     <i class="bi bi-tags me-1"></i>{{ m.tags }}
+                                </small>
+                                {% endif %}
+                            </a>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {# Smart helper cards #}
+            {% if smart_helper_results %}
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingSmartHelpers">
+                    <button class="accordion-button collapsed" type="button"
+                            data-bs-toggle="collapse" data-bs-target="#collapseSmartHelpers"
+                            aria-expanded="false" aria-controls="collapseSmartHelpers">
+                        <i class="bi bi-lightbulb me-2"></i>
+                        Smart Helpers ({{ smart_helper_results|length }})
+                    </button>
+                </h2>
+                <div id="collapseSmartHelpers" class="accordion-collapse collapse"
+                     aria-labelledby="headingSmartHelpers" data-bs-parent="#searchResultsAccordion">
+                    <div class="accordion-body">
+                        <ul class="list-group list-group-flush">
+                            {% for s in smart_helper_results %}
+                            <a
+                                href="{{ url_for('main_routes.view_smart_helper', card_id=s.id) }}"
+                                class="list-group-item list-group-item-action"
+                                target="_blank" rel="noopener noreferrer"
+                            >
+                                <div class="d-flex w-100 justify-content-between">
+                                    <div>
+                                        <h5 class="mb-1">{{ s.title }}</h5>
+                                        <small class="text-muted">
+                                            {{ s.section.value if s.section else 'any' }}
+                                            {% if s.token %} · Token: {{ s.token }}{% endif %}
+                                        </small>
+                                    </div>
+                                    <span class="badge bg-light text-muted border">{{ s.kind.value if s.kind else 'info' }}</span>
+                                </div>
+                                {% if s.summary %}
+                                <p class="mb-1 text-muted small">
+                                    {{ s.summary|striptags|truncate(200) }}
+                                </p>
+                                {% endif %}
+                                {% if s.tags %}
+                                <small class="text-muted">
+                                    <i class="bi bi-tags me-1"></i>{{ s.tags }}
                                 </small>
                                 {% endif %}
                             </a>

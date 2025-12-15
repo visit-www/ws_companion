@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}Smart Helper Card{% endblock %}
+
+{% block content %}
+<style>
+  /* Reuse Case Workspace smart helper styling for consistent rendering */
+  .smart-helper-card {
+    border-left: 4px solid #6cb2eb;
+    background: #f7fbff;
+    margin-bottom: 0.75rem;
+  }
+  .smart-helper-card .card-header {
+    background: #eaf3fa;
+    padding: 0.4rem 0.75rem;
+  }
+  .smart-helper-card-title {
+    font-size: 0.98em;
+    font-weight: 600;
+    margin-bottom: 0.1rem;
+  }
+  .smart-helper-card-meta {
+    color: #6c757d;
+    font-size: 0.87em;
+    text-align: right;
+    margin-left: auto;
+  }
+  .smart-helper-table {
+    width: 100%;
+    font-size: 0.95em;
+    border-collapse: collapse;
+    border: 1px solid #dee2e6;
+    margin-bottom: 0.5rem;
+  }
+  .smart-helper-table th {
+    text-align: center;
+    background: #f0f3f7;
+    color: #7c8a96;
+    font-weight: 600;
+    padding: 0.3rem 0.7rem 0.3rem 0.2rem;
+    width: 40%;
+    border: 1px solid #dee2e6;
+    vertical-align: top;
+    white-space: normal;
+  }
+  .smart-helper-table td {
+    text-align: left;
+    background: #fff;
+    padding: 0.3rem 0.2rem 0.3rem 0.7rem;
+    border: 1px solid #dee2e6;
+    vertical-align: top;
+    white-space: normal;
+  }
+  .smart-helper-table th:nth-child(1),
+  .smart-helper-table td:nth-child(1) {
+    background: #e8f4ff;
+    color: #405060;
+  }
+  .smart-helper-table th:nth-child(2),
+  .smart-helper-table td:nth-child(2) {
+    background: #f6fbf0;
+    color: #4e6150;
+  }
+  .smart-helper-table th:nth-child(3),
+  .smart-helper-table td:nth-child(3) {
+    background: #f9f5ff;
+    color: #5b4e61;
+  }
+  .smart-helper-table th:nth-child(4),
+  .smart-helper-table td:nth-child(4) {
+    background: #fff9f3;
+    color: #665b4e;
+  }
+  .smart-helper-table th:nth-child(5),
+  .smart-helper-table td:nth-child(5) {
+    background: #f3faff;
+    color: #4e5e66;
+  }
+  .smart-helper-table td,
+  .smart-helper-table th {
+    text-align: left;
+    vertical-align: top;
+  }
+  .smart-helper-table th {
+    text-align: center;
+  }
+  .smart-helper-card ul {
+    text-align: left;
+  }
+</style>
+
+<div class="container-fluid py-4" style="max-width: 1100px;">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 class="mb-0">Smart Helper</h3>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('main_routes.case_workspace') }}" class="btn btn-sm btn-outline-secondary">Back to Case Workspace</a>
+      {% if current_user.is_authenticated and current_user.is_admin %}
+        <a class="btn btn-sm btn-outline-primary"
+           href="{{ url_for('smart_helper_cards.edit_view', id=card.id) }}">
+          Edit in Admin
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="card shadow-sm smart-helper-card">
+    <div class="card-header d-flex justify-content-between align-items-center py-2">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <span class="badge bg-secondary rounded-pill">{{ card.kind_label }}</span>
+        <span class="badge bg-light text-muted border rounded-pill">{{ card.section_label }}</span>
+        {% set source = (card.source or '')|lower %}
+        {% set source_detail = (card.source_detail or '')|lower %}
+        {% if source %}
+          {% if source == 'ai-verified' or source_detail == 'ai-verified' %}
+            <span class="badge bg-info text-dark rounded-pill">AI — verified & updated</span>
+          {% elif source == 'ai-unverified' or 'ai' in source %}
+            <span class="badge bg-info text-dark rounded-pill">
+              {{ 'AI — new (unverified)' if source_detail == 'ai-new' else 'AI — unverified' }}
+            </span>
+          {% elif source in ['playbook', 'static'] %}
+            <span class="badge bg-secondary rounded-pill">Playbook</span>
+          {% elif source in ['admin', 'db', 'curated'] %}
+            <span class="badge bg-secondary rounded-pill">Curated</span>
+          {% else %}
+            <span class="badge bg-secondary rounded-pill">Smart helper</span>
+          {% endif %}
+        {% endif %}
+      </div>
+      <small class="text-muted">{{ card.meta_text }}</small>
+    </div>
+
+    <div class="card-body">
+      <div class="d-flex align-items-start justify-content-between mb-2">
+        <div>
+          <div class="smart-helper-card-title">{{ card.title }}</div>
+          {% if card.summary_html %}
+            <div class="text-muted small">{{ card.summary_html|safe }}</div>
+          {% elif card.summary %}
+            <div class="text-muted small">{{ card.summary|safe }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      {% if card.table_sections %}
+        {% for t in card.table_sections %}
+          {% if t.title %}<div class="small fw-semibold mb-1">{{ t.title }}</div>{% endif %}
+          <table class="smart-helper-table mb-2">
+            {% if t.headers %}
+              <thead>
+                <tr>
+                  {% for h in t.headers %}<th class="small">{{ h|safe }}</th>{% endfor %}
+                </tr>
+              </thead>
+            {% endif %}
+            {% if t.rows %}
+              <tbody>
+                {% for row in t.rows %}
+                  <tr>
+                    {% for cell in row %}<td class="small">{{ cell|safe }}</td>{% endfor %}
+                  </tr>
+                {% endfor %}
+              </tbody>
+            {% endif %}
+          </table>
+        {% endfor %}
+      {% endif %}
+
+      {% if card.bullet_sections %}
+        {% for b in card.bullet_sections %}
+          {% if b.title %}<div class="small fw-semibold mb-1">{{ b.title }}</div>{% endif %}
+          <ul class="small mb-2">
+            {% for item in b['items'] %}
+              <li>{{ item|safe }}</li>
+            {% endfor %}
+          </ul>
+        {% endfor %}
+      {% elif card.bullets %}
+        <ul class="small mb-2">
+          {% for item in card.bullets %}
+            <li>{{ item|safe }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
+      {% if card.insert_options %}
+        <div class="mt-2">
+          <div class="small text-muted mb-1">Report-ready inserts:</div>
+          <div class="d-flex flex-wrap gap-1">
+            {% for opt in card.insert_options %}
+              <span class="badge bg-warning text-dark">{{ opt.label or 'Insert' }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      {% if card.tags %}
+        <div class="mt-2 small text-muted">
+          <i class="bi bi-tags me-1"></i>{{ card.tags }}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

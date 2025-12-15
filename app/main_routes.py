@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, jsonify, request, flash, send_from_directory, redirect, url_for
+from flask import Blueprint, render_template, jsonify, request, flash, send_from_directory, redirect, url_for, current_app, abort
 from flask_wtf.csrf import generate_csrf
 import re
 from .models import (
@@ -36,6 +36,7 @@ from flask_cors import CORS
 from flask_login import current_user, AnonymousUserMixin, login_required
 from config import userdir, creativesfolder
 from types import SimpleNamespace
+from .ai_helper_service import generate_ai_cards, quota_status, _normalize_token
 
 #----------------------------------------------------------------
 # Helper: simple tokenizer for smart search
@@ -363,12 +364,20 @@ def _selection_matches_card(selection_text: str, raw_token: str) -> bool:
         return False
 
     selection_canon = re.sub(r"\s+", " ", selection_text.strip().lower())
-    if not selection_canon:
+    selection_norm = _normalize_token(selection_text) if selection_text else ""
+    if not selection_canon and not selection_norm:
         return False
 
     for tok in tokens:
+        tok_norm = _normalize_token(tok)
         if tok in selection_canon:
             return True
+        if tok_norm and selection_norm:
+            sel_parts = set(selection_norm.split())
+            tok_parts = set(tok_norm.split())
+            # Match if token stems are subset of selection stems OR selection stems subset of token stems
+            if tok_parts and sel_parts and (tok_parts.issubset(sel_parts) or sel_parts.issubset(tok_parts)):
+                return True
     return False
 
 # ---- DB-backed smart helper card builder ----
@@ -536,42 +545,155 @@ def _build_smart_helper_cards_from_db(context, selection_text: str, section: str
 
         # Add compatibility fields for frontend
         vm["kind"] = card_obj.kind
-        vm["section"] = section_value
+        vm["section"] = str(section_value) if section_value is not None else None
         vm["summary"] = vm.get("summary_html", "")
         vm["token"] = card_obj.token
-        vm["modality"] = row.modality.name if row.modality is not None else None
-        vm["body_part"] = row.body_part.name if row.body_part is not None else None
-        vm["module"] = row.module.name if row.module is not None else None
+        vm["modality"] = row.modality.name if hasattr(row.modality, "name") else (row.modality or None)
+        vm["body_part"] = row.body_part.name if hasattr(row.body_part, "name") else (row.body_part or None)
+        vm["module"] = row.module.name if hasattr(row.module, "name") else (row.module or None)
+        vm["source"] = getattr(row, "source", "manual")
+        vm["source_detail"] = getattr(row, "source_detail", None)
+        if vm["source"] and "ai" in vm["source"] and not vm["source_detail"]:
+            vm["source_detail"] = "ai-db"
         cards.append(vm)
 
     return cards
+
+
+def _search_related_tools(search_text: str, modality_enum, body_part_enum, module_enum, user, return_url: str | None = None):
+    """
+    Lightweight related tool lookup across protocols, classifications, measurements,
+    and report templates using the same normalised LIKE matching as site_search.
+    """
+    if not search_text:
+        return {}
+
+    norm_q = re.sub(r"[\s\-]+", "", search_text.lower())
+    if not norm_q:
+        return {}
+
+    def norm_match(col):
+        lowered = func.lower(col)
+        no_hyphen = func.replace(lowered, "-", "")
+        no_space = func.replace(no_hyphen, " ", "")
+        return no_space.like(f"%{norm_q}%")
+
+    related = {
+        "protocols": [],
+        "classifications": [],
+        "measurements": [],
+        "admin_templates": [],
+        "user_templates": [],
+    }
+
+    proto_q = db.session.query(ImagingProtocol).filter(ImagingProtocol.is_active.is_(True))
+    if modality_enum is not None:
+        proto_q = proto_q.filter(ImagingProtocol.modality == modality_enum)
+    if body_part_enum is not None:
+        proto_q = proto_q.filter(ImagingProtocol.body_part == body_part_enum)
+    proto_q = proto_q.filter(
+        or_(
+            norm_match(ImagingProtocol.name),
+            norm_match(ImagingProtocol.indication),
+            norm_match(ImagingProtocol.technique_text),
+            norm_match(ImagingProtocol.contrast_details),
+            norm_match(ImagingProtocol.tags),
+        )
+    ).limit(5)
+    for row in proto_q:
+        related["protocols"].append({
+            "name": row.name,
+            "url": url_for("main_routes.view_protocol", protocol_id=row.id, return_url=return_url),
+        })
+
+    cls_q = db.session.query(ClassificationSystem).filter(ClassificationSystem.is_active.is_(True))
+    if modality_enum is not None:
+        cls_q = cls_q.filter(ClassificationSystem.modality == modality_enum)
+    if body_part_enum is not None:
+        cls_q = cls_q.filter(ClassificationSystem.body_part == body_part_enum)
+    cls_q = cls_q.filter(
+        or_(
+            norm_match(ClassificationSystem.name),
+            norm_match(ClassificationSystem.description),
+            norm_match(ClassificationSystem.version),
+        )
+    ).limit(5)
+    for row in cls_q:
+        related["classifications"].append({
+            "name": row.name,
+            "url": url_for("main_routes.view_classification", classification_id=row.id, return_url=return_url),
+        })
+
+    meas_q = db.session.query(NormalMeasurement).filter(NormalMeasurement.is_active.is_(True)).filter(
+        or_(
+            norm_match(NormalMeasurement.name),
+            norm_match(NormalMeasurement.context),
+            norm_match(NormalMeasurement.reference_text),
+            norm_match(NormalMeasurement.tags),
+            norm_match(NormalMeasurement.age_group),
+            norm_match(NormalMeasurement.sex),
+        )
+    ).limit(5)
+    for row in meas_q:
+        related["measurements"].append({
+            "name": row.name,
+            "url": url_for("main_routes.view_measurement", measurement_id=row.id, return_url=return_url),
+        })
+
+    tpl_q = db.session.query(AdminReportTemplate).filter(AdminReportTemplate.is_active.is_(True)).filter(
+        or_(
+            norm_match(AdminReportTemplate.template_name),
+            norm_match(AdminReportTemplate.description),
+            norm_match(AdminReportTemplate.tags),
+        )
+    ).limit(5)
+    for row in tpl_q:
+        related["admin_templates"].append({
+            "name": row.template_name,
+            "url": url_for("main_routes.view_admin_template", template_id=row.id, return_url=return_url),
+        })
+
+    if not isinstance(user, AnonymousUserMixin):
+        ut_q = db.session.query(UserReportTemplate).filter(UserReportTemplate.user_id == user.id).filter(
+            or_(
+                norm_match(UserReportTemplate.template_name),
+                norm_match(UserReportTemplate.tags),
+            )
+        ).limit(5)
+        for row in ut_q:
+            related["user_templates"].append({
+                "name": row.template_name,
+                "url": url_for("main_routes.view_user_template", template_id=row.id, return_url=return_url),
+            })
+
+    return related
 
 def build_smart_helper_cards(context, selection_text: str, section: str, user):
     """Build helper cards for contextual smart assistance.
 
     Phase 2c+ strategy:
-    - Primary source: SmartHelperCard rows in the database, filtered by
-      section, selection text, and structural context.
-    - Fallback: static SMART_HELPER_PLAYBOOK for early bootstrap content
-      (e.g. Wells score for PE) so the feature remains useful even with
-      sparse DB content.
+    - Primary source: SmartHelperCard rows in the database (admin/authored/AI-cached).
+    - Fallback: static SMART_HELPER_PLAYBOOK (hard-coded bootstrap helpers).
+    - Last resort: AI generation → store → re-fetch from DB.
     """
     # Normalise selection text (may be an empty string if nothing is selected)
     selection_text = selection_text or ""
+    force_ai_only = bool(context.get("force_ai"))
 
-    # 1) Try database-backed smart helper cards first, using the raw selection text.
+    # 1) Try database-backed smart helper cards first, unless caller explicitly forces AI only.
     #    Card tokens are matched in Python (case-insensitive, comma-separated variants,
     #    multi-word tokens requiring adjacency).
-    db_cards = _build_smart_helper_cards_from_db(context, selection_text, section)
-    if db_cards:
-        return db_cards
+    if not force_ai_only:
+        db_cards = _build_smart_helper_cards_from_db(context, selection_text, section)
+        if db_cards:
+            return db_cards
 
     # 2) Fallback to the static playbook logic (existing behaviour) using the
     #    older normalised-token mapping (_normalise_selection_token) for
     #    bootstrap helpers such as Wells/PE.
     token = _normalise_selection_token(selection_text)
     if not token:
-        return []
+        token = None  # keep type simple
 
     section_key = (section or "").strip().lower() or "observations"
 
@@ -604,6 +726,8 @@ def build_smart_helper_cards(context, selection_text: str, section: str, user):
             vm["modality"] = None
             vm["body_part"] = None
             vm["module"] = None
+            vm["source"] = "static"
+            vm["source_detail"] = "static-playbook"
             cards.append(vm)
 
     # Wildcard helpers that apply to any section, e.g. ("any", "wells")
@@ -633,14 +757,76 @@ def build_smart_helper_cards(context, selection_text: str, section: str, user):
             vm["modality"] = None
             vm["body_part"] = None
             vm["module"] = None
+            vm["source"] = "static"
+            vm["source_detail"] = "static-playbook"
             if vm not in cards:
                 cards.append(vm)
 
-    return cards
+    db_cards = _build_smart_helper_cards_from_db(context, selection_text, section)
+    if db_cards:
+        return db_cards
 
-# *----------------------------------------------------------------
-# todo: Global Error Handling Setup
-# *----------------------------------------------------------------
+    if cards:
+        return cards
+
+    # 3) Last resort: attempt AI-backed generation (persist to DB, then re-fetch)
+    generated = generate_ai_cards(context, selection_text, section, user)
+    db_cards = _build_smart_helper_cards_from_db(context, selection_text, section)
+    if db_cards:
+        return db_cards
+
+    # If no DB cards but we have non-persisted placeholders from the generator, return them
+    if generated:
+        from types import SimpleNamespace
+        def _enum_name(x):
+            try:
+                return x.name
+            except Exception:
+                return x
+
+        out = []
+        for card_obj in generated:
+            # Already a VM dict
+            if isinstance(card_obj, dict):
+                if "section" in card_obj:
+                    card_obj["section"] = _enum_name(card_obj.get("section"))
+                if "modality" in card_obj:
+                    card_obj["modality"] = _enum_name(card_obj.get("modality"))
+                if "body_part" in card_obj:
+                    card_obj["body_part"] = _enum_name(card_obj.get("body_part"))
+                if "module" in card_obj:
+                    card_obj["module"] = _enum_name(card_obj.get("module"))
+                out.append(card_obj)
+                continue
+            # SimpleNamespace or similar
+            if isinstance(card_obj, SimpleNamespace):
+                vm = serialize_smart_helper_card(card_obj)
+                vm["kind"] = getattr(card_obj, "kind", None)
+                vm["section"] = _enum_name(getattr(card_obj, "section", None))
+                vm["summary"] = vm.get("summary_html", "")
+                vm["token"] = getattr(card_obj, "token", None)
+                vm["modality"] = _enum_name(getattr(card_obj, "modality", None))
+                vm["body_part"] = _enum_name(getattr(card_obj, "body_part", None))
+                vm["module"] = _enum_name(getattr(card_obj, "module", None))
+                vm["source"] = getattr(card_obj, "source", "ai-status")
+                vm["source_detail"] = getattr(card_obj, "source_detail", "ai-status")
+                out.append(vm)
+            else:
+                # Fallback: try serialize like a SmartHelperCard
+                vm = serialize_smart_helper_card(card_obj)
+                vm["kind"] = getattr(card_obj, "kind", None)
+                vm["section"] = _enum_name(getattr(card_obj, "section", None))
+                vm["summary"] = vm.get("summary_html", "")
+                vm["token"] = getattr(card_obj, "token", None)
+                vm["modality"] = _enum_name(getattr(card_obj, "modality", None))
+                vm["body_part"] = _enum_name(getattr(card_obj, "body_part", None))
+                vm["module"] = _enum_name(getattr(card_obj, "module", None))
+                vm["source"] = getattr(card_obj, "source", "ai-status")
+                vm["source_detail"] = getattr(card_obj, "source_detail", "ai-status")
+                out.append(vm)
+        return out
+
+    return []
 #commented out : temporary route ot test error handling
 #@main_bp.route("/_force_error")
 #def force_error():
@@ -801,6 +987,22 @@ def site_search():
         .all()
     )
 
+    # Search smart helper cards
+    smart_helper_results = (
+        db.session.query(SmartHelperCard)
+        .filter(
+            SmartHelperCard.is_active.is_(True),
+            or_(
+                norm_match(SmartHelperCard.title),
+                norm_match(SmartHelperCard.summary),
+                norm_match(SmartHelperCard.tags),
+                norm_match(SmartHelperCard.token),
+            ),
+        )
+        .limit(50)
+        .all()
+    )
+
     return render_template(
         'search_results.html',
         query=q,
@@ -811,6 +1013,7 @@ def site_search():
         adminreporttemplates_results=adminreporttemplates_results,
         userreportemplates_results=userreportemplates_results,
         measurement_results=measurement_results,
+        smart_helper_results=smart_helper_results,
     )
 # *---------------------------------------------------------------
 # Radilogy tools routes.
@@ -1391,6 +1594,8 @@ def case_workspace():
                 limit=8,
             )
         # -----------------------------------------
+    quota_info = quota_status(current_user if current_user.is_authenticated else None, current_app.config)
+
     return render_template(
         "case_workspace/case_workspace.html",
         case=case_context,
@@ -1407,6 +1612,7 @@ def case_workspace():
         tool_search=tool_search,
         active_template=active_template,
         report_text_default=report_text_default,
+        ai_quota_info=quota_info,
     )
 
 
@@ -1486,6 +1692,7 @@ def smart_helper_route():
     """Generic smart helper endpoint for Case Workspace."""
     section = (request.args.get("section") or "").strip().lower()
     selection_text = (request.args.get("selection_text") or "").strip()
+    force_ai = (request.args.get("force_ai") or "").lower() in {"true", "1", "yes"}
 
     modality_name = (request.args.get("modality") or "").strip() or None
     body_part_name = (request.args.get("body_part") or "").strip() or None
@@ -1522,10 +1729,15 @@ def smart_helper_route():
         "module_enum": module_enum,
         "indication": indication,
         "core_question": core_question,
+        "study_type": request.args.get("study_type") or "",
+        "force_ai": force_ai,
     }
 
+    return_url = request.args.get("return_url") or url_for("main_routes.case_workspace")
+
     cards = build_smart_helper_cards(context, selection_text, section, current_user)
-    return jsonify({"cards": cards})
+    related = _search_related_tools(selection_text or core_question, modality_enum, body_part_enum, module_enum, current_user, return_url)
+    return jsonify({"cards": cards, "related": related})
 
 
 # ---------------------------------------
@@ -1698,6 +1910,109 @@ def serve_creatives_folder(filename):
     Serve files from the creatives folder.
     """
     return send_from_directory(creativesfolder, filename)
+
+
+# ----------------------------------------------------------------
+# Detail views for tools (protocols, classifications, measurements, templates)
+# ----------------------------------------------------------------
+@main_bp.route("/tool/protocol/<int:protocol_id>")
+@login_required
+def view_protocol(protocol_id):
+    proto = db.session.get(ImagingProtocol, protocol_id)
+    if proto is None:
+        abort(404)
+    return_url = request.args.get("return_url")
+    return render_template("tool_detail.html", tool=proto, tool_type="protocol", return_url=return_url)
+
+
+@main_bp.route("/tool/classification/<int:classification_id>")
+@login_required
+def view_classification(classification_id):
+    cls = db.session.get(ClassificationSystem, classification_id)
+    if cls is None:
+        abort(404)
+    return_url = request.args.get("return_url")
+    return render_template("tool_detail.html", tool=cls, tool_type="classification", return_url=return_url)
+
+
+@main_bp.route("/tool/measurement/<int:measurement_id>")
+@login_required
+def view_measurement(measurement_id):
+    meas = db.session.get(NormalMeasurement, measurement_id)
+    if meas is None:
+        abort(404)
+    return_url = request.args.get("return_url")
+    return render_template("tool_detail.html", tool=meas, tool_type="measurement", return_url=return_url)
+
+
+@main_bp.route("/tool/admin-template/<int:template_id>")
+@login_required
+def view_admin_template(template_id):
+    tpl = db.session.get(AdminReportTemplate, template_id)
+    if tpl is None:
+        abort(404)
+    return_url = request.args.get("return_url")
+    return render_template("tool_detail.html", tool=tpl, tool_type="admin_template", return_url=return_url)
+
+
+@main_bp.route("/tool/user-template/<int:template_id>")
+@login_required
+def view_user_template(template_id):
+    tpl = db.session.get(UserReportTemplate, template_id)
+    if tpl is None or (hasattr(tpl, "user_id") and tpl.user_id != getattr(current_user, "id", None) and not getattr(current_user, "is_admin", False)):
+        abort(404)
+    return_url = request.args.get("return_url")
+    return render_template("tool_detail.html", tool=tpl, tool_type="user_template", return_url=return_url)
+
+
+@main_bp.route("/smart_helper/<int:card_id>")
+@login_required
+def view_smart_helper(card_id):
+    card = db.session.get(SmartHelperCard, card_id)
+    if card is None:
+        abort(404)
+    vm = serialize_smart_helper_card(card)
+    # Build bullet_sections/table_sections similar to case workspace
+    bullet_sections = []
+    table_sections = []
+    definition = getattr(card, "definition_json", None) or {}
+    if isinstance(definition, dict):
+        groups = definition.get("bullet_groups") or []
+        for g in groups:
+            items = g.get("items") or []
+            if isinstance(items, list):
+                bullet_sections.append({
+                    "title": g.get("title") or None,
+                    "items": items,
+                    "style": g.get("style") or "bullets",
+                })
+        tables = definition.get("tables") or []
+        for t in tables:
+            table_sections.append({
+                "title": t.get("title") or None,
+                "headers": t.get("headers") or [],
+                "rows": t.get("rows") or [],
+            })
+    if not bullet_sections and card.bullets_json:
+        bullet_sections.append({
+            "title": None,
+            "items": card.bullets_json,
+            "style": "bullets",
+        })
+
+    vm["bullet_sections"] = bullet_sections
+    vm["table_sections"] = table_sections
+    vm["kind_label"] = getattr(card.kind, "value", str(card.kind)) if hasattr(card, "kind") else "info"
+    vm["section_label"] = getattr(card.section, "value", str(card.section)) if hasattr(card, "section") else "any"
+    vm["meta_text"] = " · ".join(filter(None, [
+        card.token,
+        card.modality.value if getattr(card, "modality", None) else None,
+        card.body_part.value if getattr(card, "body_part", None) else None,
+        card.module.value if getattr(card, "module", None) else None,
+    ]))
+    vm["source"] = getattr(card, "source", None)
+    vm["source_detail"] = getattr(card, "source_detail", None)
+    return render_template("smart_helper_detail.html", card=vm)
 # *----------------------------------------------------------------
 #!Debugging routes:
 

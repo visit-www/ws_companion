@@ -56,3 +56,20 @@ class Config:
     SECURITY_PASSWORD_SALT = '25df2a0675d39147e5e8f1bf75550f2a'
     MAIL_MAX_EMAILS = None
     MAIL_ASCII_ATTACHMENTS = False
+
+    # AI helper cards (feature-flag + provider config)
+    AI_HELPERS_ENABLED = os.getenv('AI_HELPERS_ENABLED', 'false').lower() == 'true'
+    AI_PROVIDER = os.getenv('AI_PROVIDER')
+    AI_MODEL = os.getenv('QUBRID_MODEL')  # Using Qubrid model as default
+    AI_MAX_TOKENS = int(os.getenv('AI_MAX_TOKENS', '1500'))
+    AI_REQUEST_TIMEOUT = int(os.getenv('AI_REQUEST_TIMEOUT'))  # seconds
+    AI_FREE_DAILY_LIMIT = int(os.getenv('AI_FREE_DAILY_LIMIT'))
+    AI_PAID_DAILY_LIMIT = int(os.getenv('AI_PAID_DAILY_LIMIT'))
+    _max_calls_raw = os.getenv('AI_MAX_DAILY_CALLS_PER_USER')
+    AI_MAX_DAILY_CALLS_PER_USER = int(_max_calls_raw) if _max_calls_raw is not None else 50  # fallback cap
+    OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+    GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+    GEMINI_MODEL = os.getenv('GEMINI_MODEL')
+    DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
+    QUBRID_API_KEY = os.getenv('QUBRID_API_KEY')
+    QUBRID_MODEL = os.getenv('QUBRID_MODEL')
