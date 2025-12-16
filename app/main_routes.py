@@ -278,46 +278,7 @@ WELLS_PE_HELPER_CARD = {
     ],
 }
 
-# Minimal static playbook for contextual helpers.
-# Keys are (section, token).
-#
-# Section can be:
-#   - a specific logical section (e.g. "indication", "observations", "conclusion"), or
-#   - the special value "any" to indicate a wildcard helper that can be shown
-#     in multiple sections (used via a fallback in build_smart_helper_cards).
-SMART_HELPER_PLAYBOOK = {
-    # Wells score helper: primarily anchored to Indication, but also available
-    # as a generic helper in other sections via the ("any", "wells") key.
-    ("indication", "wells"): [WELLS_PE_HELPER_CARD],
-    ("any", "wells"): [WELLS_PE_HELPER_CARD],
-    # Core-question-level toolkit for ?PE cases
-    ("core_question", "pe"): [
-        {
-            "kind": "QUESTION_TOOLKIT",
-            "title": "Tool bundle for ?PE (CTPA)",
-            "summary": "Relevant tools for a case with suspected pulmonary embolism.",
-            "bullets": [
-                "CTPA imaging protocol.",
-                "CTPA/PE report templates (admin + user).",
-                "Checklist: RV/LV ratio, clot burden, alternative diagnoses.",
-                "Right heart strain/severity notes.",
-            ],
-            "insert_options": [],
-        }
-    ],
-}
-
-
-def _normalise_selection_token(selection_text: str) -> str:
-    """Normalise a text selection to a compact token used by the helper playbook."""
-    if not selection_text:
-        return ""
-    text = selection_text.strip().lower()
-    if "wells" in text:
-        return "wells"
-    if "pe" in text or "pulmonary embol" in text:
-        return "pe"
-    return ""
+SMART_HELPER_PLAYBOOK = {}
 
 
 
@@ -356,9 +317,9 @@ def _selection_matches_card(selection_text: str, raw_token: str) -> bool:
         - token "wells score" only matches if "wells score" appears with the words adjacent.
     """
     tokens = _split_card_tokens(raw_token)
-    # No explicit tokens means "generic" helper for the matching section/context.
+    # No explicit tokens → do not match automatically; avoid unrelated generic cards.
     if not tokens:
-        return True
+        return False
 
     if not selection_text:
         return False
@@ -370,7 +331,9 @@ def _selection_matches_card(selection_text: str, raw_token: str) -> bool:
 
     for tok in tokens:
         tok_norm = _normalize_token(tok)
-        if tok in selection_canon:
+        # Require whole-word/phrase match to avoid substring hits (e.g., "pe" in "appendicitis").
+        phrase_pattern = r"\b" + re.escape(tok).replace(r"\ ", r"\s+") + r"\b"
+        if re.search(phrase_pattern, selection_canon, flags=re.IGNORECASE):
             return True
         if tok_norm and selection_norm:
             sel_parts = set(selection_norm.split())
@@ -678,7 +641,7 @@ def build_smart_helper_cards(context, selection_text: str, section: str, user):
     """
     # Normalise selection text (may be an empty string if nothing is selected)
     selection_text = selection_text or ""
-    force_ai_only = bool(context.get("force_ai"))
+    force_ai_only = bool(context.get("force_ai") or context.get("force_provider") or context.get("replace_fallback"))
 
     # 1) Try database-backed smart helper cards first, unless caller explicitly forces AI only.
     #    Card tokens are matched in Python (case-insensitive, comma-separated variants,
@@ -688,88 +651,11 @@ def build_smart_helper_cards(context, selection_text: str, section: str, user):
         if db_cards:
             return db_cards
 
-    # 2) Fallback to the static playbook logic (existing behaviour) using the
-    #    older normalised-token mapping (_normalise_selection_token) for
-    #    bootstrap helpers such as Wells/PE.
-    token = _normalise_selection_token(selection_text)
-    if not token:
-        token = None  # keep type simple
-
-    section_key = (section or "").strip().lower() or "observations"
-
-    cards = []
-
-    # Exact (section, token) matches
-    exact_cards = SMART_HELPER_PLAYBOOK.get((section_key, token), [])
-    if exact_cards:
-        for c in exact_cards:
-            card_obj = SimpleNamespace(
-                id=None,
-                title=c.get("title"),
-                summary=c.get("summary", ""),
-                kind=c.get("kind", "info"),
-                section=section_key,
-                bullets=c.get("bullets", []),
-                insert_options=c.get("insert_options", []),
-                tags=c.get("tags", ""),
-                token=c.get("token"),
-                modality=None,
-                body_part=None,
-                module=None,
-                display_style=c.get("display_style", "auto"),
-            )
-            vm = serialize_smart_helper_card(card_obj)
-            vm["kind"] = card_obj.kind
-            vm["section"] = card_obj.section
-            vm["summary"] = vm.get("summary_html", "")
-            vm["token"] = card_obj.token
-            vm["modality"] = None
-            vm["body_part"] = None
-            vm["module"] = None
-            vm["source"] = "static"
-            vm["source_detail"] = "static-playbook"
-            cards.append(vm)
-
-    # Wildcard helpers that apply to any section, e.g. ("any", "wells")
-    any_cards = SMART_HELPER_PLAYBOOK.get(("any", token), [])
-    if any_cards:
-        for c in any_cards:
-            card_obj = SimpleNamespace(
-                id=None,
-                title=c.get("title"),
-                summary=c.get("summary", ""),
-                kind=c.get("kind", "info"),
-                section=section_key,
-                bullets=c.get("bullets", []),
-                insert_options=c.get("insert_options", []),
-                tags=c.get("tags", ""),
-                token=c.get("token"),
-                modality=None,
-                body_part=None,
-                module=None,
-                display_style=c.get("display_style", "auto"),
-            )
-            vm = serialize_smart_helper_card(card_obj)
-            vm["kind"] = card_obj.kind
-            vm["section"] = card_obj.section
-            vm["summary"] = vm.get("summary_html", "")
-            vm["token"] = card_obj.token
-            vm["modality"] = None
-            vm["body_part"] = None
-            vm["module"] = None
-            vm["source"] = "static"
-            vm["source_detail"] = "static-playbook"
-            if vm not in cards:
-                cards.append(vm)
-
     db_cards = _build_smart_helper_cards_from_db(context, selection_text, section)
     if db_cards:
         return db_cards
 
-    if cards:
-        return cards
-
-    # 3) Last resort: attempt AI-backed generation (persist to DB, then re-fetch)
+    # Last resort: attempt AI-backed generation (persist to DB, then re-fetch)
     generated = generate_ai_cards(context, selection_text, section, user)
     db_cards = _build_smart_helper_cards_from_db(context, selection_text, section)
     if db_cards:
@@ -777,7 +663,6 @@ def build_smart_helper_cards(context, selection_text: str, section: str, user):
 
     # If no DB cards but we have non-persisted placeholders from the generator, return them
     if generated:
-        from types import SimpleNamespace
         def _enum_name(x):
             try:
                 return x.name

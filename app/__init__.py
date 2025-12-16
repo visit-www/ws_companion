@@ -1,4 +1,5 @@
 from flask import Flask, request, redirect, url_for, flash,session,send_from_directory, render_template
+from dotenv import load_dotenv
 from flask_login import current_user
 from flask_admin import Admin
 from flask_admin.contrib.sqla import ModelView
@@ -18,7 +19,7 @@ from .util import load_default_data,add_default_admin,add_default_contents,add_a
 import re
 import pyotp
 
-
+load_dotenv()  # reads .env/.flaskenv in project root
 
 # Initialize Flask extensions (SQLAlchemy, Flask-Migrate, LoginManager, Flask-Admin, CSRFProtect)
 got_first_request=True
@@ -39,6 +40,7 @@ mail = Mail()
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
+
     
     # *------------------------------------------------------------------
     # Logging configuration (works well on Heroku & local)
