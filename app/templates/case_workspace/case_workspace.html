@@ -233,6 +233,106 @@
         transform: rotate(360deg);
       }
     }
+    .helper-loading-card {
+      border: 1px solid #d8e3f2;
+      border-radius: 0.5rem;
+      background: linear-gradient(135deg, #f8fbff, #ffffff);
+    }
+    .helper-loading-title {
+      font-weight: 600;
+      color: #1f2d3d;
+    }
+    .helper-progress-dots span {
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      margin-left: 4px;
+      border-radius: 50%;
+      background: #6cb2eb;
+      opacity: 0.4;
+      animation: helper-dot-pulse 1.2s ease-in-out infinite;
+    }
+    .helper-progress-dots span:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    .helper-progress-dots span:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+    @keyframes helper-dot-pulse {
+      0%, 80%, 100% {
+        opacity: 0.25;
+        transform: translateY(0);
+      }
+      40% {
+        opacity: 1;
+        transform: translateY(-2px);
+      }
+    }
+    .helper-phase-list {
+      display: flex;
+      gap: 0.65rem;
+      flex-wrap: wrap;
+    }
+    .helper-phase {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      background: #eef2f7;
+      color: #6c757d;
+    }
+    .helper-phase .helper-phase-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #c4ced9;
+    }
+    .helper-phase.is-active {
+      background: #e8f1ff;
+      color: #1f2d3d;
+      font-weight: 600;
+    }
+    .helper-phase.is-active .helper-phase-dot {
+      background: #0d6efd;
+    }
+    .helper-phase.is-complete {
+      background: #eaf8ef;
+      color: #256f3c;
+    }
+    .helper-phase.is-complete .helper-phase-dot {
+      background: #28a745;
+    }
+    .helper-loading-meta {
+      color: #6c757d;
+    }
+    .helper-status-block {
+      border: 1px solid #e5e7eb;
+      background: #0f0f0fff;
+      border-radius: 0.5rem;
+      padding: 0.65rem 0.8rem;
+      text-align: justify;
+      line-height: 1.35;
+    }
+    .helper-status-block .helper-status-heading {
+      font-weight: 700;
+      color: #d2d390ff;
+      margin-bottom: 0.2rem;
+      text-align: left;
+    }
+    .helper-reason-decleration {
+      color: #b2e299ff;
+      background: transparent;
+      font-weight: 600;
+      display: inline;
+    }
+
+    .helper-reason-text {
+      color: #fffbc2ff;
+      background: transparent;
+      font-weight: 600;
+      display: inline;
+    }
   </style>
 
   <div class="row">
@@ -683,15 +783,14 @@
                             Ask
                           </button>
                         </div>
-                        <div id="helper-status-inline" class="small text-muted ms-2" aria-live="polite"></div>
                         <div class="btn-group btn-group-sm" role="group" aria-label="Report view mode">
                           <button type="button"
-                                  class="btn btn-outline-info active m-2"
+                                  class="btn btn-outline-info active"
                                   id="report-mode-edit">
                             Edit
                         </button>
                         <button type="button"
-                                class="btn btn-info m-2"
+                                class="btn btn-info"
                                 id="report-mode-view">
                           View
                         </button>
@@ -1214,34 +1313,216 @@
         const workspaceHelpContainer = document.getElementById('workspace-help-container');
         const editorLayout = document.getElementById('report-editor-layout');
         const helperStatus = document.getElementById('helper-status');
-        const helperStatusInline = document.getElementById('helper-status-inline');
         let lastHelperToken = '';
+        const helperDefaultPhases = ['Analyzing notes…', 'Drafting helper cards…'];
+        const helperSlowThresholdMs = 25000;
+        let helperLoadingState = null;
+        const lastHelperRequest = { params: null };
 
         function setHelperStatus(message, level, isHtml) {
           const cls = level === 'error' ? 'text-danger' : level === 'warn' ? 'text-warning' : 'text-muted';
-          [helperStatus, helperStatusInline].forEach(function (el) {
-            if (!el) return;
-            if (isHtml) {
-              el.innerHTML = message || '';
-            } else {
-              el.textContent = message || '';
-            }
-            el.className = 'small ' + cls;
-          });
+          if (!helperStatus) return;
+          if (isHtml) {
+            helperStatus.innerHTML = message || '';
+          } else {
+            helperStatus.textContent = message || '';
+          }
+          helperStatus.className = 'small ' + cls;
         }
 
         function normalizeToken(text) {
           return (text || '').trim().toLowerCase();
         }
 
+        function clearHelperLoadingState() {
+          if (helperLoadingState && typeof helperLoadingState.cleanup === 'function') {
+            helperLoadingState.cleanup();
+          }
+          helperLoadingState = null;
+        }
+
+        function buildPhaseList(phases) {
+          const wrapper = document.createElement('div');
+          wrapper.className = 'helper-phase-list mt-2';
+          const items = [];
+
+          (phases || []).forEach(function (label, idx) {
+            const item = document.createElement('div');
+            item.className = 'helper-phase' + (idx === 0 ? ' is-active' : '');
+
+            const dot = document.createElement('span');
+            dot.className = 'helper-phase-dot';
+            const txt = document.createElement('span');
+            txt.className = 'helper-phase-label';
+            txt.textContent = label;
+
+            item.appendChild(dot);
+            item.appendChild(txt);
+            wrapper.appendChild(item);
+            items.push(item);
+          });
+
+          function setPhase(activeIdx) {
+            items.forEach(function (el, idx) {
+              el.classList.remove('is-active', 'is-complete');
+              if (idx < activeIdx) {
+                el.classList.add('is-complete');
+              } else if (idx === activeIdx) {
+                el.classList.add('is-active');
+              }
+            });
+          }
+
+          return { element: wrapper, setPhase: setPhase };
+        }
+
+        function renderHelperErrorState(title, detail, onRetry) {
+          clearHelperCards();
+
+          const errDiv = document.createElement('div');
+          errDiv.className = 'alert alert-warning small mb-0';
+
+          const heading = document.createElement('div');
+          heading.className = 'fw-semibold text-danger';
+          heading.textContent = title || 'Unable to load smart helper suggestions.';
+          errDiv.appendChild(heading);
+
+          if (detail) {
+            const desc = document.createElement('div');
+            desc.className = 'text-muted';
+            desc.textContent = detail;
+            errDiv.appendChild(desc);
+          }
+
+          if (typeof onRetry === 'function') {
+            const retryLink = document.createElement('a');
+            retryLink.href = '#';
+            retryLink.className = 'ms-1';
+            retryLink.textContent = 'Retry now';
+            retryLink.addEventListener('click', function (evt) {
+              evt.preventDefault();
+              onRetry();
+            });
+            errDiv.appendChild(retryLink);
+          }
+
+          helperContainer.appendChild(errDiv);
+        }
+
+        function renderHelperLoading(options) {
+          const opts = Object.assign({
+            heading: 'Generating smart helper cards…',
+            detail: 'We are analyzing your selection and preparing helper cards. This can take ~60–120 seconds depending on record size. You can still browse the case while cards generate.',
+            phases: helperDefaultPhases,
+            onRetry: null,
+            slowThreshold: helperSlowThresholdMs,
+            prefaceMessage: null
+          }, options || {});
+
+          clearHelperCards();
+          clearHelperLoadingState();
+
+          if (opts.prefaceMessage) {
+            const preface = document.createElement('div');
+            preface.className = 'alert alert-secondary small mb-2';
+            preface.textContent = opts.prefaceMessage + ' Generating smart helper cards…';
+            helperContainer.appendChild(preface);
+          }
+
+          const card = document.createElement('div');
+          card.className = 'helper-loading-card p-3 mb-2';
+
+          const titleRow = document.createElement('div');
+          titleRow.className = 'd-flex align-items-center helper-loading-title';
+          const spinner = document.createElement('span');
+          spinner.className = 'helper-status-spinner me-2';
+          const title = document.createElement('span');
+          title.textContent = opts.heading;
+          const dots = document.createElement('div');
+          dots.className = 'helper-progress-dots ms-2';
+          dots.innerHTML = '<span></span><span></span><span></span>';
+          titleRow.appendChild(spinner);
+          titleRow.appendChild(title);
+          titleRow.appendChild(dots);
+
+          const detail = document.createElement('div');
+          detail.className = 'small helper-loading-meta mt-2';
+          detail.textContent = opts.detail;
+
+          const phaseList = buildPhaseList(opts.phases || []);
+
+          const slowNote = document.createElement('div');
+          slowNote.className = 'small text-danger mt-2 d-none';
+          slowNote.textContent = 'Still working—some queries may take longer.';
+
+          helperContainer.appendChild(card);
+          card.appendChild(titleRow);
+          card.appendChild(detail);
+          if (phaseList.element) {
+            card.appendChild(phaseList.element);
+          }
+          card.appendChild(slowNote);
+
+          setHelperStatus('<span class="helper-status-spinner"></span>' + opts.heading, 'info', true);
+
+          let finished = false;
+          const timers = [];
+          const slowTimer = window.setTimeout(function () {
+            if (finished) return;
+            slowNote.classList.remove('d-none');
+            slowNote.textContent = 'Still working—some queries may take longer.';
+            detail.textContent = 'This can take ~60–120 seconds depending on record size. You can still browse the case while cards generate.';
+            if (typeof opts.onRetry === 'function') {
+              const retryLink = document.createElement('button');
+              retryLink.type = 'button';
+              retryLink.className = 'btn btn-sm btn-warning ms-2 py-0 px-2';
+              retryLink.textContent = 'Retry';
+              retryLink.addEventListener('click', function (evt) {
+                evt.preventDefault();
+                opts.onRetry();
+              });
+              slowNote.appendChild(retryLink);
+            }
+            setHelperStatus('Still working—some queries may take longer. Retry if it stalls.', 'error');
+          }, opts.slowThreshold || helperSlowThresholdMs);
+
+          if (phaseList && phaseList.setPhase) {
+            timers.push(window.setTimeout(function () {
+              if (!finished) phaseList.setPhase(1);
+            }, 7000));
+          }
+
+          helperLoadingState = {
+            setPhase: phaseList && phaseList.setPhase ? phaseList.setPhase : null,
+            cleanup: function () {
+              finished = true;
+              timers.forEach(function (t) { window.clearTimeout(t); });
+              window.clearTimeout(slowTimer);
+            }
+          };
+
+          return helperLoadingState;
+        }
+
         if (helperBtn && reportInput && helperContainer) {
           const smartHelperUrl = "{{ url_for('main_routes.smart_helper_route') }}";
 
-          function fetchHelper(paramsObj, statusMessage) {
-            clearHelperCards();
-            if (statusMessage) {
-              setHelperStatus('<span class="helper-status-spinner"></span>' + statusMessage, 'info', true);
-            }
+          function fetchHelper(paramsObj, statusMessage, options) {
+            const opts = options || {};
+            const retryFn = function () {
+              fetchHelper(paramsObj, statusMessage, options);
+            };
+            lastHelperRequest.params = Object.assign({}, paramsObj);
+
+            const loadingState = renderHelperLoading({
+              heading: statusMessage || 'Generating smart helper cards…',
+              detail: opts.detailMessage || 'We are analyzing your selection and preparing helper cards. This can take ~60–120 seconds depending on record size. You can still browse the case while cards generate.',
+              phases: opts.phases || helperDefaultPhases,
+              onRetry: retryFn,
+              slowThreshold: opts.slowThresholdMs || helperSlowThresholdMs,
+              prefaceMessage: opts.prefaceMessage
+            });
+
             const params = new URLSearchParams(paramsObj);
             console.log('[SmartHelper] fetch start', smartHelperUrl + '?' + params.toString());
 
@@ -1253,6 +1534,10 @@
               })
               .then(function (data) {
                 console.log('[SmartHelper] response data', data);
+                if (loadingState && loadingState.setPhase) {
+                  loadingState.setPhase((opts.phases || helperDefaultPhases).length);
+                }
+                clearHelperLoadingState();
                 const cards = (data && data.cards) ? data.cards : [];
                 const related = (data && data.related) ? data.related : {};
                 renderHelperCards(cards);
@@ -1260,16 +1545,16 @@
                 if (editorLayout) {
                   editorLayout.classList.add('wsc-helper-visible');
                 }
-                // Do not surface status texts here; placeholder cards will show their own message.
-                setHelperStatus('', 'info');
+                setHelperStatus('Smart helper cards updated.', 'info');
               })
               .catch(function (err) {
                 console.error('[SmartHelper] fetch error', err);
-                clearHelperCards();
-                const errDiv = document.createElement('div');
-                errDiv.className = 'text-danger';
-                errDiv.textContent = 'Unable to load smart helper suggestions.';
-                helperContainer.appendChild(errDiv);
+                clearHelperLoadingState();
+                renderHelperErrorState(
+                  'Unable to load smart helper suggestions.',
+                  'Check your connection or retry. If it keeps failing, try a shorter selection.',
+                  retryFn
+                );
                 const isTimeout = err && err.message && err.message.toLowerCase().indexOf('timeout') !== -1;
                 const msg = isTimeout ? 'Timed out. Primary model may be slow; please retry or switch provider.' : 'Unable to load smart helper suggestions.';
                 setHelperStatus(msg, 'error');
@@ -1339,17 +1624,63 @@
           });
 
           function clearHelperCards() {
+            clearHelperLoadingState();
             helperContainer.innerHTML = '';
           }
 
           function renderHelperCards(cards) {
             clearHelperCards();
 
+            const noCardReasonCard = Array.isArray(cards)
+              ? cards.find(function (c) {
+                  return c && typeof c.source_detail === 'string' && c.source_detail.toLowerCase() === 'ai-no-card';
+                })
+              : null;
+
+            if (noCardReasonCard) {
+              const reason = (noCardReasonCard.reason || noCardReasonCard.summary || (Array.isArray(noCardReasonCard.bullets) ? noCardReasonCard.bullets[0] : '') || '').trim();
+              const alert = document.createElement('div');
+              alert.className = 'helper-status-block small mb-2';
+              const heading = document.createElement('div');
+              heading.className = 'helper-status-heading';
+              heading.textContent = 'No smart helper cards were generated for your query.';
+              const reasonEl = document.createElement('div');
+              reasonEl.className = 'text-muted';
+              const reasonLabel = document.createElement('span');
+              reasonLabel.className = 'helper-reason-decleration';
+              reasonLabel.textContent = 'Reason for not generating valid helper cards: ';
+              const reasonText = document.createElement('span');
+              reasonText.className = 'helper-reason-text';
+              reasonText.textContent = reason || 'Not applicable for this context.';
+              reasonEl.appendChild(reasonLabel);
+              reasonEl.appendChild(reasonText);
+              alert.appendChild(heading);
+              alert.appendChild(reasonEl);
+              helperContainer.appendChild(alert);
+              setHelperStatus('No smart helper cards were generated for your query.', 'warn');
+              return;
+            }
+
             if (!Array.isArray(cards) || !cards.length) {
               const empty = document.createElement('div');
-              empty.className = 'text-muted';
-              empty.textContent = 'No smart helper suggestions for this selection yet.';
+              empty.className = 'helper-status-block small mb-2';
+              const heading = document.createElement('div');
+              heading.className = 'helper-status-heading';
+              heading.textContent = 'No smart helper cards were generated for your query.';
+              const reasonEl = document.createElement('div');
+              reasonEl.className = 'text-muted';
+              const reasonLabel = document.createElement('span');
+              reasonLabel.className = 'helper-reason-text';
+              reasonLabel.textContent = 'Reason for not generating valid helper cards: ';
+              const reasonText = document.createElement('span');
+              reasonText.className = 'helper-reason-text';
+              reasonText.textContent = 'Not provided.';
+              reasonEl.appendChild(reasonLabel);
+              reasonEl.appendChild(reasonText);
+              empty.appendChild(heading);
+              empty.appendChild(reasonEl);
               helperContainer.appendChild(empty);
+              setHelperStatus('No smart helper cards were generated for your query.', 'warn');
               return;
             }
 
@@ -1422,12 +1753,25 @@
               if (source) {
                 const sourceBadge = document.createElement('span');
                 sourceBadge.className = 'badge rounded-pill ms-1';
-                if (source === 'ai-verified' || sourceDetail === 'ai-verified') {
+                const isVerified = (source === 'ai-verified') || (sourceDetail.indexOf('ai-verified') === 0) || (sourceDetail === 'ai-verified');
+                if (isVerified) {
                   sourceBadge.classList.add('bg-info', 'text-dark');
-                  sourceBadge.textContent = 'AI — verified & updated';
+                  if (sourceDetail.indexOf('ai-deepseek') === 0) {
+                    sourceBadge.textContent = 'AI — DS (verified)';
+                  } else if (sourceDetail.indexOf('ai-openai') === 0) {
+                    sourceBadge.textContent = 'AI — OAI (verified)';
+                  } else {
+                    sourceBadge.textContent = 'AI — verified';
+                  }
                 } else if (source === 'ai-unverified' || source === 'ai') {
                   sourceBadge.classList.add('bg-info', 'text-dark');
-                  sourceBadge.textContent = (sourceDetail === 'ai-new') ? 'AI — new (unverified)' : 'AI — unverified';
+                  if (sourceDetail.indexOf('ai-deepseek') === 0) {
+                    sourceBadge.textContent = 'AI — DS (unverified)';
+                  } else if (sourceDetail.indexOf('ai-openai') === 0) {
+                    sourceBadge.textContent = 'AI — OAI (unverified)';
+                  } else {
+                    sourceBadge.textContent = 'AI — unverified';
+                  }
                 } else if (source === 'playbook' || source === 'static') {
                   sourceBadge.classList.add('bg-secondary');
                   sourceBadge.textContent = 'Playbook';
@@ -1439,6 +1783,8 @@
                   sourceBadge.textContent = 'Smart helper';
                 }
                 badgeContainer.appendChild(sourceBadge);
+
+                // Allow switching to the alternate provider if available and a last request exists
               }
 
               header.appendChild(badgeContainer);
@@ -1464,20 +1810,22 @@
               if ((card.source === 'ai-status') || (card.source_detail === 'ai-no-card')) {
                 const msg = card.summary || (card.bullets && card.bullets[0]) || 'No card generated.';
                 const statusEl = document.createElement('div');
-                statusEl.className = 'text-danger small border border-danger rounded p-2 bg-white';
-                statusEl.textContent = msg;
-                body.appendChild(statusEl);
-                wrapper.appendChild(body);
-                helperContainer.appendChild(wrapper);
-                return;
-              }
-
-              // If this is a status/placeholder card, show only the status message and skip the rest
-              if ((card.source === 'ai-status') || (card.source_detail === 'ai-no-card')) {
-                const msg = card.summary || (card.bullets && card.bullets[0]) || 'No card generated.';
-                const statusEl = document.createElement('div');
-                statusEl.className = 'text-warning small';
-                statusEl.textContent = msg;
+                statusEl.className = 'helper-status-block small';
+                const heading = document.createElement('div');
+                heading.className = 'helper-status-heading';
+                heading.textContent = 'No smart helper cards were generated for your query.';
+                const reasonEl = document.createElement('div');
+                reasonEl.className = 'text-muted';
+                const reasonLabel = document.createElement('span');
+                reasonLabel.className = 'helper-reason-text';
+                reasonLabel.textContent = 'Reason for not generating valid helper cards: ';
+                const reasonText = document.createElement('span');
+                reasonText.className = 'helper-reason-text';
+                reasonText.textContent = msg;
+                reasonEl.appendChild(reasonLabel);
+                reasonEl.appendChild(reasonText);
+                statusEl.appendChild(heading);
+                statusEl.appendChild(reasonEl);
                 body.appendChild(statusEl);
                 wrapper.appendChild(body);
                 helperContainer.appendChild(wrapper);
@@ -1496,6 +1844,18 @@
                 summaryEl.className = 'card-text small text-muted mb-2';
                 summaryEl.innerHTML = summaryHtml;
                 body.appendChild(summaryEl);
+              }
+
+              if (card.source_url) {
+                const sourceEl = document.createElement('div');
+                sourceEl.className = 'small mb-2';
+                const link = document.createElement('a');
+                link.href = card.source_url;
+                link.target = '_blank';
+                link.rel = 'noopener';
+                link.textContent = 'View source';
+                sourceEl.appendChild(link);
+                body.appendChild(sourceEl);
               }
 
               // Normalise modern sections from either snake_case or camelCase keys
@@ -1859,7 +2219,10 @@
                       force_timeout: 60,
                       replace_fallback: 'true'
                     };
-                    fetchHelper(paramsObj, 'Regenerating with DeepSeek (60s timeout)...');
+                    fetchHelper(paramsObj, 'Regenerating with DeepSeek (60s timeout)…', {
+                      detailMessage: 'Switching to DeepSeek and rebuilding helper cards. This can take ~60–120 seconds depending on query. You can keep editing while we regenerate.',
+                      phases: helperDefaultPhases
+                    });
                   });
                   btnRow.appendChild(regenBtn);
                   body.appendChild(btnRow);
@@ -2031,7 +2394,7 @@
             });
           }
 
-if (helperBtn && reportInput && helperContainer) {
+          if (helperBtn && reportInput && helperContainer) {
             helperBtn.addEventListener('click', function () {
               const selectionText = getSelectionTextOrWord(reportInput);
               const normSelection = normalizeToken(selectionText);
@@ -2063,52 +2426,29 @@ if (helperBtn && reportInput && helperContainer) {
               const caretPos = typeof reportInput.selectionStart === 'number'
                 ? reportInput.selectionStart
                 : (reportInput.value || '').length;
-            const sectionValue = inferSectionFromText(reportInput.value || '', caretPos);
+              const sectionValue = inferSectionFromText(reportInput.value || '', caretPos);
 
-            const params = new URLSearchParams({
-              section: sectionValue,
-              selection_text: selectionText,
-              modality: "{{ case.modality_enum.name if case.modality_enum else '' }}",
-              body_part: "{{ case.body_part_enum.name if case.body_part_enum else '' }}",
-              module: "{{ case.module_enum.name if case.module_enum else '' }}",
-              indication: "{{ case.indication or '' }}",
-              core_question: "{{ case.core_question or '' }}",
-              return_url: window.location.href,
-              force_ai: 'true'
-            });
+              const paramsObj = {
+                section: sectionValue,
+                selection_text: selectionText,
+                modality: "{{ case.modality_enum.name if case.modality_enum else '' }}",
+                body_part: "{{ case.body_part_enum.name if case.body_part_enum else '' }}",
+                module: "{{ case.module_enum.name if case.module_enum else '' }}",
+                indication: "{{ case.indication or '' }}",
+                core_question: "{{ case.core_question or '' }}",
+                return_url: window.location.href,
+                force_ai: 'true'
+              };
 
-            const loading = document.createElement('div');
-            loading.className = 'text-muted small';
-            loading.textContent = 'Generating smart helper cards...';
-            helperContainer.appendChild(loading);
-            console.log('[SmartHelper] selection fetch start', smartHelperUrl + '?' + params.toString());
+              const detailMessage = 'We are analyzing your highlighted text and preparing smart helper cards. This can take ~60–120 seconds depending on record size. You can still browse the case while cards generate.';
 
-            fetch(smartHelperUrl + '?' + params.toString(), { method: 'GET' })
-              .then(function (resp) {
-                console.log('[SmartHelper] selection response status', resp.status);
-                if (!resp.ok) throw new Error('HTTP ' + resp.status);
-                return resp.json();
-              })
-              .then(function (data) {
-                console.log('[SmartHelper] selection response data', data);
-                const cards = (data && data.cards) ? data.cards : [];
-                const related = (data && data.related) ? data.related : {};
-                renderHelperCards(cards);
-                renderRelated(related);
-                if (editorLayout) {
-                  editorLayout.classList.add('wsc-helper-visible');
-                }
-            })
-            .catch(function (err) {
-              console.error('[SmartHelper] selection fetch error', err);
-              clearHelperCards();
-              const errDiv = document.createElement('div');
-              errDiv.className = 'text-danger';
-              errDiv.textContent = 'Unable to load smart helper suggestions.';
-              helperContainer.appendChild(errDiv);
               if (editorLayout) {
                 editorLayout.classList.add('wsc-helper-visible');
               }
+
+              fetchHelper(paramsObj, 'Generating smart helper cards…', {
+                detailMessage: detailMessage,
+                phases: helperDefaultPhases
               });
             });
           }
@@ -2119,9 +2459,7 @@ if (helperBtn && reportInput && helperContainer) {
               setHelperStatus('Type a question for the smart helper.', 'warn');
               return false;
             }
-            clearHelperCards();
             lastHelperToken = normalizeToken(q);
-            setHelperStatus('Generating smart helper cards...', 'info');
             const paramsObj = {
               section: 'observations',
               selection_text: q,
@@ -2135,7 +2473,14 @@ if (helperBtn && reportInput && helperContainer) {
             };
 
             console.log('[SmartHelper] manual fetch start', smartHelperUrl, paramsObj);
-            fetchHelper(paramsObj, 'Generating smart helper cards...');
+            if (editorLayout) {
+              editorLayout.classList.add('wsc-helper-visible');
+            }
+            fetchHelper(paramsObj, 'Generating smart helper cards…', {
+              prefaceMessage: 'No helper cards in curated DB for your query.',
+              detailMessage: 'We are analyzing your question and preparing fresh smart helper cards. This can take ~60–120 seconds depending on record size. You can still browse the case while cards generate.',
+              phases: helperDefaultPhases
+            });
             return true;
           }
 
